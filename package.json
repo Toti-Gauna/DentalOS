@@ -10,7 +10,8 @@
     "preview": "vite preview --port 4173",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "npm run build && playwright test",
+    "screens": "npm run build && CAPTURE=1 playwright test e2e/screens.spec.ts"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.3.0",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.64.1",
+    "@types/node": "^22.20.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",

@@ -145,8 +145,9 @@ export interface Prefs {
   reducedMotion: 'auto' | 'on'
   audio: boolean
   volume: number
+  favorites: string[]
 }
-export const DEFAULT_PREFS: Prefs = { reducedMotion: 'auto', audio: false, volume: 0.2 }
+export const DEFAULT_PREFS: Prefs = { reducedMotion: 'auto', audio: false, volume: 0.2, favorites: [] }
 
 /** Diagnóstico exportable: errores y conteos, sin contenido operable. */
 export function buildDiagnostic(result: Extract<LoadResult, { kind: 'corrupt' | 'future' | 'needs-migration' }>, app: string) {

@@ -29,7 +29,7 @@ export function getOrCreateCart(s: AppState, businessId: string, locationId: str
       locationId,
       customerId: s.session.customerByBusiness[businessId as Cart['businessId']] ?? null,
       lines: [],
-      fulfillment: s.locations.find((l) => l.id === locationId)?.hasTables ? { kind: 'mesa', tableId: null } : { kind: 'retiro', startMin: null },
+      fulfillment: (() => { const l = s.locations.find((x) => x.id === locationId); return l?.hasTables && !(l.pickupEnabled && s.businesses.find((b) => b.id === businessId)?.kind === 'cafe') ? { kind: 'mesa' as const, tableId: null } : { kind: 'retiro' as const, startMin: null } })(),
       alias: '',
       version: 1,
       pendingOperationId: null,

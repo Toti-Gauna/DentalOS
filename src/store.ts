@@ -152,8 +152,10 @@ export function recoveryDiagnostic() {
   return buildDiagnostic(snap.recovery, 'TableFlow demo')
 }
 export function recoverWith(fixtureId: FixtureId) {
-  if (snap.recovery) backupRaw(storage, snap.recovery.raw)
+  const raw = snap.recovery?.raw
   resetDemo(fixtureId)
+  // el original se resguarda DESPUÉS del reinicio (que borra las claves TableFlow) y antes de seguir
+  if (raw) backupRaw(storage, raw)
 }
 export function recoverInMemory() {
   snap = {

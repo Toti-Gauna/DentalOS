@@ -1,4 +1,4 @@
-import { audit, byId, dup, emit, fail, ok } from './core'
+import { audit, byId, dup, emit, fail, nextId, ok } from './core'
 import { ensureCustomer } from './customers'
 import { atLocal, dateKeyOf, minutesOfDay, MINUTE } from './time'
 import type { AppState, BusinessId, Role } from './types'
@@ -94,7 +94,11 @@ const windowSet: Handler = (s, c, ctx) => {
   return ok()
 }
 
+/** Reserva un identificador de operación (contador persistente): el formulario lo reutiliza ante reintentos. */
+const opAlloc: Handler = (s) => ok({ operationId: nextId(s, 'OP', 4) })
+
 export const systemHandlers: Record<string, Handler> = {
+  'op/alloc': opAlloc,
   'clock/advance': clockAdvance,
   'clock/jump': clockJump,
   'session/setRole': setRole,
