@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { fmtShort } from '../domain/time';
 import type { ViewRole } from '../domain';
 import { navigate, useRoute } from './router';
@@ -11,16 +11,20 @@ import { MyAppointments } from '../pages/public/MyAppointments';
 import { WhatsApp } from '../pages/public/WhatsApp';
 import { CallSim } from '../pages/public/CallSim';
 import { Learn } from '../pages/public/Learn';
-import { Today } from '../pages/admin/Today';
-import { Inbox } from '../pages/admin/Inbox';
-import { People, PersonDetail } from '../pages/admin/People';
-import { Odontogram, OdontogramPicker } from '../pages/admin/Odontogram';
-import { Ortho } from '../pages/admin/Ortho';
-import { Estimates } from '../pages/admin/Estimates';
-import { Waitlist } from '../pages/admin/Waitlist';
-import { Tasks } from '../pages/admin/Tasks';
-import { Reports } from '../pages/admin/Reports';
-import { Settings } from '../pages/admin/Settings';
+
+// El panel de la clínica se carga aparte: el portal de pacientes no descarga su código.
+const Today = lazy(() => import('../pages/admin/Today').then((m) => ({ default: m.Today })));
+const Inbox = lazy(() => import('../pages/admin/Inbox').then((m) => ({ default: m.Inbox })));
+const People = lazy(() => import('../pages/admin/People').then((m) => ({ default: m.People })));
+const PersonDetail = lazy(() => import('../pages/admin/People').then((m) => ({ default: m.PersonDetail })));
+const Odontogram = lazy(() => import('../pages/admin/Odontogram').then((m) => ({ default: m.Odontogram })));
+const OdontogramPicker = lazy(() => import('../pages/admin/Odontogram').then((m) => ({ default: m.OdontogramPicker })));
+const Ortho = lazy(() => import('../pages/admin/Ortho').then((m) => ({ default: m.Ortho })));
+const Estimates = lazy(() => import('../pages/admin/Estimates').then((m) => ({ default: m.Estimates })));
+const Waitlist = lazy(() => import('../pages/admin/Waitlist').then((m) => ({ default: m.Waitlist })));
+const Tasks = lazy(() => import('../pages/admin/Tasks').then((m) => ({ default: m.Tasks })));
+const Reports = lazy(() => import('../pages/admin/Reports').then((m) => ({ default: m.Reports })));
+const Settings = lazy(() => import('../pages/admin/Settings').then((m) => ({ default: m.Settings })));
 
 export const BANNER = 'Demo · Clínica Brisa ficticia · Datos de muestra · Sin envíos reales';
 
@@ -166,9 +170,17 @@ export function App() {
 
   useEffect(() => {
     setMenuOpen(false);
-    const h = document.querySelector<HTMLElement>('[data-page-title]');
-    if (h && document.activeElement?.tagName !== 'INPUT') h.focus({ preventScroll: false });
+    // El panel se carga en diferido: reintenta hasta que exista el título de la página.
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const focusTitle = () => {
+      const h = document.querySelector<HTMLElement>('[data-page-title]');
+      if (h) { if (document.activeElement?.tagName !== 'INPUT') h.focus({ preventScroll: false }); }
+      else if (tries++ < 20) timer = setTimeout(focusTitle, 50);
+    };
+    focusTitle();
     window.scrollTo?.(0, 0);
+    return () => clearTimeout(timer);
   }, [path]);
 
   const nav = admin ? ADMIN_NAV : PUBLIC_NAV;
@@ -199,7 +211,7 @@ export function App() {
         </nav>
         <main id="main" tabIndex={-1}>
           <SystemNotices />
-          {route(segments)}
+          <Suspense fallback={<p className="muted" role="status">Cargando panel…</p>}>{route(segments)}</Suspense>
         </main>
       </div>
       <footer className="footer">
