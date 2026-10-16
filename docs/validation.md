@@ -1,5 +1,7 @@
 # Validación · Fase 1 (PROMPT 1 — Scaffold y funcionalidad FE)
 
+> Actualizado en el cierre de fase 1 (PR de cierre sobre `main` @ `c5911ac`): se agregaron pruebas para todos los casos que estaban parciales o sin ejecutar.
+
 Fecha de ejecución: 16/10/2026 (reloj real del entorno). Reloj de la demo: 2026-10-19T09:00:00-03:00.
 Entorno: contenedor Linux, `cwd=/home/user/DentalOS`, Node v22.22.0, npm 10.9.4, TypeScript 5.9.3, Vite 7.3.7, Vitest 3.2.7, ESLint 9.39.5, Playwright 1.56.1 con Chromium preinstalado (`/opt/pw-browsers/chromium`).
 
@@ -10,9 +12,11 @@ Entorno: contenedor Linux, `cwd=/home/user/DentalOS`, Node v22.22.0, npm 10.9.4,
 | `npm ci` | repo | `package-lock.json` | 0 | instalación limpia desde lockfile |
 | `npm run lint` | repo | `npm ci` | 0 | ESLint sin errores ni warnings |
 | `npm run typecheck` | repo | `npm ci` | 0 | `tsc -b --noEmit` sin errores |
-| `npm run test -- --run` | repo | `npm ci` | 0 | 1 archivo, **42 tests pasados** (`src/domain/domain.test.ts`) |
-| `npm run build` | repo | `npm ci` | 0 | `dist/` ~501 kB JS (147 kB gzip), 22 kB CSS, fuentes woff/woff2 locales |
-| `npm run test:e2e` | repo | `npm run build`, Chromium local | 0 | **15 tests pasados** (`tests/e2e/smoke.spec.ts`, `tests/e2e/flows.spec.ts`), 3 corridas consecutivas en verde antes de agregar S23/S33 |
+| `npm run test -- --run` | repo | `npm ci` | 0 | 2 archivos, **63 tests pasados**: 44 de dominio (`src/domain/domain.test.ts`) + 19 de contraste WCAG sobre los tokens reales (`src/styles/contrast.test.ts`) |
+| `npm run build` | repo | `npm ci` | 0 | entrada ~415 kB JS (126 kB gzip) + 10 chunks del panel cargados en diferido (4–21 kB c/u), 22 kB CSS, fuentes locales |
+| `npm run test:e2e` | repo | `npm run build`, Chromium local | 0 | **23 tests pasados** + 1 omitido a propósito (capturas), en 3 corridas consecutivas (`smoke`, `flows`, `coverage`) |
+| `npm run evidence` | repo | build | 0 | 10 capturas en `docs/evidence/` (1440 y 390 px) |
+| CI en GitHub (PR #1 y `main`) | Actions | — | success | job `check` y `deploy` en verde (run 38980888127) |
 
 Distinción de evidencia:
 - **U** = prueba pura de dominio (Vitest). **E** = navegador real (Playwright/Chromium). **V** = revisión visual de capturas a 1440 y 390 px realizada durante la fase. **I** = implementado, sin ejecución automatizada ni manual registrada.
@@ -22,11 +26,11 @@ Distinción de evidencia:
 
 | Caso | Estado | Evidencia |
 | --- | --- | --- |
-| S01 Visitante abre primera visita | Pass | E (inicio con servicios/CTA), V. Sede inexistente → pantalla de recuperación: I |
-| S02 Primera consulta → solicitud | Pass | U (S06), E (flujo primera visita → “Solicitud enviada”, visible una vez en recepción). Cupo ocupado al commit con formulario conservado: I (botón de simulación presente) |
-| S03 Recargar conserva | Pass | E (reload tras protagonista mantiene v2). Storage inaccesible → memoria: I (lógica en `store.ts`/`storage.ts`) |
+| S01 Visitante abre primera visita | Pass | E (inicio con servicios/CTA; sede inexistente → “Volver a sedes”), V |
+| S02 Primera consulta → solicitud | Pass | U, E (solicitud pendiente única; cupo tomado antes del commit → error, formulario conservado, reintento con otro cupo) |
+| S03 Recargar conserva | Pass | E (reload mantiene v2; storage denegado → “Solo en memoria” con aviso y la demo sigue operando) |
 | S04 Nombre vacío | Pass | E (resumen de errores recibe foco, nombra el campo) |
-| S05 Canal no elegido | Parcial | Validación `validateNewPerson` usada en E de S04 (el canal vacío forma parte del resumen), sin aserción específica |
+| S05 Canal no elegido | Pass | E (resumen nombra “Canal preferido”, el enlace lleva el foco al campo, no hay commit, los demás campos se conservan) |
 | S06 Doble clic mismo commandId | Pass | U, E (`dblclick` en Enviar solicitud → un registro) |
 | S07 Duplicado semántico | Pass | U |
 | S08 Profesional ocupado | Pass | U (sin mutación), E (protagonista) |
@@ -42,10 +46,10 @@ Distinción de evidencia:
 | S18 Check-in → atención → finalizado | Pass | U, E |
 | S19 Ausencia | Pass | U (futura rechazada, pasada registrada) |
 | S20 Filtros | Pass | U (no muta, n=0 válido). UI con “Limpiar filtros” y conteo: V |
-| S21 Preset vacío | Pass | U (KPI n=0 sin división por cero). Estado vacío de UI: I |
+| S21 Preset vacío | Pass | U (n=0), E (informes “Sin datos (n=0)”, agenda ofrece crear turno de muestra) |
 | S22 Cambio de vista | Pass | E (mismo `A-0012 v2` en portal y recepción; selector rotulado “no es inicio de sesión”) |
 | S23 Borrador al navegar | Pass | E |
-| S24 390 px táctil | Parcial | E (sin overflow horizontal en 7 rutas, agenda semanal → lista). Completar la reserva en móvil: I |
+| S24 390 px táctil | Pass | E (reserva completa con `tap` en contexto móvil táctil, sin overflow; agenda semanal → lista) |
 | S25 Reset | Pass | U (namespace), E (cancelar no cambia; confirmar repone reloj) |
 | S26 Storage corrupto | Pass | U, E (aviso, app usable, restauración) |
 | S27 Saludos | Pass | U, E |
@@ -55,11 +59,11 @@ Distinción de evidencia:
 | S31 Contenido clínico | Pass | U (límite; tarea solo al aceptar) |
 | S32 Reabrir conversación | Pass | U (mensaje de estado actual, opciones viejas inválidas) |
 | S33 Continuar por llamada | Pass | E (misma gestión R-006, mismo turno, gestión resuelta) |
-| S34 Inicio voluntario | Pass | E (sin audio por defecto). AudioContext bloqueado → aviso: I |
+| S34 Inicio voluntario | Pass | E (sin audio por defecto; AudioContext inexistente → aviso y llamada completa en texto) |
 | S35 Rama ocupado → alternativa | Pass | E |
-| S36 Mute / lectura | Parcial | Controles presentes; sin aserción automatizada: I |
+| S36 Mute / lectura | Pass | E (tras silenciar no se inicia ningún oscilador; lectura muestra todo en texto y la tarea sigue) |
 | S37 Simular silencio | Pass | E (no confirma; ofrece repetir/lectura/recepción) |
-| S38 Detener | Pass | E (detener → sin commit, turno sigue v1). Limpieza de timers/osciladores: código (`hardStop`, `ToneEngine.stop`), sin medición |
+| S38 Detener | Pass | E con AudioContext instrumentado: contextos cerrados = creados, osciladores detenidos = iniciados, 0 líneas nuevas 800 ms después de detener, turno sigue v1 |
 | S39 Homónimos / versión de ficha | Pass | U |
 | S40 Dependientes | Pass | U |
 | S41 Odontograma | Pass | U, E |
@@ -68,7 +72,7 @@ Distinción de evidencia:
 | S44 Movimiento y reversión | Pass | U, E (reintento detectado, saldo reconciliado) |
 | S45 Ofertas compitiendo | Pass | U, E |
 | S46 Educación | Pass | U, E |
-| S47 Teclado / reduced-motion | Parcial | E (Escape + devolución de foco con reduced-motion). Zoom 200 % y contraste medido: no ejecutado |
+| S47 Teclado / reduced-motion | Pass (con límite) | E (Escape + foco con reduced-motion; 720 px CSS = zoom 200 % de 1440 sin overflow en 6 rutas y menú por teclado), U (19 pares de contraste ≥ 4.5:1 texto / ≥ 3:1 no-texto). Lector de pantalla real: no ejecutado |
 | S48 Sin red | Pass | E (ninguna request fuera de 127.0.0.1 en 16 rutas + flujos), auditoría de `dist/`, CSP de build |
 
 ## Automatizaciones A01–A10
@@ -86,9 +90,13 @@ Distinción de evidencia:
 | A09 Seguimiento de presupuesto | Pass | U (vence por reloj, una tarea, sin cobro) |
 | A10 Continuidad entre canales | Pass | U (rechaza otra identidad), E (S33) |
 
-## No ejecutado / pendiente declarado
+## Correcciones hechas por la medición
 
-- Zoom 200 %, lector de pantalla real y medición formal de contraste AA (tokens elegidos con contraste ≥ 4.5:1 estimado, sin herramienta de medición).
-- Audio real: el contenedor no reproduce sonido; se verificó que la llamada funciona sin audio. La limpieza de nodos está en código, no medida.
-- Concurrencia multi-pestaña: solo aviso y elección; no se prometen merges.
-- Deploy en GitHub Pages: el workflow existe; su primera ejecución ocurre en el PR/merge.
+- `--line-strong` (#b8b2a4 → #8f897c): los bordes de campos daban 2.1:1 y WCAG 1.4.11 pide 3:1. Ahora 3.5:1 sobre blanco y 3.2:1 sobre el fondo.
+
+## No ejecutado / límites declarados
+
+- Lector de pantalla real (NVDA/VoiceOver): no hay uno disponible en el contenedor. Hay roles, labels, regiones vivas y foco gestionado, verificados por Playwright.
+- Audio audible: el contenedor no tiene salida de sonido. La limpieza se midió con un AudioContext instrumentado, no con el de un navegador real.
+- El zoom real del navegador se aproximó con su equivalente en píxeles CSS (720 px).
+- Concurrencia entre pestañas: solo hay aviso y elección; no se prometen merges.

@@ -33,6 +33,10 @@ function commitGate(d: DemoState) {
   if (d.settings.failNextCommits > 0) fail('COMMIT_FALLIDO', 'Error simulado al guardar. No se aplicó ningún cambio.');
 }
 
+/** Reglas locales que el operador puede pausar. El resto es obligatorio (seguridad, consistencia o derivación humana). */
+export const TOGGLEABLE_RULES = ['A05', 'A06', 'A09'] as const;
+const ruleOn = (d: DemoState, id: string) => d.automationRules.find((r) => r.id === id)?.enabled !== false;
+
 const getAppt = (d: DemoState, id: string) => d.appointments.find((a) => a.id === id) ?? fail('NO_EXISTE', `No existe el turno ${id}.`);
 const getPerson = (d: DemoState, id: string) => d.persons.find((p) => p.id === id) ?? fail('PERSONA_INEXISTENTE', `No existe la persona ${id}.`);
 const personName = (d: DemoState, id: string | null) => {
@@ -107,6 +111,7 @@ export type Command = Base & (
   | { type: 'removeBlock'; blockId: string }
   | { type: 'updateRule'; ruleId: string; start: string; end: string }
   | { type: 'updateServiceDuration'; serviceTypeId: string; durationMin: number }
+  | { type: 'setAutomationRule'; ruleId: string; enabled: boolean }
   | { type: 'setSetting'; key: keyof Pick<DemoSettings, 'failNextCommits' | 'reminderQuota'>; value: number }
   | { type: 'advanceClock'; minutes: number }
   | { type: 'toothMark'; personId: string; dentition: 'permanente' | 'temporal'; tooth: number; surface: Surface; procedure: string; state: 'planificado' | 'realizado' }
@@ -264,7 +269,7 @@ const cancel: Handler<'cancel'> = (d, c) => {
     if (ep && ctl) { ctl.status = 'indicado'; ctl.appointmentId = null; ep.timeline.push({ at: d.clock, kind: 'cancelacion', text: `${a.id} cancelado; el control ${ctl.id} sigue indicado.` }); }
   }
   for (const t of d.tasks) if (t.appointmentId === a.id && t.status !== 'resuelta') { t.status = 'resuelta'; t.note = 'Cerrada por cancelación del turno.'; }
-  if (hasWaitlistCandidate(d, a)) {
+  if (ruleOn(d, 'A06') && hasWaitlistCandidate(d, a)) {
     upsertTask(d, { kind: 'general', title: `Vacante liberada (${fmtShort(a.start)}): revisar lista de espera`, detail: `${serviceName(d, a.serviceTypeId)} · hay candidatos compatibles.`, assigneeId: null, dueAt: a.start, personId: null, requestId: null, appointmentId: a.id, estimateId: null, dedupeKey: `vacante:${a.id}`, ruleId: 'A06' });
   }
   audit(d, c.commandId, 'cita_cancelada', 'Appointment', a.id, `Cancelada por ${c.channel}. Motivo: ${a.cancelReason}. Recordatorios anulados.`);
@@ -453,6 +458,14 @@ const updateServiceDuration: Handler<'updateServiceDuration'> = (d, c) => {
   audit(d, c.commandId, 'duracion_editada', 'ServiceType', st.id, `${before} → ${c.durationMin} min (aplica a turnos nuevos)`);
   return ok('Duración actualizada para turnos nuevos.');
 };
+const setAutomationRule: Handler<'setAutomationRule'> = (d, c) => {
+  if (!(TOGGLEABLE_RULES as readonly string[]).includes(c.ruleId)) fail('REGLA_OBLIGATORIA', `${c.ruleId} no se puede pausar: protege consistencia o derivación humana.`);
+  const r = d.automationRules.find((x) => x.id === c.ruleId) ?? fail('NO_EXISTE', 'Regla inexistente.');
+  if (r.enabled === c.enabled) fail('SIN_CAMBIOS', 'La regla ya estaba así.');
+  r.enabled = c.enabled;
+  audit(d, c.commandId, 'regla', 'AutomationRule', r.id, `${r.id} ${c.enabled ? 'activada' : 'pausada'}`);
+  return ok(`${r.id} ${c.enabled ? 'activada' : 'pausada'}.`);
+};
 const setSetting: Handler<'setSetting'> = (d, c) => {
   if (!Number.isInteger(c.value) || c.value < 0 || c.value > 999) fail('DATOS_INVALIDOS', 'Valor entero entre 0 y 999.');
   d.settings[c.key] = c.value;
@@ -474,8 +487,8 @@ export function runAutomations(d: DemoState, commandId: string): string[] {
     const a = d.appointments.find((x) => x.id === o.appointmentId);
     if (!a || !isActive(a) || a.version !== o.appointmentVersion || toMs(a.start) <= toMs(d.clock)) { o.status = 'anulado'; continue; }
     const p = d.persons.find((x) => x.id === a.personId);
-    const rule = d.automationRules.find((r) => r.id === 'A05');
-    if (!rule?.enabled || !p?.reminderOptIn || d.settings.reminderQuota <= 0) {
+    if (!ruleOn(d, 'A05')) { log.push(`Recordatorio ${o.id} sigue programado: A05 está pausada.`); continue; }
+    if (!p?.reminderOptIn || d.settings.reminderQuota <= 0) {
       o.status = p?.reminderOptIn === false ? 'bloqueado_optout' : 'sin_cupo';
       upsertTask(d, { kind: 'contacto_manual', title: `Contacto manual por recordatorio de ${a.id}`, detail: o.status === 'sin_cupo' ? 'Cuota de muestra agotada.' : 'La persona no quiere recordatorios automáticos.', assigneeId: null, dueAt: a.start, personId: a.personId, requestId: null, appointmentId: a.id, estimateId: null, dedupeKey: `manual:${o.dedupeKey}`, ruleId: 'A05' });
       log.push(`Recordatorio ${o.id} no enviado (${o.status}); tarea manual creada.`);
@@ -490,7 +503,7 @@ export function runAutomations(d: DemoState, commandId: string): string[] {
   }
   for (const e of d.estimates) if (e.status === 'emitido' && e.validUntil && toMs(e.validUntil) <= toMs(d.clock)) {
     e.status = 'vencido'; e.decidedAt = d.clock;
-    upsertTask(d, { kind: 'seguimiento_presupuesto', title: `Presupuesto ${e.id} vencido: consulta administrativa`, detail: 'Aclarar dudas si la persona lo pide. No es venta ni cobro.', assigneeId: null, dueAt: null, personId: e.personId, requestId: null, appointmentId: null, estimateId: e.id, dedupeKey: `est:${e.id}:seguimiento`, ruleId: 'A09' });
+    if (ruleOn(d, 'A09')) upsertTask(d, { kind: 'seguimiento_presupuesto', title: `Presupuesto ${e.id} vencido: consulta administrativa`, detail: 'Aclarar dudas si la persona lo pide. No es venta ni cobro.', assigneeId: null, dueAt: null, personId: e.personId, requestId: null, appointmentId: null, estimateId: e.id, dedupeKey: `est:${e.id}:seguimiento`, ruleId: 'A09' });
     log.push(`Presupuesto ${e.id} vencido; tarea de seguimiento administrativo.`);
     audit(d, commandId, 'presupuesto_vencido', 'Estimate', e.id, 'Vencido por reloj de muestra.');
   }
@@ -750,7 +763,7 @@ const callSave: Handler<'callSave'> = (d, c) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const HANDLERS: Record<string, (d: DemoState, c: any) => CommandResultOk> = {
   book, reschedule, cancel, confirmAppointment, patientConfirm, transition, requestHumanChange, createRequest, updateRequest, chatStaffReply, createTask, updateTask,
-  createPerson, updatePerson, setReminderOptIn, addBlock, removeBlock, updateRule, updateServiceDuration, setSetting, advanceClock,
+  createPerson, updatePerson, setReminderOptIn, addBlock, removeBlock, updateRule, updateServiceDuration, setAutomationRule, setSetting, advanceClock,
   toothMark, toothUndo, toothDone, episodeIndicateControl, episodeNote, estimateCreate, estimateAddLine, estimateRemoveLine,
   estimateTransition, estimateFollowUp, ledgerRecord, ledgerReverse, waitlistAdd, waitlistRemove, offerCreate, offerAccept, offerReject,
   learningOpen, learningAnswer, learningComplete, learningReset, callSave,

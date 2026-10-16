@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { dispatch, store, useStore } from '../../app/store';
 import { navigate } from '../../app/router';
 import { resetUi } from '../../app/ui-state';
-import { PRESETS } from '../../domain';
+import { PRESETS, TOGGLEABLE_RULES } from '../../domain';
 import { NAMESPACE, serialize } from '../../domain/storage';
 import { dayName, fmtShort } from '../../domain/time';
 import { proName, locName, chairName } from '../../domain/selectors';
@@ -80,6 +80,21 @@ export function Settings() {
         </div>
 
         <aside className="stack">
+          <div className="card stack">
+            <h2 style={{ fontSize: 20 }}>Automatizaciones locales</h2>
+            <p className="small muted">Ninguna envía nada real. Solo A05, A06 y A09 se pueden pausar; el resto protege consistencia o la derivación humana.</p>
+            <ul className="list">{s.automationRules.map((r) => {
+              const toggleable = (TOGGLEABLE_RULES as readonly string[]).includes(r.id);
+              return (
+                <li key={r.id} className="list-item">
+                  {toggleable
+                    ? <label className="choice"><input type="checkbox" checked={r.enabled} onChange={(e) => show(dispatch({ type: 'setAutomationRule', ruleId: r.id, enabled: e.target.checked }))} /> <strong>{r.id}</strong> {r.name}</label>
+                    : <span><strong>{r.id}</strong> {r.name} <span className="tag">obligatoria</span></span>}
+                  <span className="small muted">{r.trigger} · {r.condition}</span>
+                </li>
+              );
+            })}</ul>
+          </div>
           <div className="card stack">
             <h2 style={{ fontSize: 20 }}>Escenarios (presets)</h2>
             <p className="small muted">Cada preset parte de la seed para aislar precondiciones. Activo: <strong>{s.preset}</strong>.</p>

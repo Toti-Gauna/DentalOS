@@ -408,3 +408,23 @@ describe('cobertura adicional de la matriz', () => {
     expect(run(s, { type: 'chatLinkRequest', conversationId: 'C-003', requestId: reqId }).result.ok).toBe(false);
   });
 });
+
+describe('reglas pausables', () => {
+  it('A05 pausada deja el recordatorio programado; reglas obligatorias no se pausan', () => {
+    let s = createSeedState();
+    s = run(s, { type: 'setAutomationRule', ruleId: 'A05', enabled: false }).state;
+    s = run(s, { type: 'advanceClock', minutes: 60 * 24 * 2 }).state;
+    expect(s.outbox.find((o) => o.dedupeKey === 'rem:A-0011:v1:24h')!.status).toBe('programado');
+    s = run(s, { type: 'setAutomationRule', ruleId: 'A05', enabled: true }).state;
+    s = run(s, { type: 'advanceClock', minutes: 1 }).state;
+    expect(s.outbox.find((o) => o.dedupeKey === 'rem:A-0011:v1:24h')!.status).toBe('entregado_simulado');
+    expect(run(s, { type: 'setAutomationRule', ruleId: 'A08', enabled: false }).result.ok).toBe(false);
+  });
+  it('A09 pausada: el presupuesto vence igual pero no crea tarea', () => {
+    let s = createSeedState();
+    s = run(s, { type: 'setAutomationRule', ruleId: 'A09', enabled: false }).state;
+    s = run(s, { type: 'advanceClock', minutes: 60 * 24 * 8 }).state;
+    expect(s.estimates.find((e) => e.id === 'EST-001')!.status).toBe('vencido');
+    expect(s.tasks.some((t) => t.estimateId === 'EST-001' && t.kind === 'seguimiento_presupuesto')).toBe(false);
+  });
+});
