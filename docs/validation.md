@@ -352,3 +352,44 @@ Láminas de las tres propuestas en claro y oscuro: `docs/evidence/l2/{a,b,c}-{cl
 - Los prototipos no son interactivos: los botones no ejecutan acciones, y así lo dice la página.
 - Las referencias son resúmenes del buscador, no páginas vistas.
 
+
+# Mejora L1–L10 · lote 3 (sistema visual A y shell de demostración)
+
+Rama `feat/dentalos-l3-sistema` desde `main` @ `a1f1b62`.
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` · `npm run typecheck` · `npm run build` | 0 | sin errores; entrada 554 kB (163 → 167 kB gzip) por el calendario y el shell |
+| `npx vitest run` | 0 | 154/154 (incluye `contrast.test.ts` con los tokens A en los dos temas: 100/100) |
+| `npx playwright test` | 0 | 73 pasadas + 1 omitida (10 nuevas en `shell-demo.spec.ts`) |
+
+**Pruebas nuevas (S49–S57):**
+
+- **Indicador “Demo”:** compacto (≤ 32 px de alto) y sin franja superior.
+- **Selector de vista en la primera visita:** cada opción lleva a su inicio, la elección se recuerda al recargar y se puede seguir sin elegir.
+- **Cambio de vista desde la botonera:** conserva los datos y el tema.
+- **Caso y reinicio desde la botonera:** ambos piden confirmación; el reinicio no toca otras claves de `localStorage`.
+- **Botonera a 320 y 390 px:** queda sobre la barra inferior, se oculta con el teclado virtual y la página no tiene scroll horizontal.
+- **Error de carga de una sección:** un fallo simulado muestra el error y “Reintentar” recupera la sección sin recargar.
+- **Calendario de la reserva:** mes de lunes a domingo, días sin atención apagados con su motivo, teclado de grilla y horarios del día elegido.
+- **Chat:** separador por día, hora dentro de la burbuja y estado simulado accesible.
+
+**Ajustes a pruebas existentes:**
+
+- Se reescribieron las que apuntaban a la franja vieja: la banda de texto, `.storage-status` en la franja y el `select` de vista. Ahora apuntan al indicador y a la botonera.
+- Se actualizaron los colores esperados del tema oscuro a los de la dirección A.
+- Las pruebas parten con el selector de vista ya respondido (`tests/e2e/fixtures.ts`); `shell-demo.spec.ts` prueba la primera visita.
+
+**Errores encontrados y corregidos en el camino:**
+
+- Cargar un caso desde Configuración llamaba a `resetUi()` y volvía a abrir el selector encima de todo. Ahora solo descarta borradores.
+- Chromium recuerda un `import()` fallido, así que el reintento pedía otra vez lo mismo y fallaba. Ahora reintenta la misma URL con un parámetro nuevo.
+- El calendario desbordaba 9 px a 320 px.
+- La botonera tapaba un botón a 320 px. En pantallas chicas queda solo como ícono.
+
+**Capturas:** `docs/evidence/l3/escritorio-claro.jpg`, `docs/evidence/l3/escritorio-oscuro.jpg` y `docs/evidence/l3/shell-y-movil.jpg`.
+
+**Límites:**
+
+- Solo Chromium. En Safari el error de `import()` no trae la URL, así que solo queda “Recargar la página”, como está previsto.
+- Guía y tráiler todavía no existen y no se muestran en la botonera.

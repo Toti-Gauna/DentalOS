@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 // L2.5 — revisión de accesibilidad y responsive sobre la UI renderizada (misma seed).
 const ROUTES = ['#/', '#/reservar', '#/mis-turnos', '#/whatsapp', '#/llamada', '#/aprender', '#/sedes/L-CEN', '#/servicios/ST-PRIMERA', '#/chicos',
@@ -122,16 +122,18 @@ test('teclado virtual en reserva: el CTA se alcanza con foco y no queda tapado',
   expect(covered).toBe(false);
 });
 
-test('menú de vista por teclado: cambia de área y lleva el foco al título', async ({ page }) => {
+test('botonera de la demo por teclado: cambia de vista y lleva el foco al título', async ({ page }) => {
   await fresh(page, '#/');
-  // La vista de muestra vive en los controles de la demo (popover nativo de la franja superior).
-  const demo = page.getByRole('button', { name: 'Controles de la demo' });
+  // La vista de muestra vive en la botonera flotante de la demo (popover nativo, abajo a la derecha).
+  const demo = page.getByRole('button', { name: /Controles de la demo/ });
   await demo.focus();
   await page.keyboard.press('Enter');
-  const role = page.getByLabel('Vista de muestra · no es inicio de sesión');
-  await role.focus();
-  await role.selectOption('recepcion');
+  const panel = page.getByRole('dialog', { name: 'Controles de la demo' });
+  await expect(panel).toBeVisible();
+  await panel.getByRole('button', { name: /^Recepción/ }).focus();
+  await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/#\/admin$/);
+  await expect(panel).toBeHidden();
   await expect(page.locator('h1')).toHaveText('Hoy y agenda');
   await expect(page.locator('h1')).toBeFocused();
 });

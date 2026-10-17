@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 // Fase 1 del rediseño: modo oscuro con preferencia Sistema / Claro / Oscuro.
 async function fresh(page: Page, hash = '#/') {
@@ -16,7 +16,7 @@ test('tema sistema: sigue prefers-color-scheme sin atributo en el documento', as
   await page.emulateMedia({ colorScheme: 'dark' });
   const dark = await bg(page);
   expect(dark).not.toBe(light);
-  expect(dark).toBe('rgb(11, 22, 21)');
+  expect(dark).toBe('rgb(14, 22, 21)');
 });
 
 test('elegir “Oscuro” se aplica, se recuerda al recargar y no parpadea al cargar', async ({ page }) => {
@@ -29,7 +29,7 @@ test('elegir “Oscuro” se aplica, se recuerda al recargar y no parpadea al ca
   await expect(menu).toBeHidden();
   await expect(page.getByRole('button', { name: 'Tema: Oscuro' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('dark');
-  expect(await bg(page)).toBe('rgb(11, 22, 21)');
+  expect(await bg(page)).toBe('rgb(14, 22, 21)');
 
   // Al recargar, el script de inicio aplica el tema antes de que monte la app (sin destello claro).
   await page.reload({ waitUntil: 'commit' });
@@ -47,6 +47,7 @@ test('modo oscuro en el panel: barra lateral, tarjetas y botón primario con con
   await fresh(page, '#/admin');
   const btn = page.getByRole('button', { name: 'Alta manual' });
   const [fg, back] = await btn.evaluate((el) => [getComputedStyle(el).color, getComputedStyle(el).backgroundColor]);
-  expect(fg).toBe('rgb(255, 255, 255)');
-  expect(back).toBe('rgb(43, 122, 113)');
+  // Dirección A en oscuro: relleno teal claro con texto oscuro.
+  expect(fg).toBe('rgb(10, 21, 19)');
+  expect(back).toBe('rgb(107, 191, 177)');
 });

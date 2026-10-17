@@ -1,5 +1,7 @@
 # Dirección visual y sistema de componentes (fase 2)
 
+> **Desde el lote 3 (17/10/2026) rige la dirección A “Editorial clínico cálido”** elegida por Ignacio: ver [`spec/direccion.md`](spec/direccion.md). Paleta, tipografía (Newsreader + Source Sans 3), radios y superficies de este documento quedan como historia; los tokens vigentes están en `src/styles/app.css`.
+
 > Actualizaciones posteriores: fase 2b en [`premium.md`](premium.md), fase 2c (componentes nativos, fondo animado, dientes premium) en [`premium-v3.md`](premium-v3.md) y el rediseño por fases (modo oscuro, shell, arte dental v4 y Brisa Chicos v2) en [`rediseno-por-fases.md`](rediseno-por-fases.md). Desde ese rediseño, el glifo de 5 superficies (`ToothGlyph`) y `SmileArt` se reemplazaron por la vista oclusal sobre arcadas y la sonrisa completa.
 
 Capturas reproducibles con la seed `dentalos-v1` y el reloj del 19/10/2026 a las 09:00:

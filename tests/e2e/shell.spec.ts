@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 // Fase 2 del rediseño: navegación en la cabecera, pie con “Ver panel demo”, bottom bar y migas.
 async function fresh(page: Page, hash = '#/') {

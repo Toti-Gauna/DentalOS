@@ -12,9 +12,11 @@ import { ToothCharacter } from '../../ui/art/characters';
 import { Button, EmptyState, Icon, SectionHeader, StatusBadge } from '../../ui/kit';
 import { PageArt } from '../../ui/art/pages';
 
-const DOW = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-const MON = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
+const DOW_LONG = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const MON_LONG = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+/** Folio del turno (dirección A): boleto de papel con la fecha en serif y borde perforado. */
 function NextAppointmentCard() {
   const s = useDemo();
   const ui = useUi();
@@ -22,31 +24,29 @@ function NextAppointmentCard() {
   const next = person ? upcomingFor(s, person.id)[0] : undefined;
   const p = next ? parts(next.start) : null;
   return (
-    <aside className="next-card" aria-labelledby="next-title">
-      <p className="eyebrow" id="next-title" style={{ margin: 0 }}>Tu próximo paso{person ? ` · ${person.firstName} (${person.id})` : ''}</p>
+    <aside className="folio" aria-labelledby="next-title">
+      <p className="eyebrow" id="next-title">Tu próximo paso{person ? ` · ${person.firstName} (${person.id})` : ''}</p>
       {next && p ? (
         <>
-          <div className="next-when">
-            <div className="turno-when" aria-hidden="true"><span className="turno-dow">{DOW[p.weekday]}</span><span className="turno-day tabular">{p.day}</span><span className="turno-month">{MON[p.month - 1]}</span></div>
-            <div>
-              <p className="big">{serviceName(s, next.serviceTypeId)}</p>
-              <p className="tabular" style={{ margin: 0 }}>{fmtLong(next.start)}</p>
-            </div>
+          <div className="folio-date">
+            <span className="folio-day tabular" aria-hidden="true">{p.day}</span>
+            <p className="folio-meta"><span>{DOW_LONG[p.weekday]}</span><span>{MON_LONG[p.month - 1]}</span><strong className="tabular">{p.hhmm} h</strong><span className="sr-only">{fmtLong(next.start)}</span></p>
           </div>
-          <p style={{ margin: 0 }}>{proName(s, next.professionalId)} · {locName(s, next.locationId)}</p>
+          <p className="folio-service">{serviceName(s, next.serviceTypeId)}</p>
+          <p className="folio-who">{proName(s, next.professionalId)} · {locName(s, next.locationId)} · <span className="tabular">{next.id}</span></p>
           <StatusBadge status={next.status} />
-          {next.status === 'solicitada' && <p className="on-dark-muted small" style={{ margin: 0 }}>Es una solicitud: recepción la confirma. Todavía no es un turno confirmado.</p>}
+          {next.status === 'solicitada' && <p className="small muted">Es una solicitud: recepción la confirma. Todavía no es un turno confirmado.</p>}
           <div className="row wrap">
-            <Button variant="secondary" icon="list" onClick={() => navigate('/mis-turnos')}>Ver o cambiar</Button>
+            <Button variant="primary" icon="list" onClick={() => navigate('/mis-turnos')}>Ver o cambiar</Button>
             <Button variant="ghost" icon="chat" onClick={() => navigate('/whatsapp')}>Escribir por WhatsApp</Button>
           </div>
-          <a className="on-dark-muted small" href={agendaLink(next)} style={{ color: 'var(--on-dark-muted)' }}>Ver este mismo turno en la agenda de recepción</a>
+          <a className="small" href={agendaLink(next)}>Ver este mismo turno en la agenda de recepción</a>
         </>
       ) : (
         <>
-          <p className="big">Sin turnos próximos</p>
-          <p className="on-dark-muted">Pedí tu primera consulta o un control. Revalidamos la disponibilidad al confirmar.</p>
-          <Button variant="secondary" icon="calendar" onClick={() => navigate('/reservar')}>Pedir turno</Button>
+          <p className="folio-service">Sin turnos próximos</p>
+          <p className="muted">Pedí tu primera consulta o un control. Revalidamos la disponibilidad al confirmar.</p>
+          <Button variant="primary" icon="calendar" onClick={() => navigate('/reservar')}>Pedir turno</Button>
         </>
       )}
     </aside>
@@ -78,7 +78,7 @@ export function Home() {
       <div className="hero">
         <div className="hero-copy">
           <p className="pill"><span className="pill-dot" aria-hidden="true" /> {s.clinic.name} · odontología general y ortodoncia</p>
-          <h1 tabIndex={-1} data-page-title>Cada consulta tiene un <span className="accent">próximo paso.</span></h1>
+          <h1 tabIndex={-1} data-page-title>Cada consulta tiene un <em>próximo paso.</em></h1>
           <p className="lede">Pedí tu primera visita, cambiá un turno o hablá con recepción. Información administrativa clara; las decisiones clínicas las toma tu profesional en consulta.</p>
           <div className="row wrap">
             <Button variant="primary" size="lg" icon="calendar" onClick={() => navigate('/reservar?motivo=ST-PRIMERA')}>Pedir primera consulta</Button>

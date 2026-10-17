@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { dispatch, store, useStore } from '../../app/store';
 import { navigate } from '../../app/router';
-import { resetUi } from '../../app/ui-state';
+import { clearDrafts, resetUi } from '../../app/ui-state';
 import { PRESETS, TOGGLEABLE_RULES } from '../../domain';
 import { NAMESPACE, serialize } from '../../domain/storage';
 import { dayName, fmtShort } from '../../domain/time';
@@ -134,7 +134,7 @@ export function Settings() {
         Se borran solo las claves del namespace <span className="code">{NAMESPACE}</span> y se repone exactamente la seed, el reloj y el progreso. Otras aplicaciones no se tocan.
       </ConfirmDialog>
       <ConfirmDialog open={!!presetToLoad} title={`¿Cargar el preset "${PRESETS.find((p) => p.id === presetToLoad)?.name}"?`} confirmLabel="Cargar" onCancel={() => setPresetToLoad(null)}
-        onConfirm={() => { const p = PRESETS.find((x) => x.id === presetToLoad)!; store.loadPreset(p.id); resetUi(); setPresetToLoad(null); announce(`Preset ${p.name} cargado.`); if (p.id !== 'storage_invalido') navigate(p.route.replace('#', '')); }}>
+        onConfirm={() => { const p = PRESETS.find((x) => x.id === presetToLoad)!; store.loadPreset(p.id); clearDrafts(); setPresetToLoad(null); announce(`Preset ${p.name} cargado.`); if (p.id !== 'storage_invalido') navigate(p.route.replace('#', '')); }}>
         Reemplaza el estado actual de la demo por el escenario elegido (partiendo de la seed).
       </ConfirmDialog>
     </section>

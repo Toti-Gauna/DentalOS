@@ -1,5 +1,24 @@
 # Checkpoint · DentalOS demo
 
+## Mejora L1–L10 — lote 3 (sistema visual elegido y shell de demostración) · cerrado, esperando OK para el lote 4
+
+- **Rama:** `feat/dentalos-l3-sistema` desde `main` @ `a1f1b62` (L1 y L2 ya fusionados).
+- **Elección registrada:** A · Editorial clínico cálido, con dos correcciones (calendario de verdad y mensajes del chat). Detalle en `docs/spec/direccion.md`.
+- **Hecho:**
+  - Tokens A en claro y oscuro, títulos en Newsreader y texto en Source Sans 3.
+  - Superficies planas con filete, radios de 6 px, barra lateral de papel y folio del próximo turno.
+  - Fondo animado solo en Brisa Chicos.
+  - Fuera la franja técnica superior. Entran el indicador “Demo” compacto en la cabecera, la botonera flotante (vista, caso, ayuda, sonido y reinicio confirmado) y el selector inicial de vista, que es opcional y se recuerda.
+  - Carga inicial real en `index.html` y error de sección con reintento que recupera sin recargar.
+  - Calendario mensual en la reserva y chat con burbujas.
+  - Se retiraron `#/propuestas` y las fuentes de B y C, además de Manrope.
+- **Resultados:**
+  - lint 0, typecheck 0, build 0;
+  - unit 154/154;
+  - e2e 73 pasadas + 1 omitida (10 nuevas en `shell-demo.spec.ts`; las de la franja vieja se reescribieron para el indicador y la botonera).
+- **Pendiente declarado:** guía/retomar y tráiler en la botonera llegan con L9/L10. Mientras no existan, no se muestran.
+- **Próxima acción exacta:** lote 4 (SVG, arte y mockups con expandir y pantalla completa), con el OK de Ignacio.
+
 ## Mejora L1–L10 — lote 2 (investigación y tres propuestas visuales) · detenido esperando la elección de Ignacio
 
 - **Rama:** `feat/dentalos-l2-propuestas` desde `feat/dentalos-l1-diagnostico` (el PR #7 del lote 1 sigue abierto; este PR lo incluye).

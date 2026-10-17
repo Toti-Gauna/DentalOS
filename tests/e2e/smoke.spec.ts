@@ -1,6 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
-const BANNER = 'Demo · Clínica Brisa ficticia · Datos de muestra · Sin envíos reales';
+// El indicador compacto “Demo” reemplazó a la franja superior (lote 3); su detalle conserva la transparencia.
+const BANNER_FACTS = 'Sin envíos reales';
 const ROUTES: [string, RegExp][] = [
   ['#/', /Cada consulta tiene un próximo paso/],
   ['#/reservar', /Pedir un turno/],
@@ -35,15 +36,17 @@ async function fresh(page: Page) {
   await page.goto('/#/');
 }
 
-test('los 15 módulos navegan con banner, sin errores ni red externa', async ({ page }) => {
+test('los 15 módulos navegan con indicador de demo, sin errores ni red externa', async ({ page }) => {
   const g = guard(page);
   await fresh(page);
   for (const [hash, title] of ROUTES) {
     await page.goto(`/${hash}`);
     await expect(page.locator('h1').first()).toHaveText(title);
-    await expect(page.getByText(BANNER)).toBeVisible();
+    await expect(page.locator('.demo-badge')).toBeVisible();
   }
-  await expect(page.getByText('Guardado en este dispositivo').first()).toBeVisible();
+  await page.locator('.demo-badge').click();
+  await expect(page.locator('#demo-badge-info')).toContainText(BANNER_FACTS);
+  await expect(page.getByText('Guardado en este dispositivo.').first()).toBeVisible();
   expect(g.errors).toEqual([]);
   expect(g.external).toEqual([]);
 });
