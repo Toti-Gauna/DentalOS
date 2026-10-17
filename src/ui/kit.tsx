@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore, type ButtonHTMLAttributes, type MouseEvent, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useId, useRef, useState, useSyncExternalStore, type ButtonHTMLAttributes, type MouseEvent, type ReactNode } from 'react';
 import { STATUS_LABEL } from '../domain/selectors';
 
 // ---------- Iconos propios (SVG inline, sin assets remotos) ----------
@@ -12,6 +12,7 @@ const PATHS: Record<string, string> = {
   sun: 'M12 16a4 4 0 100-8 4 4 0 000 8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
   moon: 'M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z',
   monitor: 'M3 5h18v11H3zM8 20h8M12 16v4',
+  grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
   sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z',
   arrow: 'M5 12h14M13 6l6 6-6 6',
   back: 'M19 12H5M11 6l-6 6 6 6',
@@ -203,13 +204,46 @@ export function EmptyState({ title, children, action, icon = 'info' }: { title: 
   return <div className="empty"><Icon name={icon} size={28} /><strong>{title}</strong>{children && <p>{children}</p>}{action}</div>;
 }
 
+/** Migas de la página actual (las provee el shell según la ruta). */
+export interface Crumbs { area: string; areaHref: string; module: { label: string; href: string } | null }
+export const CrumbsContext = createContext<Crumbs | null>(null);
+
 export function PageHeader({ eyebrow, title, children, actions, art }: { eyebrow?: string; title: string; children?: ReactNode; actions?: ReactNode; art?: ReactNode }) {
+  const crumbs = useContext(CrumbsContext);
   return (
     <header className={`page-head ${art ? 'has-art' : ''}`}>
-      <div>{eyebrow && <p className="eyebrow">{eyebrow}</p>}<h1 tabIndex={-1} data-page-title>{title}</h1>{children && <div className="lede">{children}</div>}</div>
+      <div className="page-head-text">
+        {crumbs && (
+          <nav className="crumbs" aria-label="Estás en">
+            <ol>
+              <li><a href={crumbs.areaHref}>{crumbs.area}</a></li>
+              {crumbs.module && crumbs.module.label !== title && <li><a href={crumbs.module.href}>{crumbs.module.label}</a></li>}
+              <li aria-current="page">{title}</li>
+            </ol>
+          </nav>
+        )}
+        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+        <h1 tabIndex={-1} data-page-title>{title}</h1>
+        {children && <div className="lede">{children}</div>}
+      </div>
       {actions && <div className="page-actions">{actions}</div>}
       {art && <div className="page-art" aria-hidden="true">{art}</div>}
     </header>
+  );
+}
+
+/** Encabezado de sección: antetítulo, título, descripción y acciones a la derecha. */
+export function SectionHeader({ eyebrow, title, id, children, actions, level = 2 }: { eyebrow?: string; title: string; id?: string; children?: ReactNode; actions?: ReactNode; level?: 2 | 3 }) {
+  const H = level === 2 ? 'h2' : 'h3';
+  return (
+    <div className="section-head">
+      <div>
+        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+        <H id={id}>{title}</H>
+        {children && <p className="section-desc">{children}</p>}
+      </div>
+      {actions && <div className="section-actions">{actions}</div>}
+    </div>
   );
 }
 

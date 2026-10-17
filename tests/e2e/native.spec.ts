@@ -71,17 +71,19 @@ test('drawer y confirmación sobre <dialog> nativo: modal, fondo inerte, foco y 
   await expect(confirm).toHaveCount(0);
 });
 
-test('popover nativo “¿Qué es esta demo?”: abre, se descarta con Escape y el banner sigue visible', async ({ page }) => {
+test('popover nativo “Controles de la demo”: alcance, vista y sonidos; Escape lo cierra y el banner sigue visible', async ({ page }) => {
   await fresh(page);
-  const btn = page.getByRole('button', { name: '¿Qué es esta demo?' });
+  const btn = page.getByRole('button', { name: 'Controles de la demo' });
   await btn.click();
   const info = page.locator('#demo-info');
   await expect(info).toBeVisible();
   expect(await info.evaluate((el) => el.matches(':popover-open'))).toBe(true);
   await expect(info).toContainText('No diagnostica ni recomienda tratamientos.');
+  await expect(info.getByLabel('Vista de muestra · no es inicio de sesión')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(info).toBeHidden();
   await expect(page.getByText('Demo · Clínica Brisa ficticia · Datos de muestra · Sin envíos reales')).toBeVisible();
+  await expect(page.getByText('Guardado en este dispositivo')).toBeVisible();
 });
 
 test('preguntas frecuentes: acordeón exclusivo nativo (<details name>)', async ({ page }) => {

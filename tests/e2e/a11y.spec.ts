@@ -124,6 +124,10 @@ test('teclado virtual en reserva: el CTA se alcanza con foco y no queda tapado',
 
 test('menú de vista por teclado: cambia de área y lleva el foco al título', async ({ page }) => {
   await fresh(page, '#/');
+  // La vista de muestra vive en los controles de la demo (popover nativo de la franja superior).
+  const demo = page.getByRole('button', { name: 'Controles de la demo' });
+  await demo.focus();
+  await page.keyboard.press('Enter');
   const role = page.getByLabel('Vista de muestra · no es inicio de sesión');
   await role.focus();
   await role.selectOption('recepcion');

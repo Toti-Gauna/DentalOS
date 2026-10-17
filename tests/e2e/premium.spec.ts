@@ -95,6 +95,7 @@ test('sonidos: apagados por defecto; el AudioContext nace solo con el gesto y se
   expect(await contexts(page)).toBe(0);
   expect(await played(page)).toEqual([]);
 
+  await page.getByRole('button', { name: 'Controles de la demo' }).click();
   const toggle = page.getByRole('button', { name: 'Sonidos: no' });
   await toggle.click();
   await expect(page.getByRole('button', { name: 'Sonidos: sí' })).toHaveAttribute('aria-pressed', 'true');
@@ -104,13 +105,16 @@ test('sonidos: apagados por defecto; el AudioContext nace solo con el gesto y se
 
   // Al recargar la preferencia sigue activa, pero no hay audio hasta el próximo gesto (sin autoplay).
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Sonidos: sí' })).toBeVisible();
+  await expect(page.locator('h1')).toHaveText('Sonrisas valientes');
+  expect(await page.evaluate(() => (window as unknown as { __sound: { enabled: boolean } }).__sound.enabled)).toBe(true);
   expect(await contexts(page)).toBe(0);
   await page.getByRole('button', { name: 'Saludar a Ivo' }).click();
   expect(await contexts(page)).toBe(1);
 
+  await page.getByRole('button', { name: 'Controles de la demo' }).click();
   await page.getByRole('button', { name: 'Sonidos: sí' }).click();
   await expect(page.getByRole('button', { name: 'Sonidos: no' })).toBeVisible();
+  await page.keyboard.press('Escape');
   const before = (await played(page)).length;
   await page.getByRole('button', { name: 'Saludar a Lía' }).click();
   expect((await played(page)).length).toBe(before);

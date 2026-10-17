@@ -139,10 +139,17 @@ test('S47: equivalente a zoom 200 % (720 px CSS) sin overflow y menú accesible 
     await page.waitForTimeout(150);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), hash).toBeLessThanOrEqual(0);
   }
-  const toggle = page.getByRole('button', { name: 'Menú' });
-  await toggle.focus();
+  // En pantallas angostas la navegación es la barra inferior; “Más” abre una hoja (popover nativo) operable con teclado.
+  const bar = page.getByRole('navigation', { name: 'Navegación inferior' });
+  await bar.getByRole('link', { name: 'Bandeja' }).focus();
   await page.keyboard.press('Enter');
-  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-  await page.getByRole('link', { name: /Bandeja/ }).click();
   await expect(page.locator('h1')).toHaveText('Bandeja de gestiones');
+  const more = bar.getByRole('button', { name: 'Más' });
+  await more.focus();
+  await page.keyboard.press('Enter');
+  const sheet = page.getByRole('dialog', { name: 'Más secciones' });
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole('link', { name: /Informes/ }).click();
+  await expect(page.locator('h1')).toHaveText('Informes calculados');
+  await expect(sheet).toBeHidden();
 });

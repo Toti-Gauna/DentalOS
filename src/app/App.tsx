@@ -4,7 +4,7 @@ import type { ViewRole } from '../domain';
 import { navigate, useRoute } from './router';
 import { store, useStore } from './store';
 import { resetUi, setRole, setSoundPref, useUi } from './ui-state';
-import { Button, ConfirmDialog, Icon, LiveRegion, Notice } from '../ui/kit';
+import { Button, ConfirmDialog, CrumbsContext, Icon, LiveRegion, Notice, type Crumbs } from '../ui/kit';
 import { LoadingState } from '../ui/components';
 import { Home, LocationPage, ServicePage } from '../pages/public/Home';
 import { Booking } from '../pages/public/Booking';
@@ -63,6 +63,15 @@ const ADMIN_NAV = [
   { to: '/admin/informes', label: 'Informes', icon: 'chart', m: 'M13' },
   { to: '/admin/config', label: 'Configuración y simulador', icon: 'settings', m: 'M14' },
 ];
+const ADMIN_GROUPS: { label: string; items: string[] }[] = [
+  { label: 'Operación', items: ['/admin', '/admin/bandeja', '/admin/espera', '/admin/tareas'] },
+  { label: 'Pacientes', items: ['/admin/personas', '/admin/odontograma', '/admin/ortodoncia'] },
+  { label: 'Gestión', items: ['/admin/presupuestos', '/admin/informes', '/admin/config'] },
+];
+// Bottom bar (móvil): cuatro destinos fijos y “Más”.
+const PUBLIC_TABS = ['/', '/reservar', '/mis-turnos', '/whatsapp'];
+const ADMIN_TABS = ['/admin', '/admin/bandeja', '/admin/personas'];
+const TAB_LABEL: Record<string, string> = { '/': 'Inicio', '/reservar': 'Reservar', '/mis-turnos': 'Turnos', '/whatsapp': 'Chat', '/admin': 'Agenda', '/admin/bandeja': 'Bandeja', '/admin/personas': 'Personas' };
 const PALETTE_ROUTES = [{ group: 'Panel de la clínica', items: ADMIN_NAV }, { group: 'Portal de pacientes', items: PUBLIC_NAV }];
 
 function route(segments: string[]): ReactNode {
@@ -126,7 +135,7 @@ function soundFor(type: string, ok: boolean, info?: Record<string, unknown>): Sf
 function SoundToggle() {
   const ui = useUi();
   return (
-    <button type="button" className="sound-toggle btn btn-ghost btn-sm" aria-pressed={ui.sound}
+    <button type="button" className="sound-toggle btn btn-sm" aria-pressed={ui.sound}
       onClick={() => {
         const on = !ui.sound;
         sound.setEnabled(on);
@@ -150,34 +159,33 @@ function Ambient({ kids }: { kids: boolean }) {
   );
 }
 
-/** Popover nativo con el alcance de la demo (el banner sigue siempre visible). */
-function DemoInfo() {
+/** Controles de la demo (vista de muestra, sonidos, alcance) en un popover nativo: la cabecera queda para el producto. */
+function DemoControls() {
+  const ui = useUi();
   return (
     <>
-      <button type="button" className="demo-info-btn" popoverTarget="demo-info"><Icon name="info" size={14} /> ¿Qué es esta demo?</button>
-      <div id="demo-info" popover="auto" className="demo-info" role="dialog" aria-label="Qué es esta demo">
-        <strong>DentalOS · demo pre-venta</strong>
+      <button type="button" className="demo-btn" popoverTarget="demo-info" aria-label="Controles de la demo"><Icon name="settings" size={14} /> <span>Demo</span></button>
+      <div id="demo-info" popover="auto" className="demo-info" role="dialog" aria-label="Controles de la demo">
+        <div className="demo-info-head"><strong>DentalOS · demo pre-venta</strong><span className="small muted">Herramientas de la demostración, no del producto.</span></div>
+        <div className="field">
+          <label htmlFor="role">Vista de muestra · no es inicio de sesión</label>
+          <select id="role" value={ui.role} onChange={(e) => { const r = ROLES.find((x) => x.id === e.target.value)!; setRole(r.id); navigate(r.home); }}>
+            {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+          </select>
+        </div>
+        <SoundToggle />
         <ul>
           <li>Clínica Brisa, sus personas y sus turnos son ficticios.</li>
           <li>Todo se guarda solo en este dispositivo; no hay servidor, IA ni envíos reales.</li>
           <li>Los roles son vistas de muestra, no inicios de sesión.</li>
           <li>No diagnostica ni recomienda tratamientos.</li>
         </ul>
-        <button type="button" className="btn btn-sm btn-secondary" popoverTarget="demo-info" popoverTargetAction="hide">Entendido</button>
+        <div className="row wrap">
+          <a className="btn btn-sm" href="#/admin/config"><Icon name="refresh" size={14} /> Presets y restablecer</a>
+          <button type="button" className="btn btn-sm btn-secondary" popoverTarget="demo-info" popoverTargetAction="hide">Entendido</button>
+        </div>
       </div>
     </>
-  );
-}
-
-function RoleSwitch() {
-  const ui = useUi();
-  return (
-    <div className="role-switch">
-      <label htmlFor="role">Vista de muestra · no es inicio de sesión</label>
-      <select id="role" value={ui.role} onChange={(e) => { const r = ROLES.find((x) => x.id === e.target.value)!; setRole(r.id); navigate(r.home); }}>
-        {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
-      </select>
-    </div>
   );
 }
 
@@ -188,7 +196,7 @@ function StorageStatus() {
       <Icon name={snap.mode === 'local' ? 'check' : 'alert'} size={14} />
       {snap.mode === 'local' ? 'Guardado en este dispositivo' : 'Solo en memoria: no se guarda'}
       <span className="sep" aria-hidden="true">·</span>
-      <Icon name="clock" size={14} /> <span className="tabular">Reloj de muestra: {fmtShort(snap.state.clock)}</span>
+      <Icon name="clock" size={14} /> <span className="tabular"><span className="clock-label">Reloj de muestra: </span>{fmtShort(snap.state.clock)}</span>
     </span>
   );
 }
@@ -226,7 +234,6 @@ export function App() {
   const { segments, path } = useRoute();
   const admin = segments[0] === 'admin';
   const kids = segments[0] === 'chicos';
-  const [menuOpen, setMenuOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const prevTitle = useRef<HTMLElement | null>(null);
   const prevText = useRef<string | null>(null);
@@ -252,7 +259,8 @@ export function App() {
   }, [admin]);
 
   useEffect(() => {
-    setMenuOpen(false);
+    // Al navegar se cierran hojas y menús abiertos (popovers).
+    document.querySelectorAll<HTMLElement>('[popover]').forEach((p) => { try { if (p.matches(':popover-open')) p.hidePopover(); } catch { /* sin soporte */ } });
     // El panel se carga en diferido: reintenta hasta que exista el título de la página.
     let tries = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -283,63 +291,147 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const nav = admin ? ADMIN_NAV : PUBLIC_NAV;
   const isActive = (to: string) => {
     if (to === '/' || to === '/admin') return path === to;
     // La ruta del odontograma vive bajo /admin/personas/:id: se marca su módulo, no Personas.
     if (path.endsWith('/odontograma')) return to === '/admin/odontograma';
     return path.startsWith(to);
   };
+  const nav = admin ? ADMIN_NAV : PUBLIC_NAV;
+  const current = nav.find((n) => isActive(n.to)) ?? null;
+  const crumbs: Crumbs = { area: admin ? 'Panel de la clínica' : 'Portal de pacientes', areaHref: admin ? '#/admin' : '#/', module: current && current.to !== (admin ? '/admin' : '/') ? { label: current.label, href: `#${current.to}` } : null };
 
   return (
     <div className={`app ${admin ? 'admin' : 'public'}${kids ? ' kids-mode' : ''}`}>
       <Ambient kids={kids} />
       <a href="#main" className="skip" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }}>Saltar al contenido</a>
       <div className="masthead">
-      <div className="demo-banner" role="note">
-        <strong>{BANNER}</strong>
-        <StorageStatus />
-        <DemoInfo />
-      </div>
-      <header className="topbar">
-        <div className="topbar-inner">
-          <Logo />
-          <nav className="area-switch" aria-label="Área de la demo">
-            <a href="#/" aria-current={!admin ? 'true' : undefined} aria-label="Portal de pacientes"><Icon name="user" size={16} /> <span className="lbl-long">Portal de pacientes</span><span className="lbl-short">Pacientes</span></a>
-            <a href="#/admin" aria-current={admin ? 'true' : undefined} aria-label="Panel de la clínica"><Icon name="calendar" size={16} /> <span className="lbl-long">Panel de la clínica</span><span className="lbl-short">Clínica</span></a>
-          </nav>
-          <ThemeSwitcher />
-          <SoundToggle />
-          <RoleSwitch />
-          {admin && <button type="button" className="search-btn btn btn-ghost btn-sm" onClick={() => setPaletteOpen(true)} aria-label="Buscar (Ctrl K)" aria-keyshortcuts="Control+K Meta+K"><Icon name="search" size={16} /><span>Buscar</span><kbd>Ctrl K</kbd></button>}
-          {admin && <button className="menu-toggle btn btn-ghost" aria-expanded={menuOpen} aria-controls="main-nav" onClick={() => setMenuOpen((v) => !v)}><Icon name="list" /> <span>Menú</span></button>}
+        <div className="demo-strip">
+          <div className="demo-strip-inner">
+            <p className="demo-banner" role="note"><strong>{BANNER}</strong> <StorageStatus /></p>
+            <div className="demo-strip-actions">
+              <nav className="area-switch" aria-label="Área de la demo">
+                <a href="#/" aria-current={!admin ? 'true' : undefined} aria-label="Portal de pacientes"><Icon name="user" size={14} /> <span>Portal</span></a>
+                <a href="#/admin" aria-current={admin ? 'true' : undefined} aria-label="Panel de la clínica"><Icon name="calendar" size={14} /> <span>Panel</span></a>
+              </nav>
+              <DemoControls />
+            </div>
+          </div>
         </div>
-      </header>
+        <header className="site-header">
+          <div className="site-header-inner">
+            <Logo />
+            {admin ? (
+              <>
+                <span className="header-area">Panel de la clínica</span>
+                <button type="button" className="header-search" onClick={() => setPaletteOpen(true)} aria-label="Buscar (Ctrl K)" aria-keyshortcuts="Control+K Meta+K">
+                  <Icon name="search" size={16} /><span>Buscar módulo o persona…</span><kbd>Ctrl K</kbd>
+                </button>
+              </>
+            ) : (
+              <nav className="primary-nav" aria-label="Portal de pacientes">
+                <ul>
+                  {PUBLIC_NAV.map((n) => <li key={n.to}><a href={`#${n.to}`} aria-current={isActive(n.to) ? 'page' : undefined}>{n.label}</a></li>)}
+                </ul>
+              </nav>
+            )}
+            <div className="header-actions">
+              <ThemeSwitcher />
+              {admin
+                ? <span className="view-chip" title="Vista de muestra (no es inicio de sesión)"><Icon name="user" size={14} /> {ROLES.find((r) => r.id === ui.role)?.label ?? 'Recepción'}</span>
+                : <a className="btn btn-primary btn-sm header-cta" href="#/reservar"><Icon name="calendar" size={16} /> <span>Pedir turno</span></a>}
+            </div>
+          </div>
+        </header>
       </div>
       <div className="layout">
-        <nav id="main-nav" className={`nav ${menuOpen ? 'open' : ''}`} aria-label={admin ? 'Panel de la clínica' : 'Portal de pacientes'}>
-          <ul>
-            {nav.map((n) => (
-              <li key={n.to}><a href={`#${n.to}`} aria-current={isActive(n.to) ? 'page' : undefined}><Icon name={n.icon} /><span>{n.label}</span><small className="mod">{n.m}</small></a></li>
+        {admin && (
+          <nav id="main-nav" className="sidebar" aria-label="Panel de la clínica">
+            {ADMIN_GROUPS.map((g) => (
+              <div key={g.label} className="sidebar-group">
+                <p className="sidebar-label" id={`grp-${g.label}`}>{g.label}</p>
+                <ul aria-labelledby={`grp-${g.label}`}>
+                  {g.items.map((to) => { const n = ADMIN_NAV.find((x) => x.to === to)!; return <li key={to}><a href={`#${to}`} aria-current={isActive(to) ? 'page' : undefined}><Icon name={n.icon} /><span>{n.label}</span><small className="mod">{n.m}</small></a></li>; })}
+                </ul>
+              </div>
             ))}
-          </ul>
-        </nav>
+            <a className="sidebar-portal" href="#/"><Icon name="user" size={16} /> Ver portal de pacientes</a>
+          </nav>
+        )}
         <main id="main" tabIndex={-1}>
-          <SystemNotices />
-          <Suspense fallback={<LoadingState label="Cargando panel de la clínica…" />}>{route(segments)}</Suspense>
+          <CrumbsContext.Provider value={crumbs}>
+            <SystemNotices />
+            <Suspense fallback={<LoadingState label="Cargando panel de la clínica…" />}>{route(segments)}</Suspense>
+          </CrumbsContext.Provider>
         </main>
       </div>
-      <footer className="footer">
-        <div className="footer-inner">
-          <div className="footer-brand"><BrandMark size={40} /><div><strong>Clínica Brisa</strong><span>Cada consulta tiene un próximo paso.</span></div></div>
-          <nav aria-label="Pie de página" className="footer-links">
-            <a href="#/">Inicio</a><a href="#/reservar">Reservar</a><a href="#/mis-turnos">Mis turnos</a><a href="#/chicos">Chicos</a><a href="#/admin">Panel de la clínica (recepción)</a>
-          </nav>
-          <p className="footer-note">DentalOS · demostración pre-venta con datos sintéticos. No es un producto clínico ni historia clínica productiva. Sin backend, sin IA, sin mensajes, llamadas ni cobros reales.</p>
-        </div>
-      </footer>
+      <SiteFooter admin={admin} />
+      <BottomBar admin={admin} isActive={isActive} onSearch={() => setPaletteOpen(true)} />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} routes={PALETTE_ROUTES} />
       <LiveRegion />
     </div>
+  );
+}
+
+function SiteFooter({ admin }: { admin: boolean }) {
+  return (
+    <footer className="footer">
+      {!admin && (
+        <div className="footer-cta">
+          <div>
+            <p className="footer-cta-eyebrow">Demo para clínicas</p>
+            <p className="footer-cta-title">¿Querés ver cómo lo gestiona recepción?</p>
+            <p className="footer-cta-text">Agenda, bandeja, odontograma y caja ficticia, con los mismos turnos que ves en el portal.</p>
+          </div>
+          <a className="btn btn-lg footer-cta-btn" href="#/admin"><Icon name="calendar" /> Ver panel demo</a>
+        </div>
+      )}
+      <div className="footer-inner">
+        <div className="footer-brand">
+          <BrandMark size={44} />
+          <div><strong>Clínica Brisa</strong><span>Cada consulta tiene un próximo paso.</span></div>
+        </div>
+        {admin ? (
+          <nav aria-label="Pie de página" className="footer-cols">
+            <div><p className="footer-h">Panel</p><a href="#/admin">Hoy y agenda</a><a href="#/admin/bandeja">Bandeja</a><a href="#/admin/personas">Personas</a></div>
+            <div><p className="footer-h">Demo</p><a href="#/admin/config">Presets y restablecer</a><a className="btn btn-sm footer-cta-btn" href="#/">Ver portal de pacientes</a></div>
+          </nav>
+        ) : (
+          <nav aria-label="Pie de página" className="footer-cols">
+            <div><p className="footer-h">Pacientes</p><a href="#/reservar">Reservar</a><a href="#/mis-turnos">Mis turnos</a><a href="#/aprender">Tu primera visita</a><a href="#/chicos">Brisa Chicos</a></div>
+            <div><p className="footer-h">Contacto</p><a href="#/whatsapp">WhatsApp (simulado)</a><a href="#/llamada">Llamada (simulada)</a><a href="#/sedes/L-CEN">Sede Centro</a><a href="#/sedes/L-NOR">Sede Norte</a></div>
+            <div><p className="footer-h">Demo</p><a href="#/admin">Panel de la clínica (recepción)</a><a href="#/admin/config">Presets y restablecer</a></div>
+          </nav>
+        )}
+        <p className="footer-note">DentalOS · demostración pre-venta con datos sintéticos. No es un producto clínico ni historia clínica productiva. Sin backend, sin IA, sin mensajes, llamadas ni cobros reales.</p>
+      </div>
+    </footer>
+  );
+}
+
+/** Navegación inferior en móvil: cuatro destinos y “Más” (hoja en popover nativo con el resto). */
+function BottomBar({ admin, isActive, onSearch }: { admin: boolean; isActive: (to: string) => boolean; onSearch: () => void }) {
+  const tabs = admin ? ADMIN_TABS : PUBLIC_TABS;
+  const all = admin ? ADMIN_NAV : PUBLIC_NAV;
+  const rest = all.filter((n) => !tabs.includes(n.to));
+  const moreActive = rest.some((n) => isActive(n.to));
+  return (
+    <nav className="bottombar" aria-label="Navegación inferior">
+      <ul>
+        {tabs.map((to) => { const n = all.find((x) => x.to === to)!; return (
+          <li key={to}><a href={`#${to}`} aria-current={isActive(to) ? 'page' : undefined}><Icon name={n.icon} size={22} /><span>{TAB_LABEL[to]}</span></a></li>
+        ); })}
+        {admin && <li><button type="button" onClick={onSearch}><Icon name="search" size={22} /><span>Buscar</span></button></li>}
+        <li><button type="button" popoverTarget="more-sheet" aria-current={moreActive ? 'page' : undefined}><Icon name="grid" size={22} /><span>Más</span></button></li>
+      </ul>
+      <div id="more-sheet" popover="auto" className="sheet" role="dialog" aria-label="Más secciones">
+        <div className="sheet-grip" aria-hidden="true" />
+        <p className="sheet-title">{admin ? 'Panel de la clínica' : 'Portal de pacientes'}</p>
+        <ul className="sheet-grid">
+          {rest.map((n) => <li key={n.to}><a href={`#${n.to}`} aria-current={isActive(n.to) ? 'page' : undefined}><span className="sheet-ico"><Icon name={n.icon} size={20} /></span><span>{n.label}</span></a></li>)}
+        </ul>
+        <a className="btn btn-primary sheet-cta" href={admin ? '#/' : '#/admin'}><Icon name={admin ? 'user' : 'calendar'} /> {admin ? 'Ver portal de pacientes' : 'Ver panel demo'}</a>
+      </div>
+    </nav>
   );
 }
