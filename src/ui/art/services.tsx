@@ -10,9 +10,9 @@ export function ServiceArt({ serviceTypeId, size = 96 }: { serviceTypeId: string
     <svg className="service-art" width={size} height={size} viewBox="0 0 96 96" aria-hidden="true" focusable="false">
       <defs>
         <clipPath id={`sc-${uid}`}><circle cx="48" cy="48" r="46" /></clipPath>
-        <radialGradient id={`sa-${uid}`} cx=".35" cy=".3" r=".8"><stop offset="0" style={{ stopColor: ortho ? 'var(--stage-a)' : 'var(--kid-1)' }} /><stop offset="1" style={{ stopColor: ortho ? 'var(--stage-c)' : 'var(--sand)' }} /></radialGradient>
       </defs>
-      <circle cx="48" cy="48" r="46" fill={`url(#sa-${uid})`} />
+      <circle cx="48" cy="48" r="46" fill={ortho ? 'var(--primary-50)' : 'var(--sand-50)'} stroke="var(--line)" strokeWidth="1" />
+      <path d="M14 22 A46 46 0 0 1 48 2" fill="none" stroke="var(--gold)" strokeWidth="1.4" strokeLinecap="round" />
       <g clipPath={`url(#sc-${uid})`}>
       {serviceTypeId === 'ST-PRIMERA' && (
         <g>

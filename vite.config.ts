@@ -17,6 +17,6 @@ export default defineConfig({
   build: { assetsInlineLimit: 0, sourcemap: false, chunkSizeWarningLimit: 700, modulePreload: { polyfill: false } },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
 });

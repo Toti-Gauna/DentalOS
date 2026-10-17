@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { PRESETS, type ViewRole } from '../domain';
 import { fmtShort } from '../domain/time';
 import { Button, ConfirmDialog, Icon, announce, useNativeDialog } from '../ui/kit';
+import { SpotArt } from '../ui/art/editorial';
 import { sound } from '../ui/sound';
 import { navigate } from './router';
 import { ROLES, roleById } from './roles';
@@ -41,7 +42,7 @@ function RoleList({ current, onPick, name }: { current: ViewRole | null; onPick:
       {ROLES.map((r) => (
         <li key={r.id}>
           <button type="button" className="role-option" aria-pressed={current === r.id} data-role={r.id} name={name} onClick={() => onPick(r.id)}>
-            <span className="role-ico"><Icon name={r.icon} size={20} /></span>
+            <span className="role-ico"><SpotArt kind={r.id} size={56} /></span>
             <span><strong>{r.label}</strong><small>{r.description}</small></span>
           </button>
         </li>
@@ -112,6 +113,7 @@ export function DemoDock() {
             <li><Icon name="search" size={16} /> <span><kbd>Ctrl</kbd> <kbd>K</kbd> busca módulos y personas en el panel.</span></li>
             <li><Icon name="link" size={16} /> <span>Portal y panel muestran los mismos turnos: lo que hagas en uno se ve en el otro.</span></li>
             <li><Icon name="info" size={16} /> <span>Sin backend, IA ni envíos reales. Todo queda en este dispositivo.</span></li>
+            <li><Icon name="sparkle" size={16} /> <span><a href="#/galeria" onClick={hide}>Galería del arte de la demo</a>: cada ilustración en claro y oscuro.</span></li>
           </ul>
         </section>
 

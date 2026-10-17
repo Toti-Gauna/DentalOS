@@ -22,6 +22,7 @@ Todo lo de esta página se leyó en el código o se ejecutó en esta sesión. Lo
 | `#/admin/espera` | Waitlist | M12 |
 | `#/admin/tareas` · `#/admin/informes` | Tasks · Reports | M13 |
 | `#/admin/config` | Settings (jornadas, duraciones, bloqueos, automatizaciones, escenarios) | M14 |
+| `#/galeria` | Gallery (lote 4: todo el arte a tamaño de uso o ×2; enlazada desde la ayuda de la botonera) | — |
 | ~~`#/propuestas`~~ | Retirada en el lote 3 tras la elección (láminas en `docs/evidence/l2/`) | — |
 Cualquier otra ruta → NotFound.
 

@@ -62,7 +62,7 @@ export function Odontogram({ personId }: { personId: string }) {
   return (
     <section className="page">
       <PageHeader eyebrow={`M09 · ${personLabel(s, person.id)}`} title="Odontograma" actions={<Button icon="back" onClick={() => navigate(`/admin/personas/${person.id}`)}>Ficha</Button>}>
-        Registro administrativo de muestra por la profesional. No interpreta imágenes, no diagnostica ni recomienda tratamientos.
+        Registro administrativo de muestra por la profesional. No interpreta imágenes, no diagnostica ni recomienda tratamientos. Las piezas son ilustraciones esquemáticas: su fidelidad anatómica está pendiente de revisión odontológica.
       </PageHeader>
       <div className="row wrap">
         <div className="seg" role="group" aria-label="Dentición">

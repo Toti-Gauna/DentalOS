@@ -77,6 +77,7 @@ const Waitlist = lazyRetry(() => import('../pages/admin/Waitlist'), (m) => m.Wai
 const Tasks = lazyRetry(() => import('../pages/admin/Tasks'), (m) => m.Tasks);
 const Reports = lazyRetry(() => import('../pages/admin/Reports'), (m) => m.Reports);
 const Settings = lazyRetry(() => import('../pages/admin/Settings'), (m) => m.Settings);
+const Gallery = lazyRetry(() => import('../pages/public/Gallery'), (m) => m.Gallery);
 
 export const BANNER = 'Demo · Clínica Brisa ficticia · Datos de muestra · Sin envíos reales';
 
@@ -124,6 +125,7 @@ function route(segments: string[]): ReactNode {
   if (a === 'llamada') return <CallSim />;
   if (a === 'aprender') return <Learn />;
   if (a === 'chicos') return <Kids />;
+  if (a === 'galeria') return <Gallery />;
   if (a === 'admin') {
     if (!b) return <Today />;
     if (b === 'bandeja') return <Inbox />;

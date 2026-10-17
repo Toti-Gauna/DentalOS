@@ -8,6 +8,7 @@ import { Button, Icon, Notice, PageHeader, StatusBadge, announce } from '../../u
 import { TurnoCard, agendaLink } from '../../ui/components';
 import { PageArt } from '../../ui/art/pages';
 import { BrandMark } from '../../ui/art/brand';
+import { ExpandableSurface, PhoneFrame } from '../../ui/Device';
 
 export function WhatsApp() {
   const s = useDemo();
@@ -47,12 +48,14 @@ export function WhatsApp() {
         Emulador local: no abre WhatsApp ni envía mensajes. Reglas de texto simples, sin IA. Todo lo que pasa acá se ve igual en recepción.
       </PageHeader>
       <div className="grid-2" style={{ alignItems: 'start' }}>
+        <ExpandableSurface title="WhatsApp simulado · Clínica Brisa" className="xsurface-chat">
+        <PhoneFrame>
         <div className="phone" aria-label="Emulador de WhatsApp">
           <div className="phone-head">
             <span className="chat-avatar" aria-hidden="true"><BrandMark size={30} /></span>
             <div>
-              <strong>Clínica Brisa · asistente administrativo</strong>
-              <small>{conv.contactLabel} · emulador local · sin envíos reales</small>
+              <strong>Clínica Brisa</strong>
+              <small>Asistente administrativo · simulado · {conv.contactLabel}</small>
             </div>
           </div>
           <div className="chat-log" ref={logRef} role="log" aria-live="polite" aria-relevant="additions" tabIndex={0} aria-label="Mensajes">
@@ -90,6 +93,8 @@ export function WhatsApp() {
           </form>
           <p id="wa-hint" className="composer-hint" role="status">{hint ?? ''}</p>
         </div>
+        </PhoneFrame>
+        </ExpandableSurface>
 
         <aside className="stack">
           <div className="card stack">

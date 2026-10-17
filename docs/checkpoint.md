@@ -1,5 +1,30 @@
 # Checkpoint · DentalOS demo
 
+## Mejora L1–L10 — lote 4 (SVG, arte y mockups con acabado final) · cerrado, esperando OK para el lote 5
+
+- **Rama:** `feat/dentalos-l4-arte` desde `main` @ `03a91a7` (L3 fusionado).
+- **Hecho:**
+  - **Auditoría del arte existente** en una galería nueva (`#/galeria`, enlazada desde la ayuda de la botonera). Cada pieza se ve a tamaño de uso o ×2, en claro y oscuro.
+  - **Ajustes a la dirección A**, sin reemplazar el arte bueno:
+    - halos planos de papel con arco de oro y sin sombras en los encabezados del portal y en los servicios;
+    - se quitó un personaje de Brisa Chicos recortado que había quedado en el encabezado de la sede.
+  - **Familia editorial nueva** (`src/ui/art/editorial.tsx`, 11 piezas): las cinco vistas, comprobante, ticket con código, campaña, guía, cierre y juego. Las vistas ya se usan en el selector y la botonera; el resto queda listo para los lotes 5 a 9.
+  - **Piezas dentales separadas de la caricatura**, con nota visible de revisión odontológica pendiente en la galería y en el odontograma.
+  - **Mockups finales:**
+    - teléfono con barra de estado (hora del reloj de muestra), isla e indicador de inicio;
+    - WhatsApp y llamada dentro del teléfono, con la llamada rediseñada: emisor, línea actual, opciones y teclas redondas;
+    - comprobante de turno con talón en la reserva confirmada.
+  - **“Ampliar / Pantalla completa”** y **“Restaurar / Cerrar”** sobre el mismo componente, sin perder estado:
+    - usa la Fullscreen API tras el gesto y si existe; si no, amplía dentro de la página;
+    - Escape y Atrás cierran, el resto de la página queda inerte, y vuelven el foco y la posición;
+    - no usa velo oscuro.
+- **Resultados:**
+  - lint 0, typecheck 0, build 0;
+  - unit 158/158 (4 nuevas de arte);
+  - e2e 80 pasadas + 1 omitida (7 nuevas en `mockups.spec.ts`, repetidas ×3 sin fallas).
+- **Pendiente declarado:** la fidelidad anatómica requiere revisión odontológica. El modo ampliado no se probó en iPhone/Safari reales.
+- **Próxima acción exacta:** lote 5 (recorridos y segunda actividad infantil), con el OK de Ignacio.
+
 ## Mejora L1–L10 — lote 3 (sistema visual elegido y shell de demostración) · cerrado, esperando OK para el lote 4
 
 - **Rama:** `feat/dentalos-l3-sistema` desde `main` @ `a1f1b62` (L1 y L2 ya fusionados).
