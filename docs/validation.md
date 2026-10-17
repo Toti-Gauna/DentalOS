@@ -266,3 +266,49 @@ Rama `feat/fase2c-premium` desde `main` @ `5f10a70` (PR #4 mergeado). Mismo ento
 
   Sin ellas quedan, respectivamente, el select clásico estilizado, el popover centrado, la apertura sin animación, la sombra fija y el cambio instantáneo.
 - Rendimiento con GPU real, lector de pantalla real y audio audible: no disponibles en el contenedor.
+
+# Rediseño por fases (fases 0–6: modo oscuro, shell, páginas, arte dental v4 y Brisa Chicos v2)
+
+Rama `feat/fase3-rediseno`, que sale de `feat/fase2c-premium` (PR #5). Mismo entorno y sin dependencias nuevas. El análisis y el estado por fase están en [`rediseno-por-fases.md`](rediseno-por-fases.md). El dominio no cambia (`schemaVersion` 1, seed `dentalos-v1`).
+
+## Comandos ejecutados
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` | 0 | sin errores |
+| `npm run typecheck` | 0 | sin errores |
+| `npm run test -- --run` | 0 | **154/154** en 3 archivos:<ul><li>dominio;</li><li>contraste: cada par de tokens se mide en claro **y** en oscuro, incluido el peor caso del fondo animado;</li><li>8 pruebas nuevas de la lógica del juego (`src/pages/public/kidsGame.test.ts`).</li></ul> |
+| `npm run build` | 0 | Entrada ~544 kB JS (163 kB gzip), 92 kB CSS (19 kB gzip). |
+| `npm run test:e2e` × 3 corridas | 0 | **63 pasadas** + 1 omitida a propósito (capturas) en cada corrida |
+| `npm run evidence` (320, 390, 768 y 1440 px) y `EVIDENCE_SCHEME=dark EVIDENCE_VIEWPORTS=390,1440 npm run evidence` | 0 | 72 capturas en `docs/evidence/after`: 48 en claro y 24 en oscuro (`*-dark.jpg`) |
+
+## Pruebas nuevas o reescritas
+
+| Prueba | Resultado |
+| --- | --- |
+| Contraste renderizado AA en 20 rutas a 1440 y 390 px, ahora también en **tema oscuro** (4 pruebas) | Pass |
+| Tema “Sistema” sigue `prefers-color-scheme`; “Oscuro” se aplica, se recuerda al recargar y no parpadea; el panel en oscuro mantiene el contraste del botón primario (`theme.spec.ts`, 3) | Pass |
+| Shell (`shell.spec.ts`, 6):<ul><li>menú del portal dentro de la cabecera, con página actual;</li><li>“Ver panel demo” en el pie y regreso al portal;</li><li>barra lateral agrupada, migas y búsqueda en la cabecera;</li><li>en 390 px, bottom bar con 5 destinos y hoja “Más”, contenido antes de los 200 px;</li><li>la bottom bar se oculta con un campo enfocado;</li><li>en desktop no hay bottom bar y la cabecera queda fija.</li></ul> | Pass |
+| S47 (zoom 200 %): navegación por la bottom bar y la hoja “Más” con teclado | Pass |
+| Odontograma ilustrado sobre las arcadas nuevas: oro, implante y ausente por `data-art`; un registro nuevo cambia la ilustración; 13 estados en el catálogo | Pass |
+| Brisa Chicos: los cuatro Brisitos visibles a la vez; “¡Hola, Brisitos!” muestra 4 saludos y da un sticker; tocar a cada uno muestra su globo y al cuarto llega “Amigos de verdad” sin duplicar; el álbum persiste al recargar y se vacía | Pass |
+| Juego “Cazá los bichitos” con reloj controlado:<ul><li>12 dientes deshabilitados hasta empezar;</li><li>el foco queda en “Terminar”;</li><li>un diente limpio no suma y uno con bichito sí, también con Enter;</li><li>a los 30 s da 3 estrellas, stickers y récord.</li></ul> | Pass (estable en 3 repeticiones extra) |
+| Juego sin apuro: a los 60 s sigue habiendo 3 bichitos (no se escapan) y termina al limpiar 12 | Pass |
+| Sonidos: el AudioContext nace con el gesto también en la escena grupal | Pass |
+
+## Fallos encontrados y corregidos
+
+1. **Contraste en oscuro:** el día de semana del selector de fechas quedaba en 3,99:1 al estar elegido. Ahora usa el color de texto sobre primario.
+2. **Reglas del panel que agrandaban la franja de demo, la barra lateral y las migas** (`.admin p`, `.admin li`). Se separaron con selectores específicos.
+3. **Patrón del chat en oscuro:** una máscara no cubría la parte desplazada. Ahora hay un fondo propio por tema.
+4. **Reloj de cepillado en oscuro:** el número y el aro usaban colores fijos y el número no se leía. Ahora usan los tokens del tema.
+5. **Arte dental v4:** primero el paladar quedaba plano con una banda blanca y la sonrisa tenía dientes chicos y separados. Se corrigieron los dos, con revisión visual en una galería de los 13 estados × 4 piezas.
+6. **Nombre de sticker activo en oscuro:** quedaba con poco contraste sobre oro. Ahora usa el relleno primario.
+
+## Límites declarados
+
+- Solo Chromium; el modo oscuro y las arcadas no se probaron en Firefox ni Safari.
+- El juego no mide ni evalúa el cepillado real; es solo un juego, y así lo dice la página.
+- El odontograma en móvil se desplaza en horizontal dentro de su tarjeta (mínimo 560 px) para que cada pieza siga siendo fácil de tocar; la página no tiene scroll horizontal (verificado en 320 y 390 px).
+- Sin lector de pantalla real ni audio audible en el contenedor.
+

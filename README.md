@@ -43,11 +43,11 @@ React 19 + TypeScript 5.9 + Vite 7, CSS propio, store de comandos propio (sin ro
 | `#/whatsapp` | M06 WhatsApp local | paciente / recepción |
 | `#/llamada` | M07 Llamada simulada | paciente |
 | `#/aprender` | M15 Exploración educativa | paciente |
-| `#/chicos` | Brisa Chicos (personajes, cuento, reloj de cepillado, álbum; parte de M15) | familias |
+| `#/chicos` | Brisa Chicos (los cuatro Brisitos en escena, juego “Cazá los bichitos”, cuento, reloj de cepillado, álbum; parte de M15) | familias |
 | `#/admin` | M04 Hoy / agenda (día, semana, lista) | recepción |
 | `#/admin/bandeja` | M05 Bandeja | recepción |
 | `#/admin/personas`, `#/admin/personas/:id` | M08 Ficha / familia | recepción / profesional |
-| `#/admin/odontograma`, `#/admin/personas/:id/odontograma` | M09 Odontograma | profesional |
+| `#/admin/odontograma`, `#/admin/personas/:id/odontograma` | M09 Odontograma (arcadas en U, vista oclusal por pieza) | profesional |
 | `#/admin/ortodoncia` | M10 Continuidad de ortodoncia | profesional / recepción |
 | `#/admin/presupuestos` | M11 Presupuestos y caja ficticia | profesional / dirección |
 | `#/admin/espera` | M12 Espera y recordatorios | recepción |
@@ -57,6 +57,10 @@ React 19 + TypeScript 5.9 + Vite 7, CSS propio, store de comandos propio (sin ro
 Los roles son **vistas de muestra**, nunca seguridad.
 
 Atajo: **Ctrl+K / ⌘K** abre la paleta de comandos (ir a un módulo o a la ficha de una persona por nombre o ID). Solo navega; no cambia datos.
+
+Navegación: el menú vive en la cabecera (portal) o en la barra lateral agrupada (panel); en pantallas de hasta 860 px hay una **barra inferior** con “Más”. El pie tiene **“Ver panel demo”** / “Ver portal de pacientes”. La vista de muestra, el área y los sonidos están en **“Controles de la demo”**, en la franja superior.
+
+Tema: **Sistema / Claro / Oscuro** desde la cabecera. Se guarda en este dispositivo y se aplica antes de pintar (`public/theme-init.js`), sin destello. El contraste AA se mide en los dos temas.
 
 ## Arquitectura
 

@@ -1,5 +1,51 @@
 # Checkpoint · DentalOS demo
 
+## Rediseño por fases (0–6) — modo oscuro, shell, páginas, arte dental v4 y Brisa Chicos v2 · cerrada
+
+- **Rama:** `feat/fase3-rediseno` desde `feat/fase2c-premium` @ `8ca5904` (PR #5, todavía abierto).
+- **Pedido:**
+  - menú en el header y “Ver panel demo” en el footer;
+  - bottom bar;
+  - páginas mejor estructuradas;
+  - Brisitos que aparezcan todos juntos y un juego que funcione;
+  - modo oscuro;
+  - dientes y dentaduras de nivel profesional;
+  - todo por fases.
+- **Commits:**
+  - `67cb0c8` fase 0 + 1;
+  - `514a33f` fase 2;
+  - `92423d0` fase 3;
+  - `75f6a17` fase 4;
+  - `33f00c9` fase 5;
+  - cierre con docs y evidencia.
+- **Archivos nuevos:**
+  - `docs/rediseno-por-fases.md`;
+  - `public/theme-init.js`;
+  - `src/ui/ThemeSwitcher.tsx`, `src/ui/OdontogramArch.tsx`;
+  - `src/ui/art/dentition.tsx`, `src/ui/art/kids.tsx`;
+  - `src/pages/public/kidsGame.ts` (+ test);
+  - `tests/e2e/theme.spec.ts`, `tests/e2e/shell.spec.ts`.
+- **Quitados:** `SmileArt` y `ToothGlyph`, reemplazados por la sonrisa completa y la vista oclusal.
+- **Dominio:** sin cambios.
+- **Resultados:**
+  - lint 0 y typecheck 0;
+  - 154 unit;
+  - build 0;
+  - 63 e2e en 3 corridas;
+  - 72 capturas (48 claras y 24 oscuras).
+
+  Detalle en `docs/validation.md`.
+- **Decisiones:**
+  - El tema se resuelve con `light-dark()` y `color-scheme`. La preferencia se guarda junto con la UI y se aplica antes de pintar.
+  - En móvil, la navegación es la bottom bar. Lo propio de la demo vive en un popover de la franja.
+  - El odontograma ubica las piezas por longitud de arco sobre una elipse. Cada pieza sigue siendo un `<button>` con su nombre accesible.
+  - El juego usa una semilla por partida (sin `Math.random`) y tiene un modo sin límite de tiempo.
+- **Deuda:**
+  - Firefox y Safari;
+  - lector de pantalla real;
+  - si PR #5 se mergea antes, este PR queda solo con las fases.
+- **Próxima acción exacta:** revisión de Ignacio del PR del rediseño.
+
 ## Fase 2c — análisis premium total, componentes nativos, fondo animado y dientes premium · cerrada
 
 - **Rama:** `feat/fase2c-premium` desde `main` @ `5f10a70`.

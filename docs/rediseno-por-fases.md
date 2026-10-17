@@ -96,3 +96,17 @@ Este documento es el diagnóstico honesto y el plan. Cada fase termina con lint,
 4. **Color con intención.** Teal profundo y oro como único acento. Los estados siempre llevan texto e ícono. En el modo oscuro, el teal se aclara y el oro se suaviza, sin negro puro.
 5. **Movimiento que explica.** Solo `transform`/`opacity`, de 150 a 300 ms. Con movimiento reducido, todo queda quieto y el resultado se sigue viendo.
 6. **Arte que informa.** Cada ilustración representa un dato (estado de pieza, aparatología, motivo). La decorativa es `aria-hidden`.
+
+## 4. Estado de las fases
+
+Rama `feat/fase3-rediseno`, que sale de `feat/fase2c-premium` (PR #5). Un commit por fase.
+
+| Fase | Estado | Commit | Qué quedó |
+| --- | --- | --- | --- |
+| 0 + 1 | Hecha | `67cb0c8` | <ul><li>Este análisis.</li><li>Tokens con `light-dark()` para claro y oscuro; todos los colores fijos migrados.</li><li>Preferencia Sistema/Claro/Oscuro en la cabecera, aplicada antes de pintar.</li><li>Contraste medido en los dos temas: 100 pares unitarios + contraste renderizado en 20 rutas × 2 anchos × 2 temas.</li></ul> |
+| 2 | Hecha | `514a33f` | <ul><li>Franja de demo con “Controles de la demo” (área, vista, sonidos y alcance).</li><li>Cabecera de producto con el menú adentro; búsqueda en la cabecera del panel.</li><li>Barra lateral agrupada (Operación, Pacientes, Gestión) y migas.</li><li>Pie en columnas con **“Ver panel demo”**.</li><li>**Bottom bar** en móvil con hoja “Más”; se oculta con el teclado abierto.</li></ul> |
+| 3 | Hecha | `92423d0` | Inicio con beneficios, sedes, preguntas y cierre; reserva con indicador de pasos; mis turnos con el próximo destacado y cuenta regresiva; fichas con avatar; secciones con título en portal y panel. |
+| 4 | Hecha | `75f6a17` | <ul><li>Odontograma anatómico: arcadas en U con cada pieza en vista oclusal y las superficies marcadas sobre el diente (también temporal).</li><li>Panel de la pieza con vista oclusal y lateral; leyenda y catálogo oclusales.</li><li>Sonrisa completa con labios, encías y aparatología en el inicio y en ortodoncia.</li></ul> |
+| 5 | Hecha | `33f00c9` | <ul><li>Los cuatro Brisitos juntos en escena: “¡Hola, Brisitos!” los hace saludar a la vez; tocar a uno muestra su globo.</li><li>Juego “Cazá los bichitos” con reloj (30 s, estrellas y récord) o sin apuro; se juega con toque, mouse y teclado.</li><li>Álbum de 8 stickers que conserva el progreso guardado.</li></ul> |
+| 6 | Hecha | este PR | Lint, typecheck, 154 unit, build y 63 e2e en verde en 3 corridas; evidencia en claro y oscuro (`docs/evidence/after/*-dark.jpg`); documentación. |
+
