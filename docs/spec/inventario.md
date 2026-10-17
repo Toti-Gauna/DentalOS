@@ -22,6 +22,7 @@ Todo lo de esta página se leyó en el código o se ejecutó en esta sesión. Lo
 | `#/admin/espera` | Waitlist | M12 |
 | `#/admin/tareas` · `#/admin/informes` | Tasks · Reports | M13 |
 | `#/admin/config` | Settings (jornadas, duraciones, bloqueos, automatizaciones, escenarios) | M14 |
+| `#/propuestas` | Proposals (lote 2: tres propuestas visuales; ruta aislada sin el marco de la app, chunk diferido) | — |
 Cualquier otra ruta → NotFound.
 
 ## Roles (vistas, no seguridad) — `ROLES` en `App.tsx`

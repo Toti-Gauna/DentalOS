@@ -11,6 +11,8 @@ Esta carpeta es la fuente de verdad para implementar. Un requisito **especificad
 | [`inventario.md`](inventario.md) | Lo que existe hoy, medido en el código: rutas, módulos, comandos del store, componentes, juegos, automatizaciones, pruebas. |
 | [`recorridos.md`](recorridos.md) | Los cinco recorridos del prompt, paso a paso, sobre rutas y comandos reales. |
 | [`estabilidad.md`](estabilidad.md) | Caza de la falla e2e intermitente: método, causa, corrección y verificación. |
+| [`referencias.md`](referencias.md) | Lote 2: referencias por familia de componentes, con su acceso real (solo resúmenes del buscador). |
+| [`direccion.md`](direccion.md) | Lote 2: las tres propuestas, cómo verlas y el registro de la elección de Ignacio (pendiente). |
 
 ## Convenciones
 

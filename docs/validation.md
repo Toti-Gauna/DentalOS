@@ -325,3 +325,30 @@ Rama `feat/dentalos-l1-diagnostico` desde `main` @ `73c5e75`. Sin cambios de pro
 
 Falla intermitente: ver `docs/spec/estabilidad.md` (causa, corrección y límites). Los requisitos nuevos están **especificados, no construidos** (`docs/spec/requisitos.md`).
 
+# Mejora L1–L10 · lote 2 (investigación y tres propuestas visuales)
+
+Rama `feat/dentalos-l2-propuestas`. Ruta nueva y aislada `#/propuestas`; el resto del producto no cambia (solo se agregó la ruta en `App.tsx`).
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` · `npm run typecheck` · `npm run build` | 0 | sin errores; entrada 544,52 kB (igual); `Proposals` 45 kB en chunk aparte |
+| `npx vitest run` | 0 | 245/245 (154 previas + 91 de `src/pages/proposals/contrast.test.ts`) |
+| `npx playwright test` | 0 | 66 pasadas + 1 omitida (63 previas + 3 de `tests/e2e/proposals.spec.ts`) |
+
+Qué prueban las nuevas:
+
+- Las tres propuestas renderizan las 4 pantallas y las 4 muestras con el mismo contenido del seed (A-0012, agenda del 19/10, 45 min, versión 2).
+- Cada pantalla tiene su indicador de demo.
+- Ningún par de contraste queda bajo el mínimo y no hay pedidos fuera de `127.0.0.1`.
+- Claro/oscuro y comparar quedan en la URL y sobreviven a recargar.
+- A 390 px no hay scroll horizontal y con movimiento reducido no corre ninguna animación.
+
+Láminas de las tres propuestas en claro y oscuro: `docs/evidence/l2/{a,b,c}-{claro,oscuro}.jpg`.
+
+**Límites:**
+
+- Solo Chromium.
+- `backdrop-filter` (B) sin medir en equipos modestos.
+- Los prototipos no son interactivos: los botones no ejecutan acciones, y así lo dice la página.
+- Las referencias son resúmenes del buscador, no páginas vistas.
+

@@ -31,6 +31,8 @@ const Waitlist = lazy(() => import('../pages/admin/Waitlist').then((m) => ({ def
 const Tasks = lazy(() => import('../pages/admin/Tasks').then((m) => ({ default: m.Tasks })));
 const Reports = lazy(() => import('../pages/admin/Reports').then((m) => ({ default: m.Reports })));
 const Settings = lazy(() => import('../pages/admin/Settings').then((m) => ({ default: m.Settings })));
+// Lote 2: propuestas visuales para elegir dirección. Ruta aislada, sin el marco de la app.
+const Proposals = lazy(() => import('../pages/proposals/Proposals').then((m) => ({ default: m.Proposals })));
 
 export const BANNER = 'Demo · Clínica Brisa ficticia · Datos de muestra · Sin envíos reales';
 
@@ -300,6 +302,15 @@ export function App() {
   const nav = admin ? ADMIN_NAV : PUBLIC_NAV;
   const current = nav.find((n) => isActive(n.to)) ?? null;
   const crumbs: Crumbs = { area: admin ? 'Panel de la clínica' : 'Portal de pacientes', areaHref: admin ? '#/admin' : '#/', module: current && current.to !== (admin ? '/admin' : '/') ? { label: current.label, href: `#${current.to}` } : null };
+
+  if (segments[0] === 'propuestas') {
+    return (
+      <div className="app proposals-host">
+        <div className="demo-strip"><div className="demo-strip-inner"><p className="demo-banner" role="note"><strong>{BANNER}</strong> <span>Prototipos de dirección visual</span></p></div></div>
+        <main id="main" tabIndex={-1}><Suspense fallback={<LoadingState label="Cargando propuestas visuales…" />}><Proposals /></Suspense></main>
+      </div>
+    );
+  }
 
   return (
     <div className={`app ${admin ? 'admin' : 'public'}${kids ? ' kids-mode' : ''}`}>
