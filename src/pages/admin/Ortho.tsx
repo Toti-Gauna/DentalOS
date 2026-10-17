@@ -6,7 +6,8 @@ import { byId, personLabel, proName, STATUS_LABEL } from '../../domain/selectors
 import { fmtShort } from '../../domain/time';
 import { Button, EmptyState, Field, Icon, Notice, PageHeader, StatusBadge, useResult } from '../../ui/kit';
 import { RescheduleDrawer } from '../../ui/RescheduleDrawer';
-import { APPLIANCES, OrthoArt } from '../../ui/art/ortho';
+import { APPLIANCES } from '../../ui/art/ortho';
+import { DentitionFront } from '../../ui/art/dentition';
 
 export function Ortho() {
   const s = useDemo();
@@ -32,7 +33,7 @@ export function Ortho() {
               <div className="row between"><h2 style={{ fontSize: 20, margin: 0 }}>{ep.title}</h2><StatusBadge status={ep.status === 'activo' ? 'activa' : 'cerrada'} label={ep.status === 'activo' ? 'Activo' : 'Cerrado'} /></div>
               <p className="muted">{personLabel(s, ep.personId)} · {proName(s, ep.professionalId)} · desde {fmtShort(ep.startedAt)}</p>
               <div className="appliance">
-                <div className="appliance-art"><OrthoArt kind={ep.appliance ?? 'brackets_metalicos'} width={260} title={`Ilustración: ${APPLIANCES.find((x) => x.id === (ep.appliance ?? 'brackets_metalicos'))?.label}`} /></div>
+                <div className="appliance-art"><DentitionFront appliance={ep.appliance ?? 'brackets_metalicos'} width={260} title={`Ilustración: ${APPLIANCES.find((x) => x.id === (ep.appliance ?? 'brackets_metalicos'))?.label}`} /></div>
                 <div className="stack" style={{ gap: 6 }}>
                   <p className="eyebrow" style={{ margin: 0 }}>Aparatología registrada</p>
                   <strong>{ep.appliance ? APPLIANCES.find((x) => x.id === ep.appliance)?.label : 'Sin registrar'}</strong>
@@ -97,7 +98,7 @@ export function Ortho() {
             <details className="card appliance-catalog">
               <summary><strong>Catálogo de aparatología</strong></summary>
               <ul className="catalog-grid one">
-                {APPLIANCES.map((a) => <li key={a.id} className="catalog-item"><OrthoArt kind={a.id} width={180} /><strong>{a.label}</strong><span className="small muted">{a.detail}</span></li>)}
+                {APPLIANCES.map((a) => <li key={a.id} className="catalog-item"><div className="appliance-art" aria-hidden="true"><DentitionFront appliance={a.id} width={180} lips={false} /></div><strong>{a.label}</strong><span className="small muted">{a.detail}</span></li>)}
               </ul>
             </details>
             <Notice tone="info" title="Sin progreso clínico">No mostramos porcentajes de avance ni fechas estimadas de finalización.</Notice>

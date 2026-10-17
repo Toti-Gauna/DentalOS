@@ -265,35 +265,3 @@ export function ToothArt({ kind, state = 'sano', flip = false, temporal = false,
     </svg>
   );
 }
-
-/** Sonrisa de muestra (frente superior) para composiciones de marca: coronas grandes, raíces bajo la encía. */
-export function SmileArt({ width = 320, gold = true }: { width?: number; gold?: boolean }) {
-  const uid = useId().replace(/:/g, '');
-  const teeth: { kind: ToothKind; w: number; dy: number }[] = [
-    { kind: 'canino', w: 92, dy: 10 }, { kind: 'incisivo', w: 96, dy: 4 }, { kind: 'incisivo', w: 108, dy: 0 },
-    { kind: 'incisivo', w: 108, dy: 0 }, { kind: 'incisivo', w: 96, dy: 4 }, { kind: 'canino', w: 92, dy: 10 },
-  ];
-  const xs = [8, 58, 110, 166, 222, 270];
-  const edge = 'M0 92 C50 70 90 86 130 78 C170 70 210 70 250 78 C290 86 330 70 380 92';
-  return (
-    <svg width={width} height={(width * 190) / 380} viewBox="0 0 380 190" aria-hidden="true" focusable="false" className="smile-art">
-      <defs>
-        <linearGradient id={`gum-${uid}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#f3c1bb" /><stop offset=".55" stopColor="#e7a29c" /><stop offset="1" stopColor="#d88a84" /></linearGradient>
-        <filter id={`gb-${uid}`} x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="3" /></filter>
-        <clipPath id={`gc-${uid}`}><path d="M0 46 C110 4 270 4 380 46 V190 H0 Z" /></clipPath>
-      </defs>
-      <g clipPath={`url(#gc-${uid})`}>
-        {teeth.map((t, i) => (
-          <g key={i} transform={`translate(${xs[i]} ${-26 + t.dy})`}>
-            <ToothArt kind={t.kind} state={gold && i === 4 ? 'corona_oro' : 'sano'} flip width={t.w} />
-          </g>
-        ))}
-      </g>
-      <path d={edge} stroke="#7d3b37" strokeOpacity=".28" strokeWidth="9" fill="none" filter={`url(#gb-${uid})`} />
-      <path d="M0 44 C110 2 270 2 380 44 V92 C330 70 290 86 250 78 C210 70 170 70 130 78 C90 86 50 70 0 92 Z" fill={`url(#gum-${uid})`} />
-      {[94, 150, 206, 262, 318].map((x) => <path key={x} d={`M${x - 10} ${x === 206 || x === 150 ? 76 : 80} Q${x} ${x === 206 || x === 150 ? 66 : 70} ${x + 10} ${x === 206 || x === 150 ? 76 : 80}`} fill="#f6cdc7" opacity=".55" />)}
-      <path d="M30 40 C120 12 260 12 350 40" stroke="#ffffff" strokeOpacity=".35" strokeWidth="5" fill="none" strokeLinecap="round" filter={`url(#gb-${uid})`} />
-      <path d={edge} stroke="#c2706a" strokeWidth="1.8" fill="none" />
-    </svg>
-  );
-}

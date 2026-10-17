@@ -10,7 +10,7 @@ export function ServiceArt({ serviceTypeId, size = 96 }: { serviceTypeId: string
     <svg className="service-art" width={size} height={size} viewBox="0 0 96 96" aria-hidden="true" focusable="false">
       <defs>
         <clipPath id={`sc-${uid}`}><circle cx="48" cy="48" r="46" /></clipPath>
-        <radialGradient id={`sa-${uid}`} cx=".35" cy=".3" r=".8"><stop offset="0" stopColor={ortho ? '#e7f1f6' : '#f6efe1'} /><stop offset="1" stopColor={ortho ? '#cfe1de' : '#e9deca'} /></radialGradient>
+        <radialGradient id={`sa-${uid}`} cx=".35" cy=".3" r=".8"><stop offset="0" style={{ stopColor: ortho ? 'var(--stage-a)' : 'var(--kid-1)' }} /><stop offset="1" style={{ stopColor: ortho ? 'var(--stage-c)' : 'var(--sand)' }} /></radialGradient>
       </defs>
       <circle cx="48" cy="48" r="46" fill={`url(#sa-${uid})`} />
       <g clipPath={`url(#sc-${uid})`}>

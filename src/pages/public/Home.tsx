@@ -5,11 +5,11 @@ import { useUi } from '../../app/ui-state';
 import { byId, locName, proName, serviceName, upcomingFor } from '../../domain/selectors';
 import { fmtLong, parts } from '../../domain/time';
 import { agendaLink } from '../../ui/components';
-import { SmileArt } from '../../ui/art/teeth';
+import { DentitionFront } from '../../ui/art/dentition';
 import { ServiceArt } from '../../ui/art/services';
 import { ProAvatar } from '../../ui/art/brand';
 import { ToothCharacter } from '../../ui/art/characters';
-import { Button, EmptyState, Icon, StatusBadge } from '../../ui/kit';
+import { Button, EmptyState, Icon, SectionHeader, StatusBadge } from '../../ui/kit';
 import { PageArt } from '../../ui/art/pages';
 
 const DOW = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -53,6 +53,13 @@ function NextAppointmentCard() {
   );
 }
 
+const BENEFITS = [
+  { icon: 'calendar', title: 'Turnos que no se pisan', text: 'Profesional y sillón se validan juntos al confirmar.' },
+  { icon: 'clock', title: 'Recordatorios a tu elección', text: 'Opt-in 24 h antes (simulado en esta demo).' },
+  { icon: 'wallet', title: 'Presupuestos claros', text: 'Aceptar no es pagar; la cobertura la verifica recepción.' },
+  { icon: 'refresh', title: 'Ortodoncia con seguimiento', text: 'Controles indicados por tu profesional, sin perder el hilo.' },
+];
+
 const FAQ: [string, string][] = [
   ['¿Puedo cambiar o cancelar mi turno?', 'Sí, desde Mis turnos, por WhatsApp o por llamada. Si faltan menos de 12 horas, el cambio lo gestiona recepción para no perder el horario.'],
   ['¿Cómo sé si mi turno está confirmado?', 'Cada turno muestra su estado con texto: “Confirmado” o “Pendiente de confirmación”. Una solicitud la confirma una persona de recepción; nada se confirma solo.'],
@@ -85,15 +92,21 @@ export function Home() {
         </div>
         <div className="hero-visual">
           <div className="hero-stage" aria-hidden="true">
-            <SmileArt width={420} />
+            <DentitionFront gold width={420} />
             <span className="sparkle s1" /><span className="sparkle s2" /><span className="sparkle s3" />
           </div>
           <NextAppointmentCard />
         </div>
       </div>
 
-      <section aria-labelledby="how-title" className="how">
-        <h2 id="how-title" className="sr-only">Cómo funciona</h2>
+      <ul className="benefits" aria-label="Lo que cuida la clínica">
+        {BENEFITS.map((b) => (
+          <li key={b.title}><span className="benefit-ico" aria-hidden="true"><Icon name={b.icon} size={20} /></span><span><strong>{b.title}</strong><span className="small muted">{b.text}</span></span></li>
+        ))}
+      </ul>
+
+      <section aria-labelledby="how-title" className="how home-section">
+        <SectionHeader eyebrow="Cómo funciona" id="how-title" title="Tres pasos, sin vueltas">Pedís, recepción confirma y seguís tu próximo paso con el mismo número de turno en todos los canales.</SectionHeader>
         <ol className="how-steps">
           <li><span className="how-n">1</span><div><strong>Elegís motivo y horario</strong><p>Por web, WhatsApp o llamada. Revalidamos profesional y sillón al confirmar.</p></div></li>
           <li><span className="how-n">2</span><div><strong>Recepción confirma</strong><p>Si es una solicitud, una persona la revisa. Nada se confirma solo.</p></div></li>
@@ -101,8 +114,8 @@ export function Home() {
         </ol>
       </section>
 
-      <section aria-labelledby="services-title" className="stack">
-        <div className="section-title">
+      <section aria-labelledby="services-title" className="stack home-section">
+        <div className="section-head">
           <div><p className="eyebrow">Motivos de consulta</p><h2 id="services-title">¿Qué necesitás hoy?</h2></div>
           <div className="chips" role="group" aria-label="Filtrar motivos">
             {([['todos', 'Todos'], ['general', 'Odontología general'], ['ortodoncia', 'Ortodoncia']] as const).map(([k, l]) => (
@@ -136,8 +149,8 @@ export function Home() {
         </div>
       </section>
 
-      <section aria-labelledby="team-title" className="stack">
-        <div><p className="eyebrow">Equipo</p><h2 id="team-title">Profesionales de la clínica</h2></div>
+      <section aria-labelledby="team-title" className="stack home-section">
+        <SectionHeader eyebrow="Equipo" id="team-title" title="Profesionales de la clínica">Odontología general y ortodoncia en dos sedes. Elegís con quién atenderte al reservar.</SectionHeader>
         <div className="team-grid">
           {s.professionals.map((p, i) => (
             <article key={p.id} className="card team-card lift">
@@ -167,8 +180,8 @@ export function Home() {
         </div>
       </section>
 
-      <section aria-labelledby="faq-title" className="stack">
-        <div><p className="eyebrow">Preguntas frecuentes</p><h2 id="faq-title">Lo que más nos preguntan</h2></div>
+      <section aria-labelledby="faq-title" className="stack home-section">
+        <SectionHeader eyebrow="Preguntas frecuentes" id="faq-title" title="Lo que más nos preguntan" />
         <div className="faq">
           {FAQ.map(([q, a], i) => (
             <details key={q} name="faq" open={i === 0}>
@@ -179,26 +192,32 @@ export function Home() {
         </div>
       </section>
 
-      <section aria-labelledby="sedes-title" className="grid-2">
-        <div className="stack">
-          <h2 id="sedes-title">Sedes</h2>
+      <section aria-labelledby="sedes-title" className="stack home-section">
+        <SectionHeader eyebrow="Sedes" id="sedes-title" title="Dos sedes, la misma agenda">Elegí la que te quede cómoda; recepción ve los turnos de ambas.</SectionHeader>
+        <div className="sede-grid">
           {s.locations.map((l) => (
-            <article key={l.id} className="card lift">
-              <h3>{l.name}</h3>
-              <p className="row"><Icon name="map" /> {l.address}</p>
-              <p className="muted">{l.hoursText}</p>
-              <Button size="sm" onClick={() => navigate(`/sedes/${l.id}`)}>Ver sede y equipo</Button>
+            <article key={l.id} className="card sede-card lift">
+              <div className="sede-art" aria-hidden="true"><PageArt kind="sede" /></div>
+              <div className="stack" style={{ gap: 6 }}>
+                <h3 style={{ margin: 0 }}>{l.name}</h3>
+                <p className="row" style={{ margin: 0 }}><Icon name="map" /> {l.address}</p>
+                <p className="muted small" style={{ margin: 0 }}><Icon name="clock" size={14} /> {l.hoursText}</p>
+                <div className="row wrap"><Button size="sm" onClick={() => navigate(`/sedes/${l.id}`)}>Ver sede y equipo</Button><Button size="sm" variant="quiet" onClick={() => navigate(`/reservar?sede=${l.id}`)}>Reservar acá</Button></div>
+              </div>
             </article>
           ))}
         </div>
-        <div className="stack">
-          <h2>Tu primera visita, paso a paso</h2>
-          <ol className="steps">
-            <li><div><strong>Pedís el turno</strong><br /><span className="muted">Por web, WhatsApp o llamada. Queda como solicitud hasta que recepción la confirma.</span></div></li>
-            <li><div><strong>Recepción confirma</strong><br /><span className="muted">Revalida la agenda y te avisa (en esta demo, nada se envía de verdad).</span></div></li>
-            <li><div><strong>Llegás a la sede</strong><br /><span className="muted">Recepción registra tu llegada. La profesional define los próximos pasos.</span></div></li>
-          </ol>
-          <p className="muted small">La guía educativa es opcional: toda esta información está disponible sin jugar.</p>
+      </section>
+
+      <section className="final-cta" aria-labelledby="final-title">
+        <div>
+          <p className="eyebrow">Tu próximo paso</p>
+          <h2 id="final-title">Pedí tu turno en menos de un minuto</h2>
+          <p style={{ margin: 0 }}>Elegís motivo y horario; recepción revalida la agenda. Sin llamadas de espera ni mensajes reales en esta demo.</p>
+        </div>
+        <div className="row wrap">
+          <Button variant="primary" size="lg" icon="calendar" onClick={() => navigate('/reservar')}>Pedir turno</Button>
+          <Button size="lg" icon="chat" onClick={() => navigate('/whatsapp')}>Escribir por WhatsApp</Button>
         </div>
       </section>
     </section>

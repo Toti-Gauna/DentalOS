@@ -12,7 +12,7 @@ export function PageArt({ kind }: { kind: PageArtKind }) {
   return (
     <svg viewBox="0 0 160 130" width="160" height="130" aria-hidden="true" focusable="false" className="page-art-svg">
       <defs>
-        <radialGradient id={id('halo')} cx=".5" cy=".5" r=".5"><stop offset="0" stopColor="#ffffff" /><stop offset=".7" stopColor="#e5efed" /><stop offset="1" stopColor="#cfe1de" /></radialGradient>
+        <radialGradient id={id('halo')} cx=".5" cy=".5" r=".5"><stop offset="0" style={{ stopColor: 'var(--stage-a)' }} /><stop offset=".7" style={{ stopColor: 'var(--stage-b)' }} /><stop offset="1" style={{ stopColor: 'var(--stage-c)' }} /></radialGradient>
         <linearGradient id={id('teal')} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2f7d75" /><stop offset="1" stopColor="#1b4a46" /></linearGradient>
         <linearGradient id={id('gold')} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#b8862b" /><stop offset=".5" stopColor="#f3d98a" /><stop offset="1" stopColor="#a8781f" /></linearGradient>
         <linearGradient id={id('paper')} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset="1" stopColor="#f3efe6" /></linearGradient>

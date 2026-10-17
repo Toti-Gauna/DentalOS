@@ -64,11 +64,11 @@ async function renderedContrast(page: Page): Promise<{ checked: number; skipped:
   });
 }
 
-for (const width of [1440, 390]) {
-  test(`contraste renderizado AA en ${ROUTES.length} rutas a ${width} px`, async ({ page }) => {
+for (const scheme of ['light', 'dark'] as const) for (const width of [1440, 390]) {
+  test(`contraste renderizado AA en ${ROUTES.length} rutas a ${width} px · tema ${scheme === 'light' ? 'claro' : 'oscuro'}`, async ({ page }) => {
     test.setTimeout(90_000);
     await page.setViewportSize({ width, height: 900 });
-    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: scheme });
     await fresh(page);
     const all: (Fail & { route: string })[] = [];
     let checked = 0;
@@ -124,6 +124,10 @@ test('teclado virtual en reserva: el CTA se alcanza con foco y no queda tapado',
 
 test('menú de vista por teclado: cambia de área y lleva el foco al título', async ({ page }) => {
   await fresh(page, '#/');
+  // La vista de muestra vive en los controles de la demo (popover nativo de la franja superior).
+  const demo = page.getByRole('button', { name: 'Controles de la demo' });
+  await demo.focus();
+  await page.keyboard.press('Enter');
   const role = page.getByLabel('Vista de muestra · no es inicio de sesión');
   await role.focus();
   await role.selectOption('recepcion');

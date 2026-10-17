@@ -1,24 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useState, type KeyboardEvent } from 'react';
 import { navigate } from '../../app/router';
 import { useDraft } from '../../app/ui-state';
 import { CHARACTERS, ToothCharacter, type Character, type Mood } from '../../ui/art/characters';
+import { GameMouth, Germ, KidTooth, StarArt } from '../../ui/art/kids';
 import { ToothArt } from '../../ui/art/teeth';
 import { Button, ConfirmDialog, Icon, Notice, announce } from '../../ui/kit';
 import { sound } from '../../ui/sound';
+import { CALM_GOAL, GAME_TEETH, GAME_TICKS, TICK_MS, gameReducer, initialGame, secondsLeft, starsFor, type GameMode } from './kidsGame';
 
-interface KidsProgress { stickers: string[]; brushed: number; greeted: Character[] }
-const EMPTY: KidsProgress = { stickers: [], brushed: 0, greeted: [] };
+interface KidsProgress { stickers: string[]; brushed: number; met: Character[]; games: number; cleaned: number; best: number }
+const EMPTY: KidsProgress = { stickers: [], brushed: 0, met: [], games: 0, cleaned: 0, best: 0 };
 
 const STICKERS: { id: string; label: string; how: string }[] = [
-  { id: 'saludo-mora', label: 'Muela Mora', how: 'Saludá a Mora' },
-  { id: 'saludo-coco', label: 'Colmillo Coco', how: 'Saludá a Coco' },
-  { id: 'saludo-ivo', label: 'Incisivo Ivo', how: 'Saludá a Ivo' },
-  { id: 'saludo-lia', label: 'Dientecito Lía', how: 'Saludá a Lía' },
-  { id: 'equipo', label: 'Equipo completo', how: 'Conocé a los cuatro' },
+  { id: 'equipo', label: 'Equipo completo', how: 'Saludá a los Brisitos' },
+  { id: 'amigos', label: 'Amigos de verdad', how: 'Tocá a cada Brisito para conocerlo' },
+  { id: 'juego', label: 'Cazabichitos', how: 'Terminá una partida de ¡A limpiar la sonrisa!' },
+  { id: 'juego-3', label: 'Sonrisa brillante', how: 'Ganá 3 estrellas jugando con reloj' },
+  { id: 'juego-30', label: 'Superlimpieza', how: 'Limpiá 30 bichitos en total' },
   { id: 'cuento', label: 'Cuento leído', how: 'Terminá el cuento de la primera visita' },
   { id: 'cepillado', label: 'Primer cepillado', how: 'Completá un cepillado con el reloj' },
   { id: 'cepillado-3', label: 'Diente de oro', how: 'Completá tres cepillados' },
 ];
+const STICKER_IDS = new Set(STICKERS.map((x) => x.id));
 
 const STORY: { who: Character; mood: Mood; title: string; text: string }[] = [
   { who: 'ivo', mood: 'feliz', title: 'Llegamos a la clínica', text: 'Te recibe una persona de recepción que anota tu nombre. Podés venir con quien te cuida.' },
@@ -29,10 +32,14 @@ const STORY: { who: Character; mood: Mood; title: string; text: string }[] = [
 ];
 
 const ZONES = ['Arriba a la derecha', 'Arriba a la izquierda', 'Abajo a la izquierda', 'Abajo a la derecha'];
+const IDLE_MOOD: Record<Character, Mood> = { mora: 'feliz', coco: 'guino', ivo: 'feliz', lia: 'feliz' };
 
 function StickerArt({ id, earned }: { id: string; earned: boolean }) {
-  const inner = id.startsWith('saludo-') ? <ToothCharacter who={id.slice(7) as Character} mood="feliz" size={52} />
-    : id === 'equipo' ? <ToothCharacter who="mora" mood="guino" size={52} />
+  const inner = id === 'equipo' ? <ToothCharacter who="mora" mood="guino" size={52} />
+    : id === 'amigos' ? <ToothCharacter who="lia" mood="feliz" size={52} />
+    : id === 'juego' ? <Germ variant={1} />
+    : id === 'juego-3' ? <StarArt filled />
+    : id === 'juego-30' ? <ToothCharacter who="coco" mood="feliz" size={52} />
     : id === 'cuento' ? <ToothCharacter who="ivo" mood="sorpresa" size={52} />
     : id === 'cepillado' ? <ToothCharacter who="coco" mood="valiente" size={52} />
     : <ToothArt kind="molar" state="corona_oro" width={40} />;
@@ -49,11 +56,20 @@ function goTo(headingId: string) {
 }
 
 export function Kids() {
-  const [p, setP, clearP] = useDraft<KidsProgress>('kids', EMPTY);
-  const [waving, setWaving] = useState<Character | null>(null);
+  const [raw, setP, clearP] = useDraft<Partial<KidsProgress>>('kids', EMPTY);
+  // Progreso guardado por versiones anteriores: se completa con valores vacíos y se ignoran stickers que ya no existen.
+  const p: KidsProgress = { ...EMPTY, ...raw, met: raw.met ?? [], stickers: (raw.stickers ?? []).filter((id) => STICKER_IDS.has(id)) };
+  const [active, setActive] = useState<Character | null>(null);
+  const [waving, setWaving] = useState(false);
   const [page, setPage] = useState(0);
   const [confirmReset, setConfirmReset] = useState(false);
   const [newSticker, setNewSticker] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!waving) return;
+    const id = setTimeout(() => setWaving(false), 2600);
+    return () => clearTimeout(id);
+  }, [waving]);
 
   // Los efectos (sonido, anuncio) se disparan fuera del cálculo del nuevo estado.
   const earn = (ids: string[], next: KidsProgress) => {
@@ -66,46 +82,69 @@ export function Kids() {
     }
   };
 
-  const greet = (who: Character) => {
+  const helloAll = () => {
     sound.play('pop');
-    setWaving(who);
-    const greeted = p.greeted.includes(who) ? p.greeted : [...p.greeted, who];
-    earn([`saludo-${who}`, ...(greeted.length === 4 ? ['equipo'] : [])], { ...p, greeted });
+    setActive(null);
+    setWaving(true);
+    earn(['equipo'], p);
   };
+  const meet = (who: Character) => {
+    sound.play('tap');
+    setWaving(false);
+    setActive(who);
+    const met = p.met.includes(who) ? p.met : [...p.met, who];
+    earn(met.length === 4 ? ['amigos'] : [], { ...p, met });
+  };
+  const finishGame = (score: number, stars: number, mode: GameMode) => {
+    const next = { ...p, games: p.games + 1, cleaned: p.cleaned + score, best: mode === 'reloj' ? Math.max(p.best, score) : p.best };
+    earn([...(score > 0 ? ['juego'] : []), ...(mode === 'reloj' && stars === 3 ? ['juego-3'] : []), ...(next.cleaned >= 30 ? ['juego-30'] : [])], next);
+  };
+
+  const talking = active ? CHARACTERS.find((c) => c.id === active) : null;
+  const tail = active ? CHARACTERS.findIndex((c) => c.id === active) : -1;
+  const earnedCount = STICKERS.filter((s) => p.stickers.includes(s.id)).length;
 
   return (
     <section className="page kids">
       <div className="kids-hero">
-        <div>
+        <div className="kids-hero-copy">
           <p className="eyebrow">Brisa Chicos · para chicas y chicos (y sus familias)</p>
           <h1 tabIndex={-1} data-page-title>Sonrisas valientes</h1>
-          <p className="lede">Conocé a los Brisitos, leé cómo es la primera visita y cepillate dos minutos con nosotros. Todo es para jugar y aprender: no reemplaza lo que te diga tu odontóloga.</p>
+          <p className="lede">Conocé a los Brisitos, cazá bichitos en el juego, leé cómo es la primera visita y cepillate dos minutos con nosotros. Todo es para jugar y aprender: no reemplaza lo que te diga tu odontóloga.</p>
           <div className="row wrap">
-            <Button variant="primary" size="lg" icon="clock" onClick={() => goTo('brush-title')}>Cepillarme con el reloj</Button>
-            <Button size="lg" icon="book" onClick={() => goTo('story-title')}>Leer el cuento</Button>
+            <Button variant="primary" size="lg" icon="sparkle" onClick={() => goTo('game-title')}>Jugar a limpiar la sonrisa</Button>
+            <Button size="lg" icon="clock" onClick={() => goTo('brush-title')}>Cepillarme con el reloj</Button>
+            <Button size="lg" variant="ghost" icon="book" onClick={() => goTo('story-title')}>Leer el cuento</Button>
           </div>
         </div>
-        <div className="kids-hero-art" aria-hidden="true">
-          <ToothCharacter who="mora" mood="feliz" size={150} className="float-a" />
-          <ToothCharacter who="lia" mood="guino" size={110} className="float-b" />
-          <ToothCharacter who="ivo" mood="feliz" size={130} className="float-c" />
+        <div className="brisitos" role="group" aria-labelledby="meet">
+          <h2 id="meet" className="sr-only">Los Brisitos</h2>
+          <div className={`brisitos-bubble ${talking ? 'has-tail' : ''}`} style={{ ['--tail' as string]: `${((tail + 0.5) / 4) * 100}%` }} aria-live="polite">
+            {talking ? <><p className="bubble-who"><strong>{talking.name}</strong> · {talking.tooth}</p><p className="bubble-line">{talking.line}</p><p className="small bubble-bio">{talking.bio}</p></>
+              : waving ? <p className="bubble-line">¡Los cuatro te saludan!</p>
+              : <p className="bubble-line">Tocá a un Brisito para conocerlo, o saludá a todos juntos.</p>}
+          </div>
+          <ul className={`brisitos-stage ${waving ? 'is-waving' : ''}`}>
+            {CHARACTERS.map((c, i) => (
+              <li key={c.id} className={`brisito is-${c.id} ${active === c.id ? 'is-active' : ''}`} style={{ ['--i' as string]: i }}>
+                {waving && <span className="hello-bubble" aria-hidden="true">¡Hola!</span>}
+                <button type="button" className="brisito-btn" aria-pressed={active === c.id} onClick={() => meet(c.id)} aria-label={`Conocer a ${c.name.split(' ')[1]}`}>
+                  <ToothCharacter who={c.id} mood={waving ? 'feliz' : active === c.id ? 'sorpresa' : IDLE_MOOD[c.id]} size={120} />
+                </button>
+                <span className="brisito-name" aria-hidden="true">{c.name.split(' ')[1]}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="brisitos-actions">
+            <Button variant="primary" icon="smile" onClick={helloAll}>¡Hola, Brisitos!</Button>
+            <span className="small muted tabular">Conociste a {p.met.length} de 4</span>
+          </div>
         </div>
       </div>
 
-      <section aria-labelledby="meet" className="stack">
-        <div className="section-title"><h2 id="meet">Conocé a los Brisitos</h2><span className="muted small tabular">{p.greeted.length} de 4 saludados</span></div>
-        <div className="kids-grid">
-          {CHARACTERS.map((c) => (
-            <article key={c.id} className={`kid-card ${waving === c.id ? 'is-waving' : ''}`}>
-              <ToothCharacter who={c.id} mood={waving === c.id ? 'guino' : p.greeted.includes(c.id) ? 'feliz' : 'sorpresa'} size={120} title={`${c.name}, ${waving === c.id ? 'te guiña un ojo' : 'te mira'}`} />
-              <h3>{c.name}</h3>
-              <p className="kid-tooth">{c.tooth}</p>
-              <p>{c.bio}</p>
-              <Button variant={p.greeted.includes(c.id) ? 'secondary' : 'primary'} onClick={() => greet(c.id)}>{p.greeted.includes(c.id) ? `¡Hola otra vez, ${c.name.split(' ')[1]}!` : `Saludar a ${c.name.split(' ')[1]}`}</Button>
-            </article>
-          ))}
-        </div>
-      </section>
+      <SmileGame best={p.best} round={p.games} onFinish={finishGame} />
+
+      <BrushTimer onDone={() => { const brushed = p.brushed + 1; earn(brushed >= 3 ? ['cepillado', 'cepillado-3'] : ['cepillado'], { ...p, brushed }); }} brushed={p.brushed} />
 
       <section id="cuento" aria-labelledby="story-title" className="story card">
         <div className="story-art" aria-hidden="true"><ToothCharacter who={STORY[page].who} mood={STORY[page].mood} size={170} /></div>
@@ -123,12 +162,10 @@ export function Kids() {
         </div>
       </section>
 
-      <BrushTimer onDone={() => { const brushed = p.brushed + 1; earn(brushed >= 3 ? ['cepillado', 'cepillado-3'] : ['cepillado'], { ...p, brushed }); }} brushed={p.brushed} />
-
       <section aria-labelledby="album" className="stack">
         <div className="section-title">
           <h2 id="album">Mi álbum de stickers</h2>
-          <span className="row wrap"><span className="muted small tabular">{p.stickers.length} de {STICKERS.length}</span><Button size="sm" variant="ghost" icon="refresh" onClick={() => setConfirmReset(true)}>Vaciar álbum</Button></span>
+          <span className="row wrap"><span className="muted small tabular">{earnedCount} de {STICKERS.length}</span><Button size="sm" variant="ghost" icon="refresh" onClick={() => setConfirmReset(true)}>Vaciar álbum</Button></span>
         </div>
         <ul className="album">
           {STICKERS.map((s) => {
@@ -152,12 +189,133 @@ export function Kids() {
           <Button variant="primary" icon="calendar" onClick={() => navigate('/reservar')}>Pedir un turno</Button>
           <Button icon="list" onClick={() => navigate('/mis-turnos')}>Ver turnos de la familia</Button>
         </div>
-        <Notice tone="info" title="Contenido general">Los consejos de esta sección son generales y para jugar. Lo que necesita cada chico o chica lo define su odontóloga en la consulta.</Notice>
+        <Notice tone="info" title="Contenido general">Los consejos de esta sección son generales y para jugar. Lo que necesita cada chico o chica lo define su odontóloga en la consulta. El juego no mide ni evalúa el cepillado real.</Notice>
       </section>
 
-      <ConfirmDialog open={confirmReset} title="¿Vaciar el álbum?" confirmLabel="Vaciar" onCancel={() => setConfirmReset(false)} onConfirm={() => { clearP(); setNewSticker(null); setConfirmReset(false); announce('Álbum vacío. ¡A juntar stickers de nuevo!'); }}>
-        Se quitan los stickers y el contador de cepillados de este dispositivo. No afecta turnos ni datos de la clínica.
+      <ConfirmDialog open={confirmReset} title="¿Vaciar el álbum?" confirmLabel="Vaciar" onCancel={() => setConfirmReset(false)} onConfirm={() => { clearP(); setNewSticker(null); setActive(null); setConfirmReset(false); announce('Álbum vacío. ¡A juntar stickers de nuevo!'); }}>
+        Se quitan los stickers, el récord del juego y el contador de cepillados de este dispositivo. No afecta turnos ni datos de la clínica.
       </ConfirmDialog>
+    </section>
+  );
+}
+
+// Ubicación de los 12 dientes del tablero (coordenadas del dibujo de la boca, 600 × 340).
+const SLOTS = Array.from({ length: GAME_TEETH }, (_, i) => {
+  const half = GAME_TEETH / 2;
+  const upper = i < half;
+  const k = upper ? i : i - half;
+  const x = 165 + k * 54;
+  const dx = (x - 300) / 135;
+  return { upper, n: k + 1, x, y: upper ? 114 + 12 * dx * dx : 262 - 12 * dx * dx };
+});
+
+function SmileGame({ best, round, onFinish }: { best: number; round: number; onFinish: (score: number, stars: number, mode: GameMode) => void }) {
+  const [mode, setMode] = useDraft<GameMode>('kids:game-mode', 'reloj');
+  const [g, act] = useReducer(gameReducer, mode, initialGame);
+  const finishRef = useRef(onFinish);
+  useEffect(() => { finishRef.current = onFinish; }, [onFinish]);
+  const board = useRef<HTMLDivElement>(null);
+
+  // El intervalo solo avanza el juego; los efectos reaccionan al estado nuevo.
+  useEffect(() => {
+    if (g.phase !== 'playing') return;
+    const id = setInterval(() => act({ type: 'tick' }), TICK_MS);
+    return () => clearInterval(id);
+  }, [g.phase]);
+
+  const prevPhase = useRef(g.phase);
+  useEffect(() => {
+    if (prevPhase.current === 'playing' && g.phase === 'done') {
+      const stars = starsFor(g.mode, g.score);
+      sound.play(stars > 0 ? 'fanfare' : 'success');
+      announce(`Fin del juego: limpiaste ${g.score} bichito${g.score === 1 ? '' : 's'}. ${stars} estrella${stars === 1 ? '' : 's'}.`);
+      finishRef.current(g.score, stars, g.mode);
+    }
+    prevPhase.current = g.phase;
+  }, [g.phase, g.mode, g.score]);
+
+  const playing = g.phase === 'playing';
+  const done = g.phase === 'done';
+  const stars = starsFor(g.mode, g.score);
+  const germs = Object.keys(g.germs).map(Number);
+  const pct = g.mode === 'reloj' ? ((GAME_TICKS - g.tick) / GAME_TICKS) * 100 : (g.score / CALM_GOAL) * 100;
+
+  const start = () => {
+    sound.play('tap');
+    act({ type: 'start', mode, round });
+    announce(mode === 'reloj' ? '¡A jugar! Tenés 30 segundos.' : `¡A jugar sin apuro! Limpiá ${CALM_GOAL} bichitos.`);
+  };
+  const brush = (i: number) => {
+    if (!(i in g.germs)) return;
+    sound.play('pop');
+    act({ type: 'brush', tooth: i });
+  };
+  // Flechas: izquierda/derecha recorren la fila, arriba/abajo cambian de fila.
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const btns = [...(board.current?.querySelectorAll<HTMLButtonElement>('.game-tooth') ?? [])];
+    const i = btns.indexOf(document.activeElement as HTMLButtonElement);
+    if (i < 0) return;
+    const half = GAME_TEETH / 2;
+    const to = e.key === 'ArrowRight' ? Math.min(GAME_TEETH - 1, i + 1) : e.key === 'ArrowLeft' ? Math.max(0, i - 1)
+      : e.key === 'ArrowDown' ? (i < half ? i + half : i) : e.key === 'ArrowUp' ? (i >= half ? i - half : i) : -1;
+    if (to < 0) return;
+    e.preventDefault();
+    btns[to]?.focus();
+  };
+
+  return (
+    <section className="game card" aria-labelledby="game-title">
+      <div className="stack game-side">
+        <p className="eyebrow">Juego · ¡A limpiar la sonrisa!</p>
+        <h2 id="game-title">Cazá los bichitos</h2>
+        <p style={{ margin: 0 }}>Aparecen bichitos sobre los dientes. Tocá cada diente con bichito para cepillarlo antes de que se escape. Con teclado: Tab para entrar, flechas para moverte y Enter para cepillar.</p>
+        <div className="field" style={{ maxWidth: 300 }}>
+          <label htmlFor="game-mode">Ritmo</label>
+          <select id="game-mode" value={mode} disabled={playing} onChange={(e) => setMode(e.target.value as GameMode)}>
+            <option value="reloj">Con reloj (30 segundos)</option>
+            <option value="tranquilo">Sin apuro (sin reloj)</option>
+          </select>
+        </div>
+        <dl className="game-hud">
+          <div><dt>Puntos</dt><dd className="tabular">{g.score}</dd></div>
+          <div><dt>{g.mode === 'reloj' ? 'Tiempo' : 'Meta'}</dt><dd className="tabular">{g.mode === 'reloj' ? `${secondsLeft(g)} s` : `${g.score} de ${CALM_GOAL}`}</dd></div>
+          <div><dt>Récord</dt><dd className="tabular">{best}</dd></div>
+        </dl>
+        <div className="game-time" aria-hidden="true"><span style={{ inlineSize: `${pct}%` }} /></div>
+        <div className="row wrap">
+          <Button variant={playing ? 'secondary' : 'primary'} icon={playing ? 'pause' : 'play'} onClick={playing ? () => act({ type: 'stop' }) : start}>{playing ? 'Terminar' : done ? 'Jugar otra vez' : 'Empezar a jugar'}</Button>
+        </div>
+      </div>
+      <div className="game-stage">
+        <div className={`game-board ${playing ? 'is-playing' : ''}`} ref={board} role="group" aria-label="Boca del juego: 6 dientes arriba y 6 abajo" onKeyDown={onKey}>
+          <GameMouth />
+          {SLOTS.map((sl, i) => {
+            const dirty = i in g.germs;
+            return (
+              <button key={i} type="button" className={`game-tooth ${dirty ? 'is-dirty' : ''}`} disabled={!playing}
+                style={{ left: `${(sl.x / 600) * 100}%`, top: `${(sl.y / 340) * 100}%` }}
+                aria-label={`Diente ${sl.n} de ${sl.upper ? 'arriba' : 'abajo'}${dirty ? ': ¡tiene un bichito!' : ''}`} onClick={() => brush(i)}>
+                <KidTooth lower={!sl.upper} shine={g.lastClean === i} />
+                {dirty && <span className="germ-wrap"><Germ variant={g.germs[i] % 3} /></span>}
+                {g.lastClean === i && <span key={g.cleans} className="clean-fx" aria-hidden="true" />}
+              </button>
+            );
+          })}
+          {!playing && (
+            <div className="game-overlay">
+              {done ? (
+                <div className="game-result">
+                  <p className="game-stars" aria-label={`${stars} de 3 estrellas`}>{[0, 1, 2].map((k) => <StarArt key={k} filled={k < stars} />)}</p>
+                  <p className="game-result-title">{stars === 3 ? '¡Sonrisa brillante!' : stars === 2 ? '¡Muy bien!' : stars === 1 ? '¡Buen comienzo!' : '¡Se escaparon todos!'}</p>
+                  <p className="small" style={{ margin: 0 }}>Limpiaste <span className="tabular">{g.score}</span> bichito{g.score === 1 ? '' : 's'}{g.mode === 'reloj' && g.escaped > 0 ? ` · se escaparon ${g.escaped}` : ''}.</p>
+                </div>
+              ) : <p className="game-result-title">¿Listo? Tocá “Empezar a jugar”.</p>}
+            </div>
+          )}
+        </div>
+        <p className="sr-only" aria-live="polite">{playing ? (germs.length ? `Bichitos en: ${germs.map((i) => `diente ${SLOTS[i].n} de ${SLOTS[i].upper ? 'arriba' : 'abajo'}`).join(', ')}` : 'Sin bichitos por ahora') : ''}</p>
+        <div className={`game-coach ${done && stars > 0 ? 'is-happy' : ''}`} aria-hidden="true"><ToothCharacter who="coco" mood={done && stars > 0 ? 'feliz' : 'valiente'} size={96} /></div>
+      </div>
     </section>
   );
 }
@@ -218,9 +376,9 @@ function BrushTimer({ onDone, brushed }: { onDone: () => void; brushed: number }
       </div>
       <div className="brush-visual">
         <svg viewBox="0 0 180 180" width="180" height="180" className="brush-ring" role="img" aria-label={finished ? 'Terminado' : `Quedan ${left} segundos`}>
-          <circle cx="90" cy="90" r={r} fill="none" stroke="#e9deca" strokeWidth="12" />
-          <circle cx="90" cy="90" r={r} fill="none" stroke="#2f8f86" strokeWidth="12" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ * (1 - elapsed / total)} transform="rotate(-90 90 90)" />
-          <text x="90" y="98" textAnchor="middle" fontFamily="Manrope, sans-serif" fontWeight="800" fontSize="30" fill="#173c3a">{`${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`}</text>
+          <circle cx="90" cy="90" r={r} fill="none" style={{ stroke: 'var(--line)' }} strokeWidth="12" />
+          <circle cx="90" cy="90" r={r} fill="none" style={{ stroke: 'var(--primary-fill)' }} strokeWidth="12" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ * (1 - elapsed / total)} transform="rotate(-90 90 90)" />
+          <text x="90" y="98" textAnchor="middle" fontFamily="Manrope, sans-serif" fontWeight="800" fontSize="30" style={{ fill: 'var(--ink)' }}>{`${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`}</text>
         </svg>
         <div className={`brush-char ${running ? 'is-brushing' : ''}`}><ToothCharacter who="coco" mood={finished ? 'feliz' : 'valiente'} size={110} /></div>
         <ol className="zones" aria-label="Zonas de la boca">
