@@ -123,7 +123,7 @@ export type Command = Base & (
   | { type: 'estimateCreate'; personId: string; professionalId: string }
   | { type: 'estimateAddLine'; estimateId: string; description: string; tooth: number | null; qty: number; unitMinor: number }
   | { type: 'estimateRemoveLine'; lineId: string }
-  | { type: 'estimateTransition'; estimateId: string; to: 'emitido' | 'aceptado' | 'rechazado' | 'vencido' }
+  | { type: 'estimateTransition'; estimateId: string; to: 'emitido' | 'aceptado' | 'rechazado' | 'vencido'; actorId?: string }
   | { type: 'estimateFollowUp'; estimateId: string }
   | { type: 'ledgerRecord'; personId: string; estimateId: string | null; amountMinor: number; note: string }
   | { type: 'ledgerReverse'; entryId: string }
@@ -634,11 +634,22 @@ const estimateTransition: Handler<'estimateTransition'> = (d, c) => {
   if (c.to === 'emitido' && !d.estimateLines.some((l) => l.estimateId === e.id)) fail('SIN_LINEAS', 'Agregá al menos una línea antes de emitir.');
   if (c.to === 'vencido' && e.validUntil && toMs(e.validUntil) > toMs(d.clock)) fail('VIGENTE', 'Todavía está vigente según el reloj de muestra.');
   if (c.to === 'aceptado' && e.validUntil && toMs(e.validUntil) <= toMs(d.clock)) fail('VENCIDO', 'La vigencia terminó; no se puede aceptar.');
+  // Decide la persona adulta o, si el presupuesto es de un menor, su adulto responsable. Un menor nunca acepta ni rechaza.
+  let actor: string | null = null;
+  if (c.to === 'aceptado' || c.to === 'rechazado') {
+    const patient = getPerson(d, e.personId);
+    actor = c.actorId ?? patient.id;
+    const who = getPerson(d, actor);
+    if (who.kind === 'menor') fail('MENOR_NO_DECIDE', `Un menor no acepta ni rechaza presupuestos: decide su adulto responsable.`);
+    const responsible = d.responsibleLinks.some((l) => l.dependentId === patient.id && l.responsibleId === actor);
+    if (actor !== patient.id && !responsible) fail('NO_RESPONSABLE', `${who.firstName} ${who.lastName} no es responsable de ${patient.firstName} ${patient.lastName}.`);
+  }
   const from = e.status;
   e.status = c.to;
   if (c.to === 'emitido') { e.issuedAt = d.clock; e.validUntil = addMinutes(d.clock, 15 * 1440); } else e.decidedAt = d.clock;
+  if (actor) e.decidedBy = actor;
   for (const t of d.tasks) if (t.estimateId === e.id && t.kind === 'seguimiento_presupuesto' && t.status !== 'resuelta' && (c.to === 'aceptado' || c.to === 'rechazado')) { t.status = 'resuelta'; t.note = `Presupuesto ${c.to}.`; }
-  audit(d, c.commandId, 'presupuesto_estado', 'Estimate', e.id, `${from} → ${c.to}${c.to === 'aceptado' ? ' (no genera cobro ni tratamiento realizado)' : ''}`);
+  audit(d, c.commandId, 'presupuesto_estado', 'Estimate', e.id, `${from} → ${c.to}${actor ? ` · decide ${actor}` : ''}${c.to === 'aceptado' ? ' (no genera cobro ni tratamiento realizado)' : ''}`);
   return ok(c.to === 'aceptado' ? 'Presupuesto aceptado (simulado). No es un cobro ni un tratamiento realizado.' : `Presupuesto ${c.to}.`);
 };
 const estimateFollowUp: Handler<'estimateFollowUp'> = (d, c) => {

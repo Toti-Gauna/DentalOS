@@ -16,7 +16,7 @@ describe('seed dentalos-v1', () => {
     expect(a.locations).toHaveLength(2); expect(a.professionals).toHaveLength(4); expect(a.chairs).toHaveLength(3);
     expect(a.serviceTypes).toHaveLength(6); expect(a.persons).toHaveLength(12); expect(a.appointments).toHaveLength(18);
     expect(a.requests).toHaveLength(5); expect(a.conversations).toHaveLength(3); expect(a.careEpisodes).toHaveLength(2);
-    expect(a.estimates).toHaveLength(3); expect(a.ledger).toHaveLength(10);
+    expect(a.estimates).toHaveLength(4); expect(a.ledger).toHaveLength(10);
     expect(a.responsibleLinks.filter((l) => l.responsibleId === 'P-003')).toHaveLength(2);
     expect(a.clock).toBe('2026-10-19T09:00:00-03:00');
   });
@@ -224,6 +224,8 @@ describe('recordatorios A05 y reloj', () => {
   });
 });
 
+const code = (r: { result: { ok: boolean; code?: string } }) => (r.result.ok ? 'OK' : r.result.code);
+
 describe('presupuestos y caja ficticia', () => {
   it('S43: aceptar no crea movimiento; importes negativos y duplicados se rechazan', () => {
     let s = createSeedState();
@@ -232,9 +234,32 @@ describe('presupuestos y caja ficticia', () => {
     expect(run(s, { type: 'estimateAddLine', estimateId: 'EST-003', description: 'Pieza', tooth: 99, qty: 1, unitMinor: 5 }).result.ok).toBe(false);
     const ledgerBefore = s.ledger.length; const net = ledgerNet(s);
     s = run(s, { type: 'estimateTransition', estimateId: 'EST-003', to: 'emitido' }).state;
-    s = run(s, { type: 'estimateTransition', estimateId: 'EST-003', to: 'aceptado' }).state;
+    s = run(s, { type: 'estimateTransition', estimateId: 'EST-003', to: 'aceptado', actorId: 'P-006' }).state;
     expect(s.estimates.find((e) => e.id === 'EST-003')!.status).toBe('aceptado');
     expect(s.ledger.length).toBe(ledgerBefore); expect(ledgerNet(s)).toBe(net);
+  });
+  it('S71: un menor no acepta ni rechaza; decide su responsable y queda registrado quién', () => {
+    let s = createSeedState();
+    // EST-004 es de Tomás (P-004, menor); su responsable es Carla (P-003).
+    const noActor = run(s, { type: 'estimateTransition', estimateId: 'EST-004', to: 'aceptado' });
+    expect(noActor.result.ok).toBe(false);
+    expect(noActor.result.ok === false && noActor.result.code).toBe('MENOR_NO_DECIDE');
+    expect(code(run(s, { type: 'estimateTransition', estimateId: 'EST-004', to: 'rechazado', actorId: 'P-004' }))).toBe('MENOR_NO_DECIDE');
+    expect(code(run(s, { type: 'estimateTransition', estimateId: 'EST-004', to: 'aceptado', actorId: 'P-001' }))).toBe('NO_RESPONSABLE');
+    const ok = run(s, { type: 'estimateTransition', estimateId: 'EST-004', to: 'aceptado', actorId: 'P-003' });
+    expect(ok.result.ok).toBe(true);
+    s = ok.state;
+    const e = s.estimates.find((x) => x.id === 'EST-004')!;
+    expect(e.status).toBe('aceptado');
+    expect(e.decidedBy).toBe('P-003');
+    expect(s.ledger.some((l) => l.estimateId === 'EST-004')).toBe(false); // aceptar no es pagar
+  });
+  it('S72: un adulto decide su propio presupuesto; otro adulto sin vínculo no puede', () => {
+    const s = createSeedState();
+    expect(code(run(s, { type: 'estimateTransition', estimateId: 'EST-001', to: 'aceptado', actorId: 'P-002' }))).toBe('NO_RESPONSABLE');
+    const ok = run(s, { type: 'estimateTransition', estimateId: 'EST-001', to: 'aceptado' });
+    expect(ok.result.ok).toBe(true);
+    expect(ok.state.estimates.find((x) => x.id === 'EST-001')!.decidedBy).toBe('P-006');
   });
   it('S44: registrar y revertir reconcilia; reintento no duplica', () => {
     let s = createSeedState();

@@ -3,7 +3,7 @@
 // así cada partida es distinta pero reproducible (y testeable) sin Math.random.
 
 export type GameMode = 'reloj' | 'tranquilo';
-export type GamePhase = 'idle' | 'playing' | 'done';
+export type GamePhase = 'idle' | 'playing' | 'paused' | 'done';
 
 export const GAME_TEETH = 12;
 export const TICK_MS = 500;
@@ -33,6 +33,8 @@ export type GameAction =
   | { type: 'start'; mode: GameMode; round: number }
   | { type: 'tick' }
   | { type: 'brush'; tooth: number }
+  | { type: 'pause' }
+  | { type: 'resume' }
   | { type: 'stop' };
 
 export const initialGame = (mode: GameMode = 'reloj'): GameState => ({ phase: 'idle', mode, tick: 0, germs: {}, score: 0, escaped: 0, seed: 1, lastClean: null, cleans: 0 });
@@ -57,7 +59,12 @@ export function gameReducer(st: GameState, a: GameAction): GameState {
       return spawn(fresh);
     }
     case 'stop':
-      return st.phase === 'playing' ? { ...st, phase: 'done', germs: {} } : st;
+      return st.phase === 'playing' || st.phase === 'paused' ? { ...st, phase: 'done', germs: {} } : st;
+    // En pausa el reloj no corre y los bichitos no se escapan: se retoma igual que estaba.
+    case 'pause':
+      return st.phase === 'playing' ? { ...st, phase: 'paused' } : st;
+    case 'resume':
+      return st.phase === 'paused' ? { ...st, phase: 'playing' } : st;
     case 'tick': {
       if (st.phase !== 'playing') return st;
       const tick = st.tick + 1;

@@ -119,6 +119,8 @@ export type EstimateStatus = 'borrador' | 'emitido' | 'aceptado' | 'rechazado' |
 export interface Estimate {
   id: string; personId: string; professionalId: string; status: EstimateStatus; validUntil: Iso | null;
   issuedAt: Iso | null; decidedAt: Iso | null; createdAt: Iso; coverageNote: string;
+  /** Quién decidió (aceptó o rechazó): la persona adulta o su responsable si es menor. Ausente en datos viejos. */
+  decidedBy?: string | null;
 }
 export interface EstimateLine { id: string; estimateId: string; description: string; tooth: number | null; qty: number; unitMinor: number }
 export interface LedgerEntry {

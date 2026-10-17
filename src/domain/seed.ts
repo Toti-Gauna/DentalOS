@@ -98,7 +98,7 @@ export function createSeedState(): DemoState {
     preset: 'inicial',
     clock: INITIAL_CLOCK,
     revision: 0,
-    seq: { P: 12, A: 18, R: 5, C: 3, M: 7, CS: 0, O: outbox.length, T: 3, W: 2, OF: 0, IC: 3, TC: 16, EST: 3, EL: 5, L: 10, EV: 1, B: 3, RL: 2 },
+    seq: { P: 12, A: 18, R: 5, C: 3, M: 7, CS: 0, O: outbox.length, T: 3, W: 2, OF: 0, IC: 3, TC: 16, EST: 4, EL: 7, L: 10, EV: 1, B: 3, RL: 3 },
     settings: { failNextCommits: 0, reminderQuota: 20, changeWindowHours: 12, minLeadHours: 2, horizonDays: 30, holdMinutes: 10, reminderLeadHours: 24 },
     clinic: { id: 'CL-1', name: 'Clínica Brisa', tagline: 'Cada consulta tiene un próximo paso.' },
     locations: [
@@ -153,6 +153,7 @@ export function createSeedState(): DemoState {
     responsibleLinks: [
       { id: 'RL-001', responsibleId: 'P-003', dependentId: 'P-004', relation: 'Madre (muestra)' },
       { id: 'RL-002', responsibleId: 'P-003', dependentId: 'P-005', relation: 'Madre (muestra)' },
+      { id: 'RL-003', responsibleId: 'P-006', dependentId: 'P-009', relation: 'Padre (muestra)' },
     ],
     appointments,
     requests: [
@@ -241,6 +242,7 @@ export function createSeedState(): DemoState {
     estimates: [
       { id: 'EST-001', personId: 'P-006', professionalId: 'PR-01', status: 'emitido', validUntil: '2026-10-26T18:00:00-03:00', issuedAt: '2026-10-12T09:30:00-03:00', decidedAt: null, createdAt: '2026-10-12T09:25:00-03:00', coverageNote: 'Cobertura a verificar por recepción (muestra).' },
       { id: 'EST-002', personId: 'P-008', professionalId: 'PR-01', status: 'aceptado', validUntil: '2026-10-31T18:00:00-03:00', issuedAt: '2026-10-01T11:00:00-03:00', decidedAt: '2026-10-03T10:00:00-03:00', createdAt: '2026-10-01T10:50:00-03:00', coverageNote: 'Sin cobertura declarada (muestra).' },
+      { id: 'EST-004', personId: 'P-004', professionalId: 'PR-02', status: 'emitido', validUntil: '2026-11-02T18:00:00-03:00', issuedAt: '2026-10-16T12:00:00-03:00', decidedAt: null, createdAt: '2026-10-16T11:40:00-03:00', coverageNote: 'Cobertura a verificar por recepción (muestra).' },
       { id: 'EST-003', personId: 'P-009', professionalId: 'PR-03', status: 'borrador', validUntil: null, issuedAt: null, decidedAt: null, createdAt: '2026-10-15T11:10:00-03:00', coverageNote: 'Cobertura a verificar.' },
     ],
     estimateLines: [
@@ -248,6 +250,8 @@ export function createSeedState(): DemoState {
       { id: 'EL-002', estimateId: 'EST-001', description: 'Consulta de evaluación', tooth: null, qty: 1, unitMinor: 1_500_000 },
       { id: 'EL-003', estimateId: 'EST-002', description: 'Tratamiento de conducto pieza 46', tooth: 46, qty: 1, unitMinor: 9_500_000 },
       { id: 'EL-004', estimateId: 'EST-002', description: 'Corona provisoria pieza 46', tooth: 46, qty: 1, unitMinor: 2_500_000 },
+      { id: 'EL-006', estimateId: 'EST-004', description: 'Selladores en molares (muestra)', tooth: null, qty: 4, unitMinor: 900_000 },
+      { id: 'EL-007', estimateId: 'EST-004', description: 'Control y topicación (muestra)', tooth: null, qty: 1, unitMinor: 1_200_000 },
       { id: 'EL-005', estimateId: 'EST-003', description: 'Aparatología de contención (muestra)', tooth: null, qty: 1, unitMinor: 6_000_000 },
     ],
     ledger: [

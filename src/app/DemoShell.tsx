@@ -7,9 +7,10 @@ import { Button, ConfirmDialog, Icon, announce, useNativeDialog } from '../ui/ki
 import { SpotArt } from '../ui/art/editorial';
 import { sound } from '../ui/sound';
 import { navigate } from './router';
+import { JOURNEYS, type JourneyStep } from './journeys';
 import { ROLES, roleById } from './roles';
 import { store, useStore } from './store';
-import { chooseRole, clearDrafts, resetUi, setRole, setSoundPref, useUi } from './ui-state';
+import { chooseRole, clearDrafts, resetUi, setActingPerson, setRole, setSoundPref, useUi } from './ui-state';
 
 /** Indicador permanente y compacto: dice que es una demo y dónde se guarda; el detalle se abre a pedido. */
 export function DemoBadge() {
@@ -79,6 +80,12 @@ export function DemoDock() {
   const [confirm, setConfirm] = useState<null | 'preset' | 'reset'>(null);
   const hide = () => document.getElementById('demo-dock-panel')?.hidePopover?.();
   const pick = PRESETS.find((p) => p.id === preset)!;
+  const go = (st: JourneyStep) => {
+    setRole(st.role); chooseRole(st.role);
+    if (st.actingPersonId) setActingPerson(st.actingPersonId);
+    hide(); navigate(st.to);
+    announce(`Vista ${roleById(st.role).label}: ${st.label}.`);
+  };
   return (
     <div className="demo-dock">
       <button type="button" className="demo-dock-btn" popoverTarget="demo-dock-panel" aria-label={`Controles de la demo · vista ${roleById(ui.role).label}`}>
@@ -93,6 +100,27 @@ export function DemoDock() {
         <section aria-labelledby="dock-role">
           <h3 id="dock-role">Vista <small className="muted">· no es inicio de sesión</small></h3>
           <RoleList current={ui.role} name="dock-role" onPick={(r) => { setRole(r); chooseRole(r); hide(); navigate(roleById(r).home); announce(`Vista ${roleById(r).label}: mismos datos y preferencias.`); }} />
+        </section>
+
+        <section aria-labelledby="dock-journeys">
+          <h3 id="dock-journeys">Recorridos <small className="muted">· entre vistas</small></h3>
+          <div className="journeys">
+            {JOURNEYS.map((j) => (
+              <details key={j.id} className="journey" name="dock-journey">
+                <summary><strong>{j.title}</strong></summary>
+                <p className="small muted">{j.summary}</p>
+                <ol className="journey-steps">
+                  {j.steps.map((st, i) => (
+                    <li key={i}>
+                      <button type="button" className="journey-step" data-journey={`${j.id}-${i + 1}`} onClick={() => go(st)}>
+                        <span className="journey-role">{roleById(st.role).label}</span> <span>{st.label}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </details>
+            ))}
+          </div>
         </section>
 
         <section aria-labelledby="dock-case">

@@ -6,10 +6,11 @@ import { GameMouth, Germ, KidTooth, StarArt } from '../../ui/art/kids';
 import { ToothArt } from '../../ui/art/teeth';
 import { Button, ConfirmDialog, Icon, Notice, announce } from '../../ui/kit';
 import { sound } from '../../ui/sound';
+import { MemoryGame } from './MemoryGame';
 import { CALM_GOAL, GAME_TEETH, GAME_TICKS, TICK_MS, gameReducer, initialGame, secondsLeft, starsFor, type GameMode } from './kidsGame';
 
-interface KidsProgress { stickers: string[]; brushed: number; met: Character[]; games: number; cleaned: number; best: number }
-const EMPTY: KidsProgress = { stickers: [], brushed: 0, met: [], games: 0, cleaned: 0, best: 0 };
+interface KidsProgress { stickers: string[]; brushed: number; met: Character[]; games: number; cleaned: number; best: number; memories: number }
+const EMPTY: KidsProgress = { stickers: [], brushed: 0, met: [], games: 0, cleaned: 0, best: 0, memories: 0 };
 
 const STICKERS: { id: string; label: string; how: string }[] = [
   { id: 'equipo', label: 'Equipo completo', how: 'Saludá a los Brisitos' },
@@ -17,6 +18,7 @@ const STICKERS: { id: string; label: string; how: string }[] = [
   { id: 'juego', label: 'Cazabichitos', how: 'Terminá una partida de ¡A limpiar la sonrisa!' },
   { id: 'juego-3', label: 'Sonrisa brillante', how: 'Ganá 3 estrellas jugando con reloj' },
   { id: 'juego-30', label: 'Superlimpieza', how: 'Limpiá 30 bichitos en total' },
+  { id: 'memoria', label: 'Buena memoria', how: 'Encontrá todas las parejas de la memoria' },
   { id: 'cuento', label: 'Cuento leído', how: 'Terminá el cuento de la primera visita' },
   { id: 'cepillado', label: 'Primer cepillado', how: 'Completá un cepillado con el reloj' },
   { id: 'cepillado-3', label: 'Diente de oro', how: 'Completá tres cepillados' },
@@ -40,6 +42,7 @@ function StickerArt({ id, earned }: { id: string; earned: boolean }) {
     : id === 'juego' ? <Germ variant={1} />
     : id === 'juego-3' ? <StarArt filled />
     : id === 'juego-30' ? <ToothCharacter who="coco" mood="feliz" size={52} />
+    : id === 'memoria' ? <ToothCharacter who="lia" mood="guino" size={52} />
     : id === 'cuento' ? <ToothCharacter who="ivo" mood="sorpresa" size={52} />
     : id === 'cepillado' ? <ToothCharacter who="coco" mood="valiente" size={52} />
     : <ToothArt kind="molar" state="corona_oro" width={40} />;
@@ -100,6 +103,12 @@ export function Kids() {
     earn([...(score > 0 ? ['juego'] : []), ...(mode === 'reloj' && stars === 3 ? ['juego-3'] : []), ...(next.cleaned >= 30 ? ['juego-30'] : [])], next);
   };
 
+  // La memoria da un sticker cosmético al completarla; no hay premios por puntaje ni por nada fuera del juego.
+  const finishMemory = (won: boolean) => {
+    const next = { ...p, memories: p.memories + 1 };
+    earn(won ? ['memoria'] : [], next);
+  };
+
   const talking = active ? CHARACTERS.find((c) => c.id === active) : null;
   const tail = active ? CHARACTERS.findIndex((c) => c.id === active) : -1;
   const earnedCount = STICKERS.filter((s) => p.stickers.includes(s.id)).length;
@@ -110,9 +119,10 @@ export function Kids() {
         <div className="kids-hero-copy">
           <p className="eyebrow">Brisa Chicos · para chicas y chicos (y sus familias)</p>
           <h1 tabIndex={-1} data-page-title>Sonrisas valientes</h1>
-          <p className="lede">Conocé a los Brisitos, cazá bichitos en el juego, leé cómo es la primera visita y cepillate dos minutos con nosotros. Todo es para jugar y aprender: no reemplaza lo que te diga tu odontóloga.</p>
+          <p className="lede">Conocé a los Brisitos, cazá bichitos, jugá a la memoria, leé cómo es la primera visita y cepillate dos minutos con nosotros. Todo es para jugar y aprender: no reemplaza lo que te diga tu odontóloga.</p>
           <div className="row wrap">
             <Button variant="primary" size="lg" icon="sparkle" onClick={() => goTo('game-title')}>Jugar a limpiar la sonrisa</Button>
+            <Button size="lg" icon="grid" onClick={() => goTo('memory-title')}>Jugar a la memoria</Button>
             <Button size="lg" icon="clock" onClick={() => goTo('brush-title')}>Cepillarme con el reloj</Button>
             <Button size="lg" variant="ghost" icon="book" onClick={() => goTo('story-title')}>Leer el cuento</Button>
           </div>
@@ -143,6 +153,8 @@ export function Kids() {
       </div>
 
       <SmileGame best={p.best} round={p.games} onFinish={finishGame} />
+
+      <MemoryGame round={p.memories} onFinish={finishMemory} />
 
       <BrushTimer onDone={() => { const brushed = p.brushed + 1; earn(brushed >= 3 ? ['cepillado', 'cepillado-3'] : ['cepillado'], { ...p, brushed }); }} brushed={p.brushed} />
 
@@ -189,11 +201,11 @@ export function Kids() {
           <Button variant="primary" icon="calendar" onClick={() => navigate('/reservar')}>Pedir un turno</Button>
           <Button icon="list" onClick={() => navigate('/mis-turnos')}>Ver turnos de la familia</Button>
         </div>
-        <Notice tone="info" title="Contenido general">Los consejos de esta sección son generales y para jugar. Lo que necesita cada chico o chica lo define su odontóloga en la consulta. El juego no mide ni evalúa el cepillado real.</Notice>
+        <Notice tone="info" title="Contenido general">Los consejos de esta sección son generales y para jugar. Lo que necesita cada chico o chica lo define su odontóloga en la consulta. Los juegos no miden ni evalúan el cepillado real ni la salud de la boca, y jugar no reemplaza el control. El ritmo de cada juego y vaciar el álbum los decide la persona adulta que acompaña.</Notice>
       </section>
 
       <ConfirmDialog open={confirmReset} title="¿Vaciar el álbum?" confirmLabel="Vaciar" onCancel={() => setConfirmReset(false)} onConfirm={() => { clearP(); setNewSticker(null); setActive(null); setConfirmReset(false); announce('Álbum vacío. ¡A juntar stickers de nuevo!'); }}>
-        Se quitan los stickers, el récord del juego y el contador de cepillados de este dispositivo. No afecta turnos ni datos de la clínica.
+        Se quitan los stickers, el récord del juego, las partidas de memoria y el contador de cepillados de este dispositivo. No afecta turnos ni datos de la clínica.
       </ConfirmDialog>
     </section>
   );
@@ -225,7 +237,7 @@ function SmileGame({ best, round, onFinish }: { best: number; round: number; onF
 
   const prevPhase = useRef(g.phase);
   useEffect(() => {
-    if (prevPhase.current === 'playing' && g.phase === 'done') {
+    if ((prevPhase.current === 'playing' || prevPhase.current === 'paused') && g.phase === 'done') {
       const stars = starsFor(g.mode, g.score);
       sound.play(stars > 0 ? 'fanfare' : 'success');
       announce(`Fin del juego: limpiaste ${g.score} bichito${g.score === 1 ? '' : 's'}. ${stars} estrella${stars === 1 ? '' : 's'}.`);
@@ -235,6 +247,8 @@ function SmileGame({ best, round, onFinish }: { best: number; round: number; onF
   }, [g.phase, g.mode, g.score]);
 
   const playing = g.phase === 'playing';
+  const paused = g.phase === 'paused';
+  const active = playing || paused;
   const done = g.phase === 'done';
   const stars = starsFor(g.mode, g.score);
   const germs = Object.keys(g.germs).map(Number);
@@ -271,7 +285,7 @@ function SmileGame({ best, round, onFinish }: { best: number; round: number; onF
         <p style={{ margin: 0 }}>Aparecen bichitos sobre los dientes. Tocá cada diente con bichito para cepillarlo antes de que se escape. Con teclado: Tab para entrar, flechas para moverte y Enter para cepillar.</p>
         <div className="field" style={{ maxWidth: 300 }}>
           <label htmlFor="game-mode">Ritmo</label>
-          <select id="game-mode" value={mode} disabled={playing} onChange={(e) => setMode(e.target.value as GameMode)}>
+          <select id="game-mode" value={mode} disabled={active} onChange={(e) => setMode(e.target.value as GameMode)}>
             <option value="reloj">Con reloj (30 segundos)</option>
             <option value="tranquilo">Sin apuro (sin reloj)</option>
           </select>
@@ -283,7 +297,8 @@ function SmileGame({ best, round, onFinish }: { best: number; round: number; onF
         </dl>
         <div className="game-time" aria-hidden="true"><span style={{ inlineSize: `${pct}%` }} /></div>
         <div className="row wrap">
-          <Button variant={playing ? 'secondary' : 'primary'} icon={playing ? 'pause' : 'play'} onClick={playing ? () => act({ type: 'stop' }) : start}>{playing ? 'Terminar' : done ? 'Jugar otra vez' : 'Empezar a jugar'}</Button>
+          <Button variant={active ? 'secondary' : 'primary'} icon={active ? 'x' : 'play'} onClick={active ? () => act({ type: 'stop' }) : start}>{active ? 'Terminar' : done ? 'Jugar otra vez' : 'Empezar a jugar'}</Button>
+          {active && <Button variant="ghost" icon={paused ? 'play' : 'pause'} aria-pressed={paused} onClick={() => { act({ type: paused ? 'resume' : 'pause' }); announce(paused ? 'Seguimos jugando.' : 'Juego en pausa: el reloj se detuvo.'); }}>{paused ? 'Seguir' : 'Pausar'}</Button>}
         </div>
       </div>
       <div className="game-stage">
@@ -309,7 +324,8 @@ function SmileGame({ best, round, onFinish }: { best: number; round: number; onF
                   <p className="game-result-title">{stars === 3 ? '¡Sonrisa brillante!' : stars === 2 ? '¡Muy bien!' : stars === 1 ? '¡Buen comienzo!' : '¡Se escaparon todos!'}</p>
                   <p className="small" style={{ margin: 0 }}>Limpiaste <span className="tabular">{g.score}</span> bichito{g.score === 1 ? '' : 's'}{g.mode === 'reloj' && g.escaped > 0 ? ` · se escaparon ${g.escaped}` : ''}.</p>
                 </div>
-              ) : <p className="game-result-title">¿Listo? Tocá “Empezar a jugar”.</p>}
+              ) : paused ? <p className="game-result-title">En pausa. Tocá “Seguir” cuando quieras.</p>
+                : <p className="game-result-title">¿Listo? Tocá “Empezar a jugar”.</p>}
             </div>
           )}
         </div>

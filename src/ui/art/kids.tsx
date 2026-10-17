@@ -70,3 +70,15 @@ export function StarArt({ filled }: { filled: boolean }) {
     </svg>
   );
 }
+
+/** Cepillo de dientes de la memoria (lote 5): plano, sin IDs internos para poder repetirlo en el tablero. */
+export function BrushArt() {
+  return (
+    <svg className="brush-art" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <rect x="8" y="40" width="40" height="9" rx="4.5" transform="rotate(-35 28 44)" fill="#5aa79a" stroke="#2f6f64" strokeWidth="2" />
+      <rect x="36" y="14" width="18" height="10" rx="3" transform="rotate(-35 45 19)" fill="#fff" stroke="#2f6f64" strokeWidth="2" />
+      <path d="M38 12 L41 8 M43 9 L46 5 M48 6 L51 2" stroke="#7fb8e0" strokeWidth="3" strokeLinecap="round" transform="translate(-2 4)" />
+      <circle cx="18" cy="50" r="2" fill="#fff" opacity=".7" />
+    </svg>
+  );
+}

@@ -53,8 +53,8 @@ El adulto responsable gestiona → espacio infantil opcional → turno.
 | 1 | Responsable ve los turnos de dependientes (Carla P-003 → Tomás P-004, Lola P-005) | `#/mis-turnos`, `#/admin/personas/P-003` | existe (S40) |
 | 2 | Pide turno para el dependiente | `book` con `personId` | existe |
 | 3 | Espacio infantil opcional | `#/chicos` (escena, juego, reloj, cuento, álbum) | existe |
-| 4 | Segunda actividad infantil distinta | **[nuevo]** R-KID-02 | falta |
-| 5 | Presupuesto: lo acepta el responsable, nunca el menor | `estimateTransition` | existe; regla explícita **[nuevo]** R-FLW-02 |
+| 4 | Segunda actividad infantil distinta | `#/chicos` · “Memoria de los Brisitos” (`kidsMemory.ts`, `MemoryGame.tsx`) | existe desde L5 (S74–S76) |
+| 5 | Presupuesto: lo ve y lo acepta el responsable, nunca el menor | `#/mis-turnos` (`PatientEstimates`) y `#/admin/presupuestos` · `estimateTransition` con `actorId` | existe desde L5 (S67–S69, S71, S72) |
 
 ## 5 · Dirección
 Capacidad/seguimiento → campaña administrativa → economía → aprobación.
@@ -69,3 +69,28 @@ Capacidad/seguimiento → campaña administrativa → economía → aprobación.
 | 6 | Resultado simulado → reserva | **[nuevo]** R-SCN-02 (caso 8) | falta |
 
 Todo con datos ficticios; ninguna comunicación, cobro ni medición real.
+
+## Lote 5 · brechas cerradas y recorridos entre vistas
+
+Brechas detectadas al recorrer los 15 módulos, antes de tocarlos:
+
+| Brecha | Dónde | Cierre en L5 |
+| --- | --- | --- |
+| El portal no mostraba presupuestos: solo recepción los veía | `#/mis-turnos` | `PatientEstimates`: ver líneas y total, “Tengo una consulta” (`estimateFollowUp`), aceptar o no aceptar con confirmación; saldo y pagos simulados aparte de la aceptación |
+| La regla “un menor no acepta” era implícita (siempre decidía la propia persona) | `estimateTransition` | `actorId` obligatorio de hecho: menor → `MENOR_NO_DECIDE`, adulto ajeno → `NO_RESPONSABLE`; se guarda `decidedBy` y queda en la auditoría |
+| EST-003 era de un menor sin responsable registrado | seed | Vínculo de muestra RL-003 (Ramiro P-006 → Diego P-009) y presupuesto EST-004 de Tomás (P-004) emitido para recorrerlo |
+| El juego de bichitos no se podía pausar | `#/chicos` | Pausar / Seguir: el reloj y el tablero se detienen; “Terminar” sigue disponible |
+| Una sola actividad de juego | `#/chicos` | “Memoria de los Brisitos” |
+| Saltar entre vistas exigía saber rutas y personas | botonera | “Recorridos” con pasos que fijan vista, persona del portal y ruta |
+
+Las brechas restantes ya tienen lote: QR y código (L7), campañas y economía (L6), escenas guiadas (L9), motion (L8).
+
+Recorridos de la botonera (`src/app/journeys.ts`). Solo navegan: no inician sesión ni cambian datos.
+
+| Recorrido | Pasos (vista → ruta) | Escenario |
+| --- | --- | --- |
+| Un turno de punta a punta | Visitante → `#/reservar` · Recepción → `#/admin` · Paciente (P-001) → `#/mis-turnos` | S67 |
+| Presupuesto de un menor | Recepción → `#/admin/presupuestos` · Paciente (Carla P-003) → `#/mis-turnos` · Recepción → `#/admin/presupuestos` | S68, S69 |
+| Un mensaje que llega a recepción | Visitante → `#/whatsapp` · Recepción → `#/admin/bandeja` | S70 |
+| Brisa Chicos en familia | Paciente (Carla P-003) → `#/mis-turnos` · Paciente → `#/chicos` | S70 |
+

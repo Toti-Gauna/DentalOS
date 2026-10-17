@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { dispatch, useDemo } from '../../app/store';
 import { useDraft } from '../../app/ui-state';
-import { byId, estimateTotals, ledgerNet, money, personLabel, personName, proName } from '../../domain/selectors';
+import { byId, decidersFor, estimateTotals, ledgerNet, money, personLabel, personName, proName } from '../../domain/selectors';
 import { fmtShort } from '../../domain/time';
 import { Button, ConfirmDialog, EmptyState, Field, Kpi, Notice, PageHeader, StatusBadge, announce, useResult } from '../../ui/kit';
 import { MoneySummary } from '../../ui/components';
@@ -72,7 +72,11 @@ function EstimateDetail({ id, show }: { id: string; show: Show }) {
     show(r);
     if (r.ok) setLine({ description: '', tooth: '', qty: '1', amount: '' });
   };
-  const tr = (to: 'emitido' | 'aceptado' | 'rechazado' | 'vencido') => show(dispatch({ type: 'estimateTransition', estimateId: e.id, to }));
+  const patient = byId(s.persons, e.personId);
+  const deciders = decidersFor(s, e.personId);
+  const [actor, setActor] = useState(deciders[0]?.id ?? '');
+  const actorId = deciders.some((d) => d.id === actor) ? actor : deciders[0]?.id;
+  const tr = (to: 'emitido' | 'aceptado' | 'rechazado' | 'vencido') => show(dispatch({ type: 'estimateTransition', estimateId: e.id, to, actorId: to === 'aceptado' || to === 'rechazado' ? actorId : undefined }));
   return (
     <div className="card stack">
       <div className="row between"><h2 style={{ fontSize: 20, margin: 0 }}>{e.id} · {personLabel(s, e.personId)}</h2><StatusBadge status={e.status} /></div>
@@ -103,9 +107,19 @@ function EstimateDetail({ id, show }: { id: string; show: Show }) {
       )}
       <div className="row wrap">
         {e.status === 'borrador' && <Button variant="primary" onClick={() => tr('emitido')}>Emitir</Button>}
-        {e.status === 'emitido' && <><Button variant="primary" onClick={() => tr('aceptado')}>Registrar aceptación (simulada)</Button><Button onClick={() => tr('rechazado')}>Registrar rechazo</Button><Button variant="ghost" onClick={() => tr('vencido')}>Marcar vencido</Button></>}
+        {e.status === 'emitido' && patient?.kind === 'menor' && (
+          <div className="field" style={{ minWidth: 260 }}>
+            <label htmlFor={`decide-${e.id}`}>Decide (adulto responsable)</label>
+            {deciders.length === 0
+              ? <p className="field-msg">Sin adulto responsable registrado: no se puede registrar la decisión.</p>
+              : <select id={`decide-${e.id}`} value={actorId} onChange={(ev) => setActor(ev.target.value)}>{deciders.map((d) => <option key={d.id} value={d.id}>{d.firstName} {d.lastName} · {d.id}</option>)}</select>}
+            <p className="hint">Es de un menor: lo acepta o rechaza su responsable, nunca el menor.</p>
+          </div>
+        )}
+        {e.status === 'emitido' && <><Button variant="primary" onClick={() => tr('aceptado')} disabled={!actorId}>Registrar aceptación (simulada)</Button><Button onClick={() => tr('rechazado')} disabled={!actorId}>Registrar rechazo</Button><Button variant="ghost" onClick={() => tr('vencido')}>Marcar vencido</Button></>}
         {(e.status === 'emitido' || e.status === 'vencido') && <Button variant="ghost" onClick={() => show(dispatch({ type: 'estimateFollowUp', estimateId: e.id }))}>La persona pide una explicación</Button>}
       </div>
+      {(e.status === 'aceptado' || e.status === 'rechazado') && e.decidedBy && <p className="small muted">Decidió: {personLabel(s, e.decidedBy)}{e.decidedAt ? ` · ${fmtShort(e.decidedAt)}` : ''}</p>}
       {e.status === 'aceptado' && <Notice tone="info" title="Aceptado no es cobrado">La aceptación no registró ningún movimiento ni marcó tratamientos como realizados. Para un movimiento ficticio usá la caja.</Notice>}
     </div>
   );

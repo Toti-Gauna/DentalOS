@@ -29,6 +29,12 @@ export function dependentsOf(s: DemoState, personId: string) {
 export function responsibleOf(s: DemoState, personId: string) {
   return s.responsibleLinks.filter((l) => l.dependentId === personId).map((l) => byId(s.persons, l.responsibleId)).filter(Boolean);
 }
+/** Quién puede aceptar o rechazar un presupuesto de esta persona: ella misma si es adulta; si es menor, sus responsables. */
+export function decidersFor(s: DemoState, personId: string) {
+  const p = byId(s.persons, personId);
+  if (!p) return [];
+  return p.kind === 'menor' ? responsibleOf(s, personId).filter((x): x is NonNullable<typeof x> => !!x && x.kind === 'adulto') : [p];
+}
 export function homonymsOf(s: DemoState, personId: string) {
   const p = byId(s.persons, personId);
   if (!p) return [];

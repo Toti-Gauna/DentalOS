@@ -36,11 +36,12 @@ visitante → `/` · paciente/responsable → `/mis-turnos` · recepción → `/
 - **Automatizaciones:** A01–A10 (`seed.ts`), configurables desde Configuración; solo A05, A06 y A09 se pueden pausar.
 - **Persistencia:** `localStorage["dentalos.demo.v1"]` (estado) y `…:ui` (rol, tema, sonido, borradores). Reset borra solo ese namespace.
 - **Sin equivalente hoy:** entidad de campaña/segmento/costo, código o QR de turno, escena guiada, temporada.
+- **Cambios de L5 en la seed:** sigue con 12 personas; 3 vínculos de responsable (se agregó RL-003, Ramiro P-006 → Diego P-009) y 4 presupuestos (se agregó EST-004 de Tomás P-004, emitido). `Estimate.decidedBy` registra quién aceptó o rechazó.
 
 ## UI (`src/ui`, `src/pages`)
 - `kit.tsx`, `components.tsx`, `CommandPalette.tsx`, `ThemeSwitcher.tsx`, `AppointmentPanel.tsx`, `RescheduleDrawer.tsx`, `OdontogramArch.tsx`, `sound.ts` (efectos de interfaz), `tones.ts` (ToneEngine de la llamada: tonos “habla” y “guardado”).
 - **Arte** (`src/ui/art`): `teeth.tsx` (lateral, 13 estados × 4 piezas), `dentition.tsx` (oclusal, arcadas, sonrisa con aparatología), `ortho.tsx`, `characters.tsx` (Brisitos), `kids.tsx` (diente, bichito, boca y estrellas del juego), `pages.tsx`, `services.tsx`, `brand.tsx`.
-- **Juegos:** Kids tiene dos actividades: “Cazá los bichitos” (con reloj de 30 s o sin apuro, lógica pura con semilla en `kidsGame.ts`) y el reloj de cepillado de 2 min o demo de 20 s. Más cuento de 5 pasos, escena grupal de los 4 Brisitos y álbum de 8 stickers. **No hay todavía una segunda actividad distinta** (requisito R-KID-02).
+- **Juegos:** Kids tiene dos actividades: “Cazá los bichitos” (con reloj de 30 s o sin apuro, lógica pura con semilla en `kidsGame.ts`) y el reloj de cepillado de 2 min o demo de 20 s. Más cuento de 5 pasos, escena grupal de los 4 Brisitos y álbum de 8 stickers. Desde L5 hay una segunda actividad distinta, “Memoria de los Brisitos” (`kidsMemory.ts` + `MemoryGame.tsx`), y el juego de bichitos se puede pausar. El álbum pasa a 9 stickers.
 - **Estilos:** `src/styles/app.css` (1.177 líneas), tokens con `light-dark()`.
 - **Shell actual:** franja superior de demo (banner largo, Portal/Panel, “Demo”), cabecera de producto con menú, barra lateral agrupada en el panel, pie con “Ver panel demo” y bottom bar en móvil (≤ 860 px).
 

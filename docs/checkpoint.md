@@ -1,5 +1,22 @@
 # Checkpoint · DentalOS demo
 
+## Mejora L1–L10 — lote 5 (recorridos, presupuestos y segunda actividad infantil) · cerrado, esperando OK para el lote 6
+
+- **Rama:** `feat/dentalos-l5-recorridos` desde `main` @ `17b9446` (L4 fusionado).
+- **Hecho:**
+  - **Brechas funcionales** listadas antes de tocarlas (`docs/spec/recorridos.md`, sección del lote 5). Las que pertenecen a L6–L9 quedan asignadas, sin rehacer módulos.
+  - **Presupuestos en el portal** (Mis turnos): ver líneas y total, “Tengo una consulta”, aceptar o no aceptar con confirmación. Aceptar es administrativo: no es un pago ni deja el tratamiento hecho, y el saldo y los pagos simulados se muestran aparte.
+  - **Regla del menor en el dominio:** `estimateTransition` recibe quién decide; un menor no puede (`MENOR_NO_DECIDE`) y un adulto que no es su responsable tampoco (`NO_RESPONSABLE`). Se guarda `decidedBy` y queda en la auditoría. Recepción elige el adulto responsable en un selector.
+  - **Seed:** vínculo RL-003 (Ramiro P-006 → Diego P-009, antes sin responsable) y presupuesto emitido EST-004 de Tomás (P-004) para recorrer el caso. Siguen 12 personas.
+  - **Brisa Chicos:** el juego de bichitos se puede pausar (reloj y tablero quietos) y terminar desde la pausa. Segunda actividad **“Memoria de los Brisitos”**: 6 pares, sin apuro por defecto o con reloj de 90 s, pausa, salida, reintento, flechas en la grilla, táctil y un sticker cosmético. Solo usa tokens de color, así que sigue claro/oscuro y las temporadas del lote 8.
+  - **Recorridos en la botonera:** 4 recorridos entre vistas; cada paso fija vista, persona del portal y ruta. No inicia sesión ni cambia datos.
+- **Resultados:**
+  - lint 0, typecheck 0, build 0;
+  - unit 167/167 (9 nuevas: 2 de dominio, 1 de pausa, 6 de memoria);
+  - e2e 86 pasadas + 1 omitida (6 nuevas en `tests/e2e/journeys.spec.ts`).
+- **Pendiente declarado:** no se probó con lector de pantalla real ni en Safari/Firefox. Las temporadas llegan en el lote 8.
+- **Próxima acción exacta:** lote 6 (campañas, economía y asistentes), con el OK de Ignacio.
+
 ## Mejora L1–L10 — lote 4 (SVG, arte y mockups con acabado final) · cerrado, esperando OK para el lote 5
 
 - **Rama:** `feat/dentalos-l4-arte` desde `main` @ `03a91a7` (L3 fusionado).
