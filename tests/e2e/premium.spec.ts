@@ -34,29 +34,94 @@ test('inicio premium: arte por motivo, equipo ilustrado y acceso a Brisa Chicos'
   await expect(page.getByRole('navigation', { name: 'Portal de pacientes' }).getByRole('link', { name: 'Chicos' })).toHaveAttribute('aria-current', 'page');
 });
 
-test('Brisa Chicos: saludos, cuento y álbum persisten en el dispositivo y se pueden vaciar', async ({ page }) => {
+test('Brisa Chicos: los cuatro Brisitos están juntos, saludan a la vez y el álbum persiste y se vacía', async ({ page }) => {
   await fresh(page, '#/chicos');
+  const stage = page.getByRole('group', { name: 'Los Brisitos' });
+  for (const name of ['Mora', 'Coco', 'Ivo', 'Lía']) await expect(stage.getByRole('button', { name: `Conocer a ${name}` })).toBeVisible();
   const album = page.locator('.album');
   await expect(album.locator('.album-slot.is-earned')).toHaveCount(0);
-  for (const name of ['Mora', 'Coco', 'Ivo', 'Lía']) await page.getByRole('button', { name: `Saludar a ${name}` }).click();
-  await expect(page.getByText('4 de 4 saludados')).toBeVisible();
-  await expect(album.locator('.album-slot.is-earned')).toHaveCount(5); // 4 saludos + equipo completo
-  await expect(page.locator('.sr-only[aria-live]')).toContainText('Nuevo sticker: Equipo completo');
-  await expect(album.locator('.album-slot.is-new')).toContainText('Equipo completo');
-  // Saludar de nuevo no duplica stickers.
-  await page.getByRole('button', { name: '¡Hola otra vez, Mora!' }).click();
-  await expect(album.locator('.album-slot.is-earned')).toHaveCount(5);
+
+  await stage.getByRole('button', { name: '¡Hola, Brisitos!' }).click();
+  await expect(stage.locator('.hello-bubble')).toHaveCount(4);
+  await expect(stage.locator('.brisitos-bubble')).toHaveText('¡Los cuatro te saludan!');
+  await expect(album.locator('.album-slot.is-earned')).toHaveCount(1);
+  await expect(page.locator('.sr-only[aria-atomic="true"]')).toContainText('Nuevo sticker: Equipo completo');
+
+  // Tocar a cada uno muestra su globo; al conocer a los cuatro llega otro sticker (sin duplicar al repetir).
+  await stage.getByRole('button', { name: 'Conocer a Coco' }).click();
+  await expect(stage.getByRole('button', { name: 'Conocer a Coco' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(stage.locator('.brisitos-bubble')).toContainText('¡Soy Coco!');
+  for (const name of ['Mora', 'Ivo', 'Lía']) await stage.getByRole('button', { name: `Conocer a ${name}` }).click();
+  await expect(stage.getByText('Conociste a 4 de 4')).toBeVisible();
+  await expect(album.locator('.album-slot.is-new')).toContainText('Amigos de verdad');
+  await stage.getByRole('button', { name: 'Conocer a Mora' }).click();
+  await expect(album.locator('.album-slot.is-earned')).toHaveCount(2);
 
   for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Terminar el cuento' }).click();
-  await expect(album.locator('.album-slot.is-earned')).toHaveCount(6);
+  await expect(album.locator('.album-slot.is-earned')).toHaveCount(3);
 
   await page.reload();
-  await expect(page.locator('.album .album-slot.is-earned')).toHaveCount(6);
+  await expect(page.locator('.album .album-slot.is-earned')).toHaveCount(3);
   await page.getByRole('button', { name: 'Vaciar álbum' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Vaciar', exact: true }).click();
   await expect(page.locator('.album .album-slot.is-earned')).toHaveCount(0);
-  await expect(page.getByText('0 de 4 saludados')).toBeVisible();
+  await expect(page.getByText('Conociste a 0 de 4')).toBeVisible();
+});
+
+test('juego “Cazá los bichitos”: aparecen bichitos, cepillarlos suma, a los 30 s da estrellas y sticker (reloj controlado)', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-10-19T12:00:00Z') });
+  await fresh(page, '#/chicos');
+  await page.getByRole('button', { name: 'Jugar a limpiar la sonrisa' }).click();
+  await expect(page.getByRole('heading', { name: 'Cazá los bichitos' })).toBeFocused();
+  const board = page.getByRole('group', { name: /Boca del juego/ });
+  await expect(board.getByRole('button')).toHaveCount(12);
+  await expect(board.getByRole('button').first()).toBeDisabled();
+
+  const start = page.getByRole('button', { name: 'Empezar a jugar' });
+  await start.click();
+  await expect(page.getByRole('button', { name: 'Terminar' })).toBeFocused(); // el foco no se pierde al cambiar el botón
+  const dirty = board.getByRole('button', { name: /tiene un bichito/ });
+  await expect(dirty).toHaveCount(1);
+  // Un diente limpio no suma; uno con bichito sí.
+  await board.getByRole('button', { name: /^Diente \d de (arriba|abajo)$/ }).first().click();
+  await expect(page.locator('.game-hud dd').first()).toHaveText('0');
+  await dirty.first().click();
+  await expect(page.locator('.game-hud dd').first()).toHaveText('1');
+
+  // Teclado: Tab entra al tablero, Enter cepilla.
+  await page.clock.runFor(1_000);
+  await dirty.first().focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.game-hud dd').first()).toHaveText('2');
+
+  for (let t = 0; t < 60; t++) {
+    while (await dirty.count()) await dirty.first().click();
+    await page.clock.runFor(500);
+  }
+  await expect(page.getByText('¡Sonrisa brillante!')).toBeVisible();
+  await expect(page.getByLabel('3 de 3 estrellas')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Jugar otra vez' })).toBeVisible();
+  const album = page.locator('.album');
+  for (const label of ['Cazabichitos', 'Sonrisa brillante']) await expect(album.locator('.album-slot.is-earned', { hasText: label })).toHaveCount(1);
+  await expect(page.locator('.game-hud div', { hasText: 'Récord' }).locator('dd')).not.toHaveText('0');
+});
+
+test('juego sin apuro: no hay reloj ni escapes y se termina al limpiar 12', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-10-19T12:00:00Z') });
+  await fresh(page, '#/chicos');
+  await page.getByLabel('Ritmo').selectOption('tranquilo');
+  await page.getByRole('button', { name: 'Empezar a jugar' }).click();
+  await page.clock.runFor(60_000);
+  const board = page.getByRole('group', { name: /Boca del juego/ });
+  const dirty = board.getByRole('button', { name: /tiene un bichito/ });
+  await expect(dirty).toHaveCount(3);
+  for (let i = 0; i < 40 && (await page.getByRole('button', { name: 'Terminar' }).count()); i++) {
+    while (await dirty.count()) await dirty.first().click();
+    await page.clock.runFor(1_000);
+  }
+  await expect(page.getByText('¡Sonrisa brillante!')).toBeVisible();
+  await expect(page.locator('.game-hud div', { hasText: 'Meta' }).locator('dd')).toHaveText('12 de 12');
 });
 
 test('Brisa Chicos: los accesos del encabezado llevan al reloj y al cuento sin salir de la página', async ({ page }) => {
@@ -74,7 +139,7 @@ test('reloj de cepillado: avanza por zonas, termina y da sticker (reloj controla
   await page.clock.install({ time: new Date('2026-10-19T12:00:00Z') });
   await fresh(page, '#/chicos');
   await page.getByLabel('Duración').selectOption('20');
-  await page.getByRole('button', { name: 'Empezar' }).click();
+  await page.getByRole('button', { name: 'Empezar', exact: true }).click();
   await expect(page.locator('.zone-now')).toHaveText('Ahora: Arriba a la derecha');
   await page.clock.runFor(5_000);
   await expect(page.locator('.zone-now')).toHaveText('Ahora: Arriba a la izquierda');
@@ -91,7 +156,7 @@ test('reloj de cepillado: avanza por zonas, termina y da sticker (reloj controla
 test('sonidos: apagados por defecto; el AudioContext nace solo con el gesto y se recuerda la preferencia', async ({ page }) => {
   await fakeAudio(page);
   await fresh(page, '#/chicos');
-  await page.getByRole('button', { name: 'Saludar a Mora' }).click();
+  await page.getByRole('button', { name: 'Conocer a Mora' }).click();
   expect(await contexts(page)).toBe(0);
   expect(await played(page)).toEqual([]);
 
@@ -100,7 +165,7 @@ test('sonidos: apagados por defecto; el AudioContext nace solo con el gesto y se
   await toggle.click();
   await expect(page.getByRole('button', { name: 'Sonidos: sí' })).toHaveAttribute('aria-pressed', 'true');
   expect(await contexts(page)).toBe(1);
-  await page.getByRole('button', { name: 'Saludar a Coco' }).click();
+  await page.getByRole('button', { name: '¡Hola, Brisitos!' }).click();
   expect(await played(page)).toEqual(expect.arrayContaining(['toggle', 'pop', 'stamp']));
 
   // Al recargar la preferencia sigue activa, pero no hay audio hasta el próximo gesto (sin autoplay).
@@ -108,7 +173,7 @@ test('sonidos: apagados por defecto; el AudioContext nace solo con el gesto y se
   await expect(page.locator('h1')).toHaveText('Sonrisas valientes');
   expect(await page.evaluate(() => (window as unknown as { __sound: { enabled: boolean } }).__sound.enabled)).toBe(true);
   expect(await contexts(page)).toBe(0);
-  await page.getByRole('button', { name: 'Saludar a Ivo' }).click();
+  await page.getByRole('button', { name: 'Conocer a Ivo' }).click();
   expect(await contexts(page)).toBe(1);
 
   await page.getByRole('button', { name: 'Controles de la demo' }).click();
@@ -116,7 +181,7 @@ test('sonidos: apagados por defecto; el AudioContext nace solo con el gesto y se
   await expect(page.getByRole('button', { name: 'Sonidos: no' })).toBeVisible();
   await page.keyboard.press('Escape');
   const before = (await played(page)).length;
-  await page.getByRole('button', { name: 'Saludar a Lía' }).click();
+  await page.getByRole('button', { name: 'Conocer a Lía' }).click();
   expect((await played(page)).length).toBe(before);
 });
 

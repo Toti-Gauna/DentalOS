@@ -5,11 +5,11 @@ import { useId, type ReactNode } from 'react';
 export type Character = 'mora' | 'coco' | 'ivo' | 'lia';
 export type Mood = 'feliz' | 'guino' | 'valiente' | 'dormido' | 'sorpresa';
 
-export const CHARACTERS: { id: Character; name: string; tooth: string; bio: string }[] = [
-  { id: 'mora', name: 'Muela Mora', tooth: 'Muela (molar)', bio: 'Tritura la comida con fuerza. Le encanta que la cepilles bien atrás, donde casi nadie llega.' },
-  { id: 'coco', name: 'Colmillo Coco', tooth: 'Colmillo (canino)', bio: 'Es el más puntiagudo y deportista. Ayuda a cortar y siempre pide hilo dental después del partido.' },
-  { id: 'ivo', name: 'Incisivo Ivo', tooth: 'Incisivo', bio: 'Es el primero en saludar cuando sonreís. Usa anteojos y sabe todo sobre la primera visita.' },
-  { id: 'lia', name: 'Dientecito Lía', tooth: 'Diente de leche', bio: 'Es pequeña y un día va a dejarle lugar a un diente nuevo. Mientras tanto, también quiere estar limpita.' },
+export const CHARACTERS: { id: Character; name: string; tooth: string; bio: string; line: string }[] = [
+  { id: 'mora', name: 'Muela Mora', tooth: 'Muela (molar)', bio: 'Tritura la comida con fuerza. Le encanta que la cepilles bien atrás, donde casi nadie llega.', line: '¡Soy Mora! Cepillame bien atrás, que ahí casi nadie llega.' },
+  { id: 'coco', name: 'Colmillo Coco', tooth: 'Colmillo (canino)', bio: 'Es el más puntiagudo y deportista. Ayuda a cortar y siempre pide hilo dental después del partido.', line: '¡Soy Coco! Después del partido, ¡hilo dental!' },
+  { id: 'ivo', name: 'Incisivo Ivo', tooth: 'Incisivo', bio: 'Es el primero en saludar cuando sonreís. Usa anteojos y sabe todo sobre la primera visita.', line: '¡Soy Ivo! Te cuento cómo es la primera visita.' },
+  { id: 'lia', name: 'Dientecito Lía', tooth: 'Diente de leche', bio: 'Es pequeña y un día va a dejarle lugar a un diente nuevo. Mientras tanto, también quiere estar limpita.', line: '¡Soy Lía! Un día le dejo lugar a un diente nuevo.' },
 ];
 
 const BODY: Record<Character, { body: string; cx: number; eyeY: number; legs: [string, string] }> = {
@@ -71,8 +71,10 @@ export function ToothCharacter({ who, mood = 'feliz', size = 120, title, classNa
       {/* brazos */}
       <path d={`M${b.cx - 40} 78 C${b.cx - 52} 80 ${b.cx - 56} 92 ${b.cx - 50} 98`} stroke={outline} strokeWidth="9" strokeLinecap="round" fill="none" />
       <path d={`M${b.cx - 40} 78 C${b.cx - 52} 80 ${b.cx - 56} 92 ${b.cx - 50} 98`} stroke="#fbf8f2" strokeWidth="5" strokeLinecap="round" fill="none" />
-      <path d={`M${b.cx + 40} 78 C${b.cx + 52} 76 ${b.cx + 56} 64 ${b.cx + 52} 56`} stroke={outline} strokeWidth="9" strokeLinecap="round" fill="none" />
-      <path d={`M${b.cx + 40} 78 C${b.cx + 52} 76 ${b.cx + 56} 64 ${b.cx + 52} 56`} stroke="#fbf8f2" strokeWidth="5" strokeLinecap="round" fill="none" />
+      <g className="arm-r">
+        <path d={`M${b.cx + 40} 78 C${b.cx + 52} 76 ${b.cx + 56} 64 ${b.cx + 52} 56`} stroke={outline} strokeWidth="9" strokeLinecap="round" fill="none" />
+        <path d={`M${b.cx + 40} 78 C${b.cx + 52} 76 ${b.cx + 56} 64 ${b.cx + 52} 56`} stroke="#fbf8f2" strokeWidth="5" strokeLinecap="round" fill="none" />
+      </g>
       <path d={b.body} fill={`url(#${g('body')})`} />
       <g clipPath={`url(#${g('clip')})`}>
         <rect x="0" y={b.eyeY + 18} width="120" height="60" fill={`url(#${g('warm')})`} />
