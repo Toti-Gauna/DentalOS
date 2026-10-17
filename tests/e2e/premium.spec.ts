@@ -69,9 +69,16 @@ test('Brisa Chicos: los cuatro Brisitos están juntos, saludan a la vez y el ál
   await expect(page.getByText('Conociste a 0 de 4')).toBeVisible();
 });
 
-test('juego “Cazá los bichitos”: aparecen bichitos, cepillarlos suma, a los 30 s da estrellas y sticker (reloj controlado)', async ({ page }) => {
+// `clock.install` deja correr el tiempo en vivo además de los saltos de `runFor`: un juego de 30 s puede terminar entre un
+// `count()` y un `click()` (falla intermitente medida en 1 de 5 corridas). Pausar el reloj lo vuelve determinista.
+async function pausedClock(page: Page, hash: string) {
   await page.clock.install({ time: new Date('2026-10-19T12:00:00Z') });
-  await fresh(page, '#/chicos');
+  await fresh(page, hash);
+  await page.clock.pauseAt(new Date('2026-10-19T12:05:00Z'));
+}
+
+test('juego “Cazá los bichitos”: aparecen bichitos, cepillarlos suma, a los 30 s da estrellas y sticker (reloj controlado)', async ({ page }) => {
+  await pausedClock(page, '#/chicos');
   await page.getByRole('button', { name: 'Jugar a limpiar la sonrisa' }).click();
   await expect(page.getByRole('heading', { name: 'Cazá los bichitos' })).toBeFocused();
   const board = page.getByRole('group', { name: /Boca del juego/ });
@@ -95,9 +102,10 @@ test('juego “Cazá los bichitos”: aparecen bichitos, cepillarlos suma, a los
   await page.keyboard.press('Enter');
   await expect(page.locator('.game-hud dd').first()).toHaveText('2');
 
-  for (let t = 0; t < 60; t++) {
+  // Un bichito vive 4 s: cepillar cada 2 s lo alcanza siempre y la partida entera cuesta 15 vueltas, no 60.
+  for (let t = 0; t < 15; t++) {
     while (await dirty.count()) await dirty.first().click();
-    await page.clock.runFor(500);
+    await page.clock.runFor(2_000);
   }
   await expect(page.getByText('¡Sonrisa brillante!')).toBeVisible();
   await expect(page.getByLabel('3 de 3 estrellas')).toBeVisible();
@@ -108,17 +116,16 @@ test('juego “Cazá los bichitos”: aparecen bichitos, cepillarlos suma, a los
 });
 
 test('juego sin apuro: no hay reloj ni escapes y se termina al limpiar 12', async ({ page }) => {
-  await page.clock.install({ time: new Date('2026-10-19T12:00:00Z') });
-  await fresh(page, '#/chicos');
+  await pausedClock(page, '#/chicos');
   await page.getByLabel('Ritmo').selectOption('tranquilo');
   await page.getByRole('button', { name: 'Empezar a jugar' }).click();
   await page.clock.runFor(60_000);
   const board = page.getByRole('group', { name: /Boca del juego/ });
   const dirty = board.getByRole('button', { name: /tiene un bichito/ });
   await expect(dirty).toHaveCount(3);
-  for (let i = 0; i < 40 && (await page.getByRole('button', { name: 'Terminar' }).count()); i++) {
+  for (let i = 0; i < 20 && (await page.getByRole('button', { name: 'Terminar' }).count()); i++) {
     while (await dirty.count()) await dirty.first().click();
-    await page.clock.runFor(1_000);
+    await page.clock.runFor(2_000);
   }
   await expect(page.getByText('¡Sonrisa brillante!')).toBeVisible();
   await expect(page.locator('.game-hud div', { hasText: 'Meta' }).locator('dd')).toHaveText('12 de 12');
@@ -136,8 +143,7 @@ test('Brisa Chicos: los accesos del encabezado llevan al reloj y al cuento sin s
 });
 
 test('reloj de cepillado: avanza por zonas, termina y da sticker (reloj controlado)', async ({ page }) => {
-  await page.clock.install({ time: new Date('2026-10-19T12:00:00Z') });
-  await fresh(page, '#/chicos');
+  await pausedClock(page, '#/chicos');
   await page.getByLabel('Duración').selectOption('20');
   await page.getByRole('button', { name: 'Empezar', exact: true }).click();
   await expect(page.locator('.zone-now')).toHaveText('Ahora: Arriba a la derecha');

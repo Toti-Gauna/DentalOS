@@ -1,5 +1,20 @@
 # Checkpoint · DentalOS demo
 
+## Mejora L1–L10 — lote 1 (diagnóstico, especificación y estabilidad) · cerrado
+
+- **Rama:** `feat/dentalos-l1-diagnostico` desde `main` @ `73c5e75`. Autorización de Ignacio: un PR por lote, seguimiento hasta verde, y esperar su OK antes del lote siguiente.
+- **Hecho:**
+  - `docs/spec/` con requisitos con ID (52, con fuente, roles, escenarios, componente, aceptación y estado), inventario medido, cinco recorridos y la correspondencia con los D-IDs de la auditoría.
+  - Falla e2e intermitente **identificada y corregida**: carrera por reloj en vivo en el test del juego de Brisa Chicos (`page.clock.install` no detiene el tiempo) y, al verificar, un test demasiado costoso bajo carga. Detalle en `docs/spec/estabilidad.md`.
+- **Código del producto:** sin cambios. Solo `tests/e2e/premium.spec.ts` y documentación.
+- **Resultados:**
+  - lint 0, typecheck 0, 154 unit, build 0.
+  - Subconjunto afectado × 20 repeticiones con 4 workers: 60/60.
+  - Suite completa × 5 seguidas: 63 pasadas + 1 omitida en cada una.
+- **Hallazgo de la especificación:** la cancelación **no crea** tareas (solo cierra las del turno); el caso “cancelación → tarea” es trabajo nuevo del lote 9.
+- **Decisiones que siguen pendientes de Ignacio:** elección visual (lote 2), confirmación del indicador “Demo” compacto con botonera (lote 3), precio/anticipo/plazo del cierre Eclipse (lote 9).
+- **Próxima acción exacta:** lote 2 — investigación por familia de componentes y tres propuestas visuales en una ruta aislada, y **detenerse** hasta la elección de Ignacio. Modelo recomendado: Opus 5.5 en el nivel más alto disponible (“Extra”).
+
 ## Rediseño por fases (0–6) — modo oscuro, shell, páginas, arte dental v4 y Brisa Chicos v2 · cerrada
 
 - **Rama:** `feat/fase3-rediseno` desde `feat/fase2c-premium` @ `8ca5904` (PR #5, todavía abierto).

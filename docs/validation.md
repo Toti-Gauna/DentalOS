@@ -312,3 +312,16 @@ Rama `feat/fase3-rediseno`, que sale de `feat/fase2c-premium` (PR #5). Mismo ent
 - El odontograma en móvil se desplaza en horizontal dentro de su tarjeta (mínimo 560 px) para que cada pieza siga siendo fácil de tocar; la página no tiene scroll horizontal (verificado en 320 y 390 px).
 - Sin lector de pantalla real ni audio audible en el contenedor.
 
+# Mejora L1–L10 · lote 1 (diagnóstico, especificación y estabilidad)
+
+Rama `feat/dentalos-l1-diagnostico` desde `main` @ `73c5e75`. Sin cambios de producto.
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` · `npm run typecheck` · `npm run build` | 0 | sin errores |
+| `npm run test -- --run` | 0 | 154/154 |
+| e2e, subconjunto del juego y reloj de cepillado × 20 repeticiones, 4 workers | 0 | **60/60** |
+| e2e, suite completa × 5 seguidas | 0 | 5 × 63 pasadas + 1 omitida |
+
+Falla intermitente: ver `docs/spec/estabilidad.md` (causa, corrección y límites). Los requisitos nuevos están **especificados, no construidos** (`docs/spec/requisitos.md`).
+
