@@ -3,7 +3,7 @@
 import { addMinutes, at, toMs } from './time';
 import {
   INITIAL_CLOCK, SCHEMA_VERSION, SEED,
-  type Appointment, type AppointmentStatus, type Channel, type DemoState, type OutboxItem, type ServiceType,
+  type Appointment, type AppointmentStatus, type Campaign, type CampaignConfig, type CampaignEconomics, type Channel, type DemoState, type OutboxItem, type ServiceType,
 } from './types';
 
 export const LEARNING_CARD_IDS = ['ayuda', 'cambio', 'datos'] as const;
@@ -88,6 +88,27 @@ function buildOutbox(appointments: Appointment[]): OutboxItem[] {
   return items;
 }
 
+export const A11_RULE = { id: 'A11', name: 'Envío programado de campaña', trigger: 'Reloj alcanza la fecha programada', condition: 'Campaña activa (no pausada); sin baja ni exclusión al enviar; una vez por persona y campaña', enabled: true };
+
+/** Costos y límites ficticios de comunicación (centavos). Ningún proveedor real. */
+export function defaultCampaignConfig(): CampaignConfig {
+  return { commCostMinor: { whatsapp: 4_500, portal: 0, llamada: 30_000 }, maxPer30d: 2, capacityDays: 14 };
+}
+
+const noEconomics = (): CampaignEconomics => ({ listPriceMinor: null, discountMinor: 0, serviceCostMinor: null, otherVariableMinor: null, fixedCostMinor: null, responseRatePct: null });
+
+function seedCampaigns(): Campaign[] {
+  const base = { trigger: 'manual' as const, cadence: 'unica' as const, personId: null, extraNote: '', serviceTypeId: null, scheduledFor: null, pausedAt: null, version: 1 };
+  return [
+    { ...base, id: 'CMP-001', name: 'Actualizar datos de contacto (muestra)', kind: 'masiva', segmentIds: [], templateId: 'datos_contacto', status: 'finalizada',
+      economics: { ...noEconomics(), fixedCostMinor: 0 }, createdAt: '2026-09-28T09:00:00-03:00', updatedAt: '2026-09-30T10:00:00-03:00', approvedAt: '2026-09-29T12:00:00-03:00', activatedAt: '2026-09-30T10:00:00-03:00' },
+    { ...base, id: 'CMP-002', name: 'Horario del feriado de octubre (muestra)', kind: 'masiva', segmentIds: [], templateId: 'horarios', status: 'finalizada',
+      economics: { ...noEconomics(), fixedCostMinor: 0 }, createdAt: '2026-10-06T09:00:00-03:00', updatedAt: '2026-10-08T10:00:00-03:00', approvedAt: '2026-10-07T12:00:00-03:00', activatedAt: '2026-10-08T10:00:00-03:00' },
+    { ...base, id: 'CMP-003', name: 'Presupuestos sin respuesta', kind: 'segmentada', segmentIds: ['presupuestos_sin_respuesta'], templateId: 'presupuesto_pendiente', status: 'borrador',
+      economics: noEconomics(), createdAt: '2026-10-16T15:00:00-03:00', updatedAt: '2026-10-16T15:00:00-03:00', approvedAt: null, activatedAt: null },
+  ];
+}
+
 export function createSeedState(): DemoState {
   const appointments = buildAppointments();
   const outbox = buildOutbox(appointments);
@@ -98,7 +119,7 @@ export function createSeedState(): DemoState {
     preset: 'inicial',
     clock: INITIAL_CLOCK,
     revision: 0,
-    seq: { P: 12, A: 18, R: 5, C: 3, M: 7, CS: 0, O: outbox.length, T: 3, W: 2, OF: 0, IC: 3, TC: 16, EST: 4, EL: 7, L: 10, EV: 1, B: 3, RL: 3 },
+    seq: { P: 12, A: 18, R: 5, C: 3, M: 7, CS: 0, O: outbox.length, T: 3, W: 2, OF: 0, IC: 3, TC: 16, EST: 4, EL: 7, L: 10, EV: 1, B: 3, RL: 3, CMP: 3, CD: 4 },
     settings: { failNextCommits: 0, reminderQuota: 20, changeWindowHours: 12, minLeadHours: 2, horizonDays: 30, holdMinutes: 10, reminderLeadHours: 24 },
     clinic: { id: 'CL-1', name: 'Clínica Brisa', tagline: 'Cada consulta tiene un próximo paso.' },
     locations: [
@@ -138,7 +159,7 @@ export function createSeedState(): DemoState {
     ],
     persons: [
       { id: 'P-001', firstName: 'Martina', lastName: 'Sosa', birthYear: 1994, kind: 'adulto', preferredChannel: 'whatsapp', reminderOptIn: true, adminNote: 'Prefiere turnos por la mañana.', version: 1 },
-      { id: 'P-002', firstName: 'Julián', lastName: 'Herrera', birthYear: 1987, kind: 'adulto', preferredChannel: 'whatsapp', reminderOptIn: true, adminNote: '', version: 1 },
+      { id: 'P-002', firstName: 'Julián', lastName: 'Herrera', birthYear: 1987, kind: 'adulto', preferredChannel: 'whatsapp', reminderOptIn: true, adminNote: '', version: 1, campaignExclusion: 'Pidió no recibir campañas hasta fin de año (muestra).' },
       { id: 'P-003', firstName: 'Carla', lastName: 'Benítez', birthYear: 1985, kind: 'adulto', preferredChannel: 'portal', reminderOptIn: true, adminNote: 'Responsable de dos dependientes de muestra.', version: 1 },
       { id: 'P-004', firstName: 'Tomás', lastName: 'Benítez', birthYear: 2015, kind: 'menor', preferredChannel: null, reminderOptIn: true, adminNote: '', version: 1 },
       { id: 'P-005', firstName: 'Lola', lastName: 'Benítez', birthYear: 2018, kind: 'menor', preferredChannel: null, reminderOptIn: true, adminNote: '', version: 1 },
@@ -147,7 +168,7 @@ export function createSeedState(): DemoState {
       { id: 'P-008', firstName: 'Ana', lastName: 'Paredes', birthYear: 1968, kind: 'adulto', preferredChannel: 'llamada', reminderOptIn: true, adminNote: '', version: 1 },
       { id: 'P-009', firstName: 'Diego', lastName: 'Funes', birthYear: 2009, kind: 'menor', preferredChannel: 'whatsapp', reminderOptIn: true, adminNote: '', version: 1 },
       { id: 'P-010', firstName: 'Sofía', lastName: 'Ledesma', birthYear: 1999, kind: 'adulto', preferredChannel: 'portal', reminderOptIn: true, adminNote: 'Primera visita pedida por web.', version: 1 },
-      { id: 'P-011', firstName: 'Hernán', lastName: 'Ibarra', birthYear: 1972, kind: 'adulto', preferredChannel: 'llamada', reminderOptIn: false, adminNote: 'No quiere recordatorios automáticos (opt-out ficticio).', version: 1 },
+      { id: 'P-011', firstName: 'Hernán', lastName: 'Ibarra', birthYear: 1972, kind: 'adulto', preferredChannel: 'llamada', reminderOptIn: false, adminNote: 'No quiere recordatorios automáticos (opt-out ficticio).', version: 1, campaignOptOut: true },
       { id: 'P-012', firstName: 'Valeria', lastName: 'Ortiz', birthYear: 1990, kind: 'adulto', preferredChannel: 'whatsapp', reminderOptIn: true, adminNote: '', version: 1 },
     ],
     responsibleLinks: [
@@ -189,6 +210,7 @@ export function createSeedState(): DemoState {
       { id: 'A08', name: 'Derivación humana', trigger: 'Texto clínico, desconocido o pedido de persona', condition: 'Nunca diagnosticar ni clasificar', enabled: true },
       { id: 'A09', name: 'Seguimiento de presupuesto', trigger: 'Presupuesto emitido vence', condition: 'Sin tarea previa; nunca marca cobro', enabled: true },
       { id: 'A10', name: 'Continuidad entre canales', trigger: 'Se continúa una gestión en otro canal', condition: 'Selección explícita de gestión y persona por ID', enabled: true },
+      A11_RULE,
     ],
     outbox,
     tasks: [
@@ -266,6 +288,14 @@ export function createSeedState(): DemoState {
       { id: 'L-009', personId: 'P-010', estimateId: null, kind: 'pago_simulado', amountMinor: 900_000, reversesId: null, reversedById: null, commandId: 'seed:L-009', at: '2026-10-12T15:00:00-03:00', note: 'Seña administrativa (ficticio)' },
       { id: 'L-010', personId: 'P-009', estimateId: null, kind: 'pago_simulado', amountMinor: 3_000_000, reversesId: null, reversedById: null, commandId: 'seed:L-010', at: '2026-10-15T11:30:00-03:00', note: 'Control (ficticio)' },
     ],
+    campaigns: seedCampaigns(),
+    campaignDeliveries: [
+      { id: 'CD-001', campaignId: 'CMP-001', contactId: 'P-003', forPersonIds: ['P-003'], channel: 'portal', status: 'entregado_simulado', dueAt: '2026-09-30T10:00:00-03:00', createdAt: '2026-09-30T10:00:00-03:00', text: 'Hola Carla: si cambiaste de teléfono o de correo, podés actualizarlo en el portal. (Mensaje simulado de la demo)', dedupeKey: 'camp:CMP-001:P-003', note: '' },
+      { id: 'CD-002', campaignId: 'CMP-002', contactId: 'P-001', forPersonIds: ['P-001'], channel: 'whatsapp', status: 'entregado_simulado', dueAt: '2026-10-08T10:00:00-03:00', createdAt: '2026-10-08T10:00:00-03:00', text: 'Hola Martina: el lunes 12/10 la clínica atiende en horario reducido. (Mensaje simulado de la demo)', dedupeKey: 'camp:CMP-002:P-001', note: '' },
+      { id: 'CD-003', campaignId: 'CMP-002', contactId: 'P-003', forPersonIds: ['P-003', 'P-004', 'P-005'], channel: 'portal', status: 'entregado_simulado', dueAt: '2026-10-08T10:00:00-03:00', createdAt: '2026-10-08T10:00:00-03:00', text: 'Hola Carla: el lunes 12/10 la clínica atiende en horario reducido. (Mensaje simulado de la demo)', dedupeKey: 'camp:CMP-002:P-003', note: '' },
+      { id: 'CD-004', campaignId: 'CMP-002', contactId: 'P-012', forPersonIds: ['P-012'], channel: 'whatsapp', status: 'entregado_simulado', dueAt: '2026-10-08T10:00:00-03:00', createdAt: '2026-10-08T10:00:00-03:00', text: 'Hola Valeria: el lunes 12/10 la clínica atiende en horario reducido. (Mensaje simulado de la demo)', dedupeKey: 'camp:CMP-002:P-012', note: '' },
+    ],
+    campaignConfig: defaultCampaignConfig(),
     learning: LEARNING_CARD_IDS.map((cardId) => ({ cardId, state: 'nuevo', attempts: 0, lastChoiceId: null, opens: 0, rereads: 0, completedAt: null })),
     audit: [{ id: 'EV-0001', at: seedAt, type: 'seed', entity: 'demo', entityId: SEED, detail: 'Fixture inicial dentalos-v1 cargado.', commandId: 'seed' }],
     processed: {},

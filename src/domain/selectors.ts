@@ -123,4 +123,5 @@ export const STATUS_LABEL: Record<string, string> = {
   activa: 'Activa', vencida: 'Vencida', aceptada: 'Aceptada', rechazada: 'Rechazada', tomada_por_otro: 'Tomada por otra persona', retirada: 'Retirada',
   derivada: 'Derivada', esperando_paciente: 'Esperando paciente', cerrada: 'Cerrada',
   indicado: 'Indicado', reservado: 'Reservado', realizado: 'Realizado', planificado: 'Planificado',
+  lista: 'Vista previa revisada', aprobada: 'Aprobada', pausada: 'En pausa', pausado: 'En pausa', bloqueado: 'No enviado',
 };

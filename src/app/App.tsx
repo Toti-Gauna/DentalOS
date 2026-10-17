@@ -73,6 +73,7 @@ const Odontogram = lazyRetry(() => import('../pages/admin/Odontogram'), (m) => m
 const OdontogramPicker = lazyRetry(() => import('../pages/admin/Odontogram'), (m) => m.OdontogramPicker);
 const Ortho = lazyRetry(() => import('../pages/admin/Ortho'), (m) => m.Ortho);
 const Estimates = lazyRetry(() => import('../pages/admin/Estimates'), (m) => m.Estimates);
+const Campaigns = lazyRetry(() => import('../pages/admin/Campaigns'), (m) => m.Campaigns);
 const Waitlist = lazyRetry(() => import('../pages/admin/Waitlist'), (m) => m.Waitlist);
 const Tasks = lazyRetry(() => import('../pages/admin/Tasks'), (m) => m.Tasks);
 const Reports = lazyRetry(() => import('../pages/admin/Reports'), (m) => m.Reports);
@@ -100,13 +101,14 @@ const ADMIN_NAV = [
   { to: '/admin/presupuestos', label: 'Presupuestos y caja', icon: 'wallet', m: 'M11' },
   { to: '/admin/espera', label: 'Espera y recordatorios', icon: 'hourglass', m: 'M12' },
   { to: '/admin/tareas', label: 'Tareas', icon: 'check', m: 'M13' },
+  { to: '/admin/campanas', label: 'Campañas', icon: 'send', m: 'M16' },
   { to: '/admin/informes', label: 'Informes', icon: 'chart', m: 'M13' },
   { to: '/admin/config', label: 'Configuración y simulador', icon: 'settings', m: 'M14' },
 ];
 const ADMIN_GROUPS: { label: string; items: string[] }[] = [
   { label: 'Operación', items: ['/admin', '/admin/bandeja', '/admin/espera', '/admin/tareas'] },
   { label: 'Pacientes', items: ['/admin/personas', '/admin/odontograma', '/admin/ortodoncia'] },
-  { label: 'Gestión', items: ['/admin/presupuestos', '/admin/informes', '/admin/config'] },
+  { label: 'Gestión', items: ['/admin/presupuestos', '/admin/campanas', '/admin/informes', '/admin/config'] },
 ];
 // Bottom bar (móvil): cuatro destinos fijos y “Más”.
 const PUBLIC_TABS = ['/', '/reservar', '/mis-turnos', '/whatsapp'];
@@ -135,6 +137,7 @@ function route(segments: string[]): ReactNode {
     if (b === 'odontograma') return <OdontogramPicker />;
     if (b === 'ortodoncia') return <Ortho />;
     if (b === 'presupuestos') return <Estimates />;
+    if (b === 'campanas') return <Campaigns />;
     if (b === 'espera') return <Waitlist />;
     if (b === 'tareas') return <Tasks />;
     if (b === 'informes') return <Reports />;

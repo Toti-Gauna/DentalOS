@@ -41,7 +41,7 @@ Control indicado por el profesional → seguimiento administrativo → reserva.
 | 2 | Queda una tarea `control_indicado` (la crea el propio comando, deduplicada) | `episodeIndicateControl` → `upsertTask` | existe |
 | 3 | Se reserva el turno del control | `book` con `ST-ORTO-CTRL` | existe |
 | 4 | Aparatología registrada | `episodeSetAppliance` | existe |
-| 5 | Segmento “controles ya indicados pendientes” y campaña | **[nuevo]** R-GRW-01, R-GRW-02 | falta |
+| 5 | Segmento “controles ya indicados pendientes” y campaña | `#/admin/campanas` · `segmentMembers('controles_pendientes')`, `campaignCreate` | existe desde L6 (S79, S83) |
 
 El software no decide cuándo corresponde un control ni lo recomienda por rentabilidad.
 
@@ -63,9 +63,9 @@ Capacidad/seguimiento → campaña administrativa → economía → aprobación.
 | --- | --- | --- | --- |
 | 1 | Informes con denominador y n=0 | `#/admin/informes` | existe |
 | 2 | Capacidad y ocupación | informes, `Configuración` | existe |
-| 3 | Segmento y campaña (borrador → vista previa → aprobación → activación simulada) | **[nuevo]** R-GRW-01, R-GRW-02 | falta |
-| 4 | Economía antes de activar (contribución, equilibrio, ND) | **[nuevo]** R-GRW-03 | falta |
-| 5 | Asistente determinista | **[nuevo]** R-GRW-05 | falta |
+| 3 | Segmento y campaña (borrador → vista previa → aprobación → activación simulada) | `#/admin/campanas` · `campaignPreview`, `campaignApprove`, `campaignActivate`, `campaignPause` | existe desde L6 (S83–S86) |
+| 4 | Economía antes de activar (contribución, equilibrio, ND, capacidad) | `campaignEconomics`, `capacityFor`, `reviewCampaign` | existe desde L6 (S87–S90) |
+| 5 | Asistente determinista | `directorAnswer` (`src/domain/assistant.ts`) en `#/admin/campanas` | existe desde L6 (S92–S94) |
 | 6 | Resultado simulado → reserva | **[nuevo]** R-SCN-02 (caso 8) | falta |
 
 Todo con datos ficticios; ninguna comunicación, cobro ni medición real.
@@ -93,4 +93,21 @@ Recorridos de la botonera (`src/app/journeys.ts`). Solo navegan: no inician sesi
 | Presupuesto de un menor | Recepción → `#/admin/presupuestos` · Paciente (Carla P-003) → `#/mis-turnos` · Recepción → `#/admin/presupuestos` | S68, S69 |
 | Un mensaje que llega a recepción | Visitante → `#/whatsapp` · Recepción → `#/admin/bandeja` | S70 |
 | Brisa Chicos en familia | Paciente (Carla P-003) → `#/mis-turnos` · Paciente → `#/chicos` | S70 |
+
+## Lote 6 · campañas administrativas y asistentes
+
+Recorrido de dirección sobre datos reales del store (todo simulado):
+
+| # | Paso | Ruta / comando | Escenario |
+| --- | --- | --- | --- |
+| 1 | Ver segmentos con sus conteos | `#/admin/campanas` · `segmentMembers` | S79 |
+| 2 | Preguntar al asistente por controles pendientes y crear un borrador | `directorAnswer('controles')` → `campaignCreate` | S92 |
+| 3 | Revisar audiencia: baja, exclusión, frecuencia y unificación | `buildAudience` | S80–S82 |
+| 4 | Cargar economía; si falta algo, ND y sigue en borrador | `campaignUpdate`, `campaignPreview` | S87–S89 |
+| 5 | Capacidad de agenda contra lo proyectado | `capacityFor` | S90 |
+| 6 | Aprobar y activar (simulado); pausar o reanudar | `campaignApprove`, `campaignActivate`, `campaignPause`, `campaignResume` | S83–S85 |
+| 7 | Ver proyectado, simulado y observado por separado | `campaignResults` | S91 |
+| 8 | La persona consulta turno, presupuesto o seguimiento por WhatsApp | `chatSend` / `chatChoose` (`mi_turno`, `presupuesto`, `seguimiento`) | S95, S96 |
+
+La botonera suma el recorrido “Campaña administrativa” (dirección → recepción → paciente).
 

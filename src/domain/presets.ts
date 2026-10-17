@@ -37,6 +37,7 @@ export const PRESETS: Preset[] = [
   { id: 'vacio', name: 'Vacío', description: 'Sin personas, citas ni movimientos. KPIs con n=0.', route: '#/admin/informes', cases: 'S21', build: withPreset('vacio', (s) => {
     s.persons = []; s.responsibleLinks = []; s.appointments = []; s.requests = []; s.conversations = []; s.messages = []; s.outbox = []; s.tasks = [];
     s.waitlist = []; s.offers = []; s.careEpisodes = []; s.toothChart = []; s.estimates = []; s.estimateLines = []; s.ledger = [];
+    s.campaigns = []; s.campaignDeliveries = [];
   }) },
   { id: 'dos_ofertas', name: 'Dos ofertas compitiendo', description: 'Se canceló el control del Dr. Acosta mié 21/10 09:00 y hay dos candidatos con oferta activa por el mismo cupo.', route: '#/admin/espera', cases: 'S45, A06', build: withPreset('dos_ofertas', (s) => {
     const a = s.appointments.find((x) => x.id === 'A-0018')!;

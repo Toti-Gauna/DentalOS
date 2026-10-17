@@ -9,6 +9,22 @@ import { TurnoCard, agendaLink } from '../../ui/components';
 import { PageArt } from '../../ui/art/pages';
 import { BrandMark } from '../../ui/art/brand';
 import { ExpandableSurface, PhoneFrame } from '../../ui/Device';
+import { useStreamedText } from '../../ui/Stream';
+
+/** La respuesta nueva del asistente aparece por palabras (breve e interrumpible); el lector de pantalla recibe el texto entero. */
+function StreamedReply({ text, id, onDone }: { text: string; id: string; onDone: (done: boolean) => void }) {
+  const st = useStreamedText(text, id);
+  const busy = st.streaming;
+  useEffect(() => { onDone(!busy); }, [busy, onDone]);
+  return (
+    <>
+      <span className="sr-only">{text}</span>
+      {st.thinking ? <span className="typing" aria-hidden="true"><span /><span /><span /></span>
+        : <span className="bubble-text" aria-hidden="true">{st.shown}</span>}
+      {busy && <button type="button" className="stream-skip" onClick={st.finish}>Mostrar todo</button>}
+    </>
+  );
+}
 
 export function WhatsApp() {
   const s = useDemo();
@@ -17,6 +33,9 @@ export function WhatsApp() {
   const [hint, setHint] = useState<string | null>(null);
   const conv = byId(s.conversations, convId) ?? s.conversations[0];
   const logRef = useRef<HTMLDivElement>(null);
+  // Solo se anima lo que llega en esta visita: el historial se muestra entero.
+  const [seenAtMount] = useState(() => new Set(s.messages.map((m) => m.id)));
+  const [replyReady, setReplyReady] = useState(true);
   const msgs = conv ? s.messages.filter((m) => m.conversationId === conv.id) : [];
   const replies = conv ? activeReplies(s, conv.id) : [];
   const openRequests = conv ? s.requests.filter((r) => (r.status === 'pendiente' || r.status === 'asignada') && (!conv.personId || r.personId === conv.personId)) : [];
@@ -42,6 +61,8 @@ export function WhatsApp() {
   };
 
   const upcoming = conv.personId ? upcomingFor(s, conv.personId) : [];
+  const lastMsg = msgs[msgs.length - 1];
+  const streamsLast = !!lastMsg && lastMsg.from === 'asistente' && !seenAtMount.has(lastMsg.id);
   return (
     <section className="page">
       <PageHeader eyebrow="M06 · Canal simulado" title="WhatsApp de la demo" art={<PageArt kind="chat" />}>
@@ -70,7 +91,9 @@ export function WhatsApp() {
                   <div className={`bubble ${m.from}${grouped ? ' is-grouped' : ''}`}>
                     {m.from === 'sistema' && <Icon name="info" size={14} />}
                     {m.from === 'recepcion' && <span className="who">Recepción · persona</span>}
-                    <span className="bubble-text">{m.text}</span>
+                    {i === msgs.length - 1 && streamsLast
+                      ? <StreamedReply key={m.id} text={m.text} id={m.id} onDone={setReplyReady} />
+                      : <span className="bubble-text">{m.text}</span>}
                     <span className="stamp tabular" title={`${fmtShort(m.at)} · ${status}`}>
                       <span className="sr-only">{fmtShort(m.at)} · {status}</span>
                       <span aria-hidden="true">{parts(m.at).hhmm}{m.from === 'paciente' && <span className={`ticks${m.simulated === 'entregado_simulado' ? '' : ' is-read'}`}>✓✓</span>}</span>
@@ -80,7 +103,7 @@ export function WhatsApp() {
                 </Fragment>
               );
             })}
-            {replies.length > 0 && (
+            {replies.length > 0 && (replyReady || !streamsLast) && (
               <div className="replies" role="group" aria-label="Respuestas rápidas">
                 {replies.map((r) => <button key={r.id} className="reply" onClick={() => choose(r.id)}>{r.label}</button>)}
               </div>

@@ -3,7 +3,7 @@ import { expect, test, type Page } from './fixtures';
 // L2.5 — revisión de accesibilidad y responsive sobre la UI renderizada (misma seed).
 const ROUTES = ['#/', '#/reservar', '#/mis-turnos', '#/whatsapp', '#/llamada', '#/aprender', '#/sedes/L-CEN', '#/servicios/ST-PRIMERA', '#/chicos',
   '#/admin', '#/admin/bandeja', '#/admin/personas', '#/admin/personas/P-003', '#/admin/personas/P-008/odontograma', '#/admin/ortodoncia',
-  '#/admin/presupuestos', '#/admin/espera', '#/admin/tareas', '#/admin/informes', '#/admin/config'];
+  '#/admin/presupuestos', '#/admin/campanas', '#/admin/espera', '#/admin/tareas', '#/admin/informes', '#/admin/config'];
 
 async function fresh(page: Page, hash = '#/') {
   await page.goto('/');

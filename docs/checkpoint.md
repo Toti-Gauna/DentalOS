@@ -1,5 +1,28 @@
 # Checkpoint · DentalOS demo
 
+## Mejora L1–L10 — lote 6 (seguimiento, campañas, economía y asistentes) · cerrado, esperando OK para el lote 7
+
+- **Rama:** `feat/dentalos-l6-campanas` desde `main` @ `359c5ed` (L5 fusionado).
+- **Hecho:**
+  - **Módulo M16 · Campañas y seguimiento** (`#/admin/campanas`), con cuatro segmentos calculados desde el store: controles ya indicados pendientes, presupuestos sin respuesta, consultas sin turno y turnos cancelados para volver a coordinar.
+  - **Audiencia:** un menor se contacta por su adulto responsable. Quedan fuera la baja, la exclusión administrativa y quien llegó al límite de 2 mensajes en 30 días. Una persona que aparece varias veces recibe un solo mensaje. El orden es por ID, sin ranking.
+  - **Campañas** individuales, segmentadas o masivas; manuales, programadas o por evento. Ciclo: borrador → vista previa → aprobación → activación simulada → pausa / reanudar / finalizar. Calendario de semana, mes, bimestre y temporada.
+  - **Mensajes discretos:** las plantillas no nombran tratamientos, diagnósticos ni importes. Un control rechaza urgencias, miedo, ofertas y detalles clínicos, también en la nota agregada.
+  - **Economía antes de activar:**
+    - Contribución = ingreso neto − costo de servicio − otros variables. El % es sobre el ingreso neto y no es ganancia neta.
+    - Equilibrio = costo de la campaña ÷ contribución, hacia arriba. Con contribución ≤ 0 no hay equilibrio.
+    - El costo de comunicación se cuenta una sola vez.
+    - Si falta un dato se muestra ND y la campaña sigue en borrador.
+    - La capacidad de agenda bloquea si la proyección la supera.
+  - **Resultados** proyectado, simulado y observado por separado, sin sumarse. Reservar no es atender ni cobrar, y la atribución no prueba causalidad.
+  - **Asistente de dirección** determinista: controles pendientes, capacidad, datos faltantes (lleva al campo) y costo con la cuenta. Crea un borrador, nunca activa.
+  - **WhatsApp:** suma “Mi próximo turno”, “Mis presupuestos” y “Mi seguimiento”, por ID e incluyendo a quienes la persona tiene a cargo. Lo clínico sigue derivando a recepción.
+  - **Respuestas en streaming** breves e interrumpibles (Detener / Mostrar todo); con movimiento reducido salen enteras.
+  - **A11:** entrega lo programado y respeta la baja al momento de enviar.
+- **Resultados:** ver `docs/validation.md`, sección del lote 6.
+- **Pendiente declarado:** los textos de las plantillas requieren revisión de la clínica real. Los costos de comunicación son ficticios. No se probó con lector de pantalla real.
+- **Próxima acción exacta:** lote 7 (códigos y QR paciente–recepción), con el OK de Ignacio.
+
 ## Mejora L1–L10 — lote 5 (recorridos, presupuestos y segunda actividad infantil) · cerrado, esperando OK para el lote 6
 
 - **Rama:** `feat/dentalos-l5-recorridos` desde `main` @ `17b9446` (L4 fusionado).

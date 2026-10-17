@@ -61,7 +61,7 @@ test('S70: cada recorrido arranca en su vista y ruta; los pasos funcionan con te
   await fresh(page, '#/');
   await page.getByRole('button', { name: /Controles de la demo/ }).click();
   const d = dock(page);
-  await expect(d.locator('details.journey')).toHaveCount(4);
+  await expect(d.locator('details.journey')).toHaveCount(5); // L6 agregó “Campaña administrativa”
   const summary = d.locator('details.journey', { hasText: 'Un mensaje que llega a recepción' }).locator('summary');
   await summary.focus();
   await page.keyboard.press('Enter');

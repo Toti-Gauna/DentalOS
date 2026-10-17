@@ -12,7 +12,7 @@ export function normalize(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9:\s]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-export type Intent = 'clinico' | 'negacion' | 'ambiguo' | 'humano' | 'cancelar' | 'reprogramar' | 'horarios' | 'ubicacion' | 'reservar' | 'saludo' | 'si' | 'no' | 'desconocido';
+export type Intent = 'clinico' | 'negacion' | 'ambiguo' | 'humano' | 'cancelar' | 'reprogramar' | 'mi_turno' | 'presupuesto' | 'seguimiento' | 'horarios' | 'ubicacion' | 'reservar' | 'saludo' | 'si' | 'no' | 'desconocido';
 
 const has = (t: string, re: RegExp) => re.test(t);
 const CLINICO = /\b(duel\w*|dolor\w*|medicament\w*|remedio\w*|pastilla\w*|antibiotic\w*|ibuprofeno|paracetamol|sangr\w*|hinchad\w*|hinchazon|infecc\w*|fiebre|absceso|flemon|inflamad\w*|urgencia|urgente|me rompi|se me rompio|se me cayo)\b/;
@@ -23,6 +23,9 @@ const HORARIOS = /\b(horario\w*|cuando atienden|que dias|abren|atienden|sabado\w
 const UBICACION = /\b(direccion|ubicacion|ubicados|donde quedan|donde estan|donde es|como llego|sede\w*|mapa)\b/;
 const RESERVAR = /\b(turno\w*|cita\w*|reserv\w*|sacar|pedir hora|primera consulta|consulta)\b/;
 const SALUDO = /^(hola+|holis|buen dia|buenos dias|buenas|buenas tardes|buenas noches|que tal)( .*)?$/;
+const MI_TURNO = /\b(mi turno|mis turnos|mi proximo turno|proximo turno|cuando (es|tengo) (mi|el) turno|cuando tengo turno)\b/;
+const PRESUPUESTO = /\bpresupuest\w*/;
+const SEGUIMIENTO = /\b(seguimiento|mis controles|mi control|control indicado)\b/;
 const NEGACION = /\bno\b.*\b(cancel\w*|anul\w*|mover|cambi\w*|reprogram\w*)/;
 
 export function detectIntent(raw: string): Intent {
@@ -35,6 +38,9 @@ export function detectIntent(raw: string): Intent {
   if (has(t, HUMANO)) return 'humano';
   if (c) return 'cancelar';
   if (r) return 'reprogramar';
+  if (has(t, PRESUPUESTO)) return 'presupuesto';
+  if (has(t, SEGUIMIENTO)) return 'seguimiento';
+  if (has(t, MI_TURNO)) return 'mi_turno';
   if (has(t, HORARIOS)) return 'horarios';
   if (has(t, UBICACION)) return 'ubicacion';
   if (has(t, RESERVAR)) return 'reservar';
@@ -64,6 +70,9 @@ const MENU: QuickReply[] = [
   { id: 'menu:reservar', label: 'Pedir un turno' },
   { id: 'menu:reprogramar', label: 'Cambiar mi turno' },
   { id: 'menu:cancelar', label: 'Cancelar un turno' },
+  { id: 'menu:mi_turno', label: 'Mi próximo turno' },
+  { id: 'menu:presupuesto', label: 'Mis presupuestos' },
+  { id: 'menu:seguimiento', label: 'Mi seguimiento' },
   { id: 'menu:info', label: 'Horarios y ubicación' },
   { id: 'menu:humano', label: 'Hablar con recepción' },
 ];
@@ -305,6 +314,58 @@ function infoText(d: DemoState) {
   return d.locations.map((l) => `${l.name}: ${l.address}. ${l.hoursText}.`).join(' ') + ' Direcciones ficticias de la demo.';
 }
 
+// ---------- Consultas administrativas del paciente (lote 6 · R-GRW-06) ----------
+/** La persona de la conversación y quienes tiene a cargo: un adulto responsable consulta también por sus dependientes. */
+function family(d: DemoState, personId: string) {
+  return [personId, ...d.responsibleLinks.filter((l) => l.responsibleId === personId).map((l) => l.dependentId)];
+}
+const firstName = (d: DemoState, id: string) => d.persons.find((p) => p.id === id)?.firstName ?? id;
+const pesos = (minor: number) => `$ ${(minor / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+function myAppointments(d: DemoState, conv: Conversation) {
+  if (!requireIdentity(d, conv)) return;
+  const ids = family(d, conv.personId!);
+  const appts = ids.flatMap((id) => activeFutureAppointments(d, id)).sort((a, b) => toMs(a.start) - toMs(b.start)).slice(0, 3);
+  if (!appts.length) return showMenu(d, conv, 'No encontré turnos activos a tu nombre ni de quienes tenés a cargo (por ID). ¿Querés pedir uno?');
+  const lines = appts.map((a) => `${a.personId !== conv.personId ? `${firstName(d, a.personId)}: ` : ''}${svcName(d, a.serviceTypeId)} el ${fmtShort(a.start)} en ${locName(d, a.locationId)} (${a.id}, ${a.status === 'solicitada' ? 'pendiente de confirmar por recepción' : 'confirmado'}).`);
+  setFlow(conv, { step: 'menu' });
+  say(d, conv, `${appts.length === 1 ? 'Tu próximo turno' : 'Tus próximos turnos'}: ${lines.join(' ')}`, [{ id: 'menu:reprogramar', label: 'Cambiar mi turno' }, BACK]);
+}
+
+function myEstimates(d: DemoState, conv: Conversation) {
+  if (!requireIdentity(d, conv)) return;
+  const ids = family(d, conv.personId!);
+  const list = d.estimates.filter((e) => ids.includes(e.personId) && e.status !== 'borrador');
+  setFlow(conv, { step: 'menu' });
+  if (!list.length) return say(d, conv, 'No tenés presupuestos emitidos (ni quienes tenés a cargo). Si esperabas uno, recepción lo revisa.', [{ id: 'menu:humano', label: 'Hablar con recepción' }, BACK]);
+  const lines = list.map((e) => {
+    const total = d.estimateLines.filter((l) => l.estimateId === e.id).reduce((s, l) => s + l.qty * l.unitMinor, 0);
+    const state = e.status === 'emitido' ? `emitido${e.validUntil ? `, vigente hasta ${fmtShort(e.validUntil)}` : ''}` : e.status === 'aceptado' ? 'aceptado (no es un cobro)' : e.status;
+    return `${e.id}${e.personId !== conv.personId ? ` para ${firstName(d, e.personId)}` : ''}: ${state}, total ${pesos(total)} (importe ficticio).`;
+  });
+  say(d, conv, `${lines.join(' ')} Aceptar un presupuesto es administrativo: no es un pago. Podés verlo y decidir en Mis turnos, o pedir que recepción te lo explique.`, [{ id: 'menu:humano', label: 'Que me lo explique recepción' }, BACK]);
+}
+
+function myFollowUp(d: DemoState, conv: Conversation) {
+  if (!requireIdentity(d, conv)) return;
+  const ids = family(d, conv.personId!);
+  const eps = d.careEpisodes.filter((e) => ids.includes(e.personId) && e.status === 'activo');
+  setFlow(conv, { step: 'menu' });
+  if (!eps.length) return say(d, conv, 'No tenés un seguimiento administrativo activo. Si tenés una duda sobre tu salud, recepción te comunica con tu profesional: yo no evalúo síntomas.', [{ id: 'menu:humano', label: 'Hablar con recepción' }, BACK]);
+  const lines: string[] = [];
+  let pending = false;
+  for (const e of eps) {
+    const who = e.personId !== conv.personId ? `${firstName(d, e.personId)}: ` : '';
+    for (const c of e.controls) {
+      if (c.status === 'indicado') { pending = true; lines.push(`${who}hay un control ya indicado por la profesional para coordinar (${c.id}).`); }
+      else if (c.status === 'reservado' && c.appointmentId) lines.push(`${who}el control ${c.id} ya tiene turno: ${apptLabel(d, c.appointmentId)}.`);
+    }
+  }
+  const joined = lines.join(' ');
+  const text = lines.length ? joined.charAt(0).toUpperCase() + joined.slice(1) : 'Tu seguimiento está activo y no hay controles pendientes de coordinar.';
+  say(d, conv, `${text} Los controles los indica tu profesional; yo solo ayudo a coordinar el turno.`, [...(pending ? [{ id: 'menu:reservar', label: 'Pedir el turno del control' }] : []), { id: 'menu:humano', label: 'Hablar con recepción' }, BACK]);
+}
+
 // ---------- Ruteo ----------
 function handleIntent(d: DemoState, conv: Conversation, intent: Intent, commandId: string) {
   const f = conv.flow;
@@ -319,6 +380,9 @@ function handleIntent(d: DemoState, conv: Conversation, intent: Intent, commandI
     case 'reprogramar': return startAppointmentFlow(d, conv, 'reprogramar');
     case 'horarios': case 'ubicacion': setFlow(conv, { step: 'menu' }); return say(d, conv, infoText(d), MENU);
     case 'reservar': return startBook(d, conv);
+    case 'mi_turno': return myAppointments(d, conv);
+    case 'presupuesto': return myEstimates(d, conv);
+    case 'seguimiento': return myFollowUp(d, conv);
     case 'saludo': setFlow(conv, { step: 'menu' }); return say(d, conv, GREETING, MENU);
     case 'si':
       if (f.step === 'review_change') return confirmChange(d, conv);

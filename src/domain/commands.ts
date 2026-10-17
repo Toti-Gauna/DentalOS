@@ -5,7 +5,7 @@ import { ACTIVE_STATUSES, findSlots, isActive, resolveChair, slotFor, slotKey, v
 import { reminderText } from './seed';
 import { LEARNING_CARDS } from './learning';
 import type {
-  Appointment, AppointmentStatus, Block, CallLine, CallSession, Channel, CommandResult, CommandResultErr, CommandResultOk,
+  Appointment, AppointmentStatus, Block, CallLine, CallSession, CampaignInput, Channel, CommandResult, CommandResultErr, CommandResultOk, ContactChannel,
   DemoSettings, DemoState, OutboxKind, Person, Request, RequestKind, RequestStatus, SlotRef, Surface, Task, TaskKind,
 } from './types';
 
@@ -141,6 +141,16 @@ export type Command = Base & (
   | { type: 'chatChoose'; conversationId: string; replyId: string }
   | { type: 'chatOpen'; conversationId: string }
   | { type: 'chatLinkRequest'; conversationId: string; requestId: string | null }
+  | { type: 'campaignCreate'; input: CampaignInput }
+  | { type: 'campaignUpdate'; campaignId: string; patch: Partial<CampaignInput> }
+  | { type: 'campaignPreview'; campaignId: string }
+  | { type: 'campaignApprove'; campaignId: string }
+  | { type: 'campaignActivate'; campaignId: string }
+  | { type: 'campaignPause'; campaignId: string }
+  | { type: 'campaignResume'; campaignId: string }
+  | { type: 'campaignClose'; campaignId: string }
+  | { type: 'contactPrefSet'; personId: string; optOut?: boolean; exclusion?: string | null }
+  | { type: 'campaignConfigSet'; commCostMinor?: Partial<Record<ContactChannel, number | null>>; maxPer30d?: number }
 );
 
 export type CommandInput = Command extends infer C ? (C extends Command ? Omit<C, 'commandId'> : never) : never;
@@ -508,6 +518,7 @@ export function runAutomations(d: DemoState, commandId: string): string[] {
     log.push(`Presupuesto ${e.id} vencido; tarea de seguimiento administrativo.`);
     audit(d, commandId, 'presupuesto_vencido', 'Estimate', e.id, 'Vencido por reloj de muestra.');
   }
+  for (const fn of EXTRA_AUTOMATIONS) log.push(...fn(d, commandId));
   return log;
 }
 
@@ -799,6 +810,10 @@ const HANDLERS: Record<string, (d: DemoState, c: any) => CommandResultOk> = {
 };
 
 export function registerHandler(type: string, h: (d: DemoState, c: Command) => CommandResultOk) { HANDLERS[type] = h; }
+
+// Automatizaciones de otros módulos (campañas) que corren con el reloj, sin importar ese módulo acá.
+const EXTRA_AUTOMATIONS: ((d: DemoState, commandId: string) => string[])[] = [];
+export function registerAutomation(fn: (d: DemoState, commandId: string) => string[]) { EXTRA_AUTOMATIONS.push(fn); }
 
 export interface ExecResult { state: DemoState; result: CommandResult; replayed: boolean }
 

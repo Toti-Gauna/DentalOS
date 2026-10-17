@@ -36,6 +36,7 @@ visitante → `/` · paciente/responsable → `/mis-turnos` · recepción → `/
 - **Automatizaciones:** A01–A10 (`seed.ts`), configurables desde Configuración; solo A05, A06 y A09 se pueden pausar.
 - **Persistencia:** `localStorage["dentalos.demo.v1"]` (estado) y `…:ui` (rol, tema, sonido, borradores). Reset borra solo ese namespace.
 - **Sin equivalente hoy:** entidad de campaña/segmento/costo, código o QR de turno, escena guiada, temporada.
+- **Lote 6:** módulo M16 `#/admin/campanas` (`Campaigns.tsx`, `DirectorAssistant.tsx`); dominio `campaigns.ts` (segmentos, audiencia, plantillas, economía, capacidad, 10 comandos nuevos y la automatización A11) y `assistant.ts`. Colecciones nuevas `campaigns`, `campaignDeliveries` y `campaignConfig`, completadas al cargar datos guardados antes (sin cambiar la versión de esquema). Seed: 3 campañas (2 finalizadas con 4 entregas simuladas y el borrador CMP-003), baja de campañas de P-011 y exclusión de P-002. WhatsApp suma “Mi próximo turno”, “Mis presupuestos” y “Mi seguimiento”.
 - **Cambios de L5 en la seed:** sigue con 12 personas; 3 vínculos de responsable (se agregó RL-003, Ramiro P-006 → Diego P-009) y 4 presupuestos (se agregó EST-004 de Tomás P-004, emitido). `Estimate.decidedBy` registra quién aceptó o rechazó.
 
 ## UI (`src/ui`, `src/pages`)
