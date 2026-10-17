@@ -4,8 +4,9 @@ import { NAMESPACE } from '../domain/storage';
 import type { ViewRole } from '../domain';
 
 const UI_KEY = `${NAMESPACE}:ui`;
-interface UiState { role: ViewRole; actingPersonId: string; sound: boolean; drafts: Record<string, unknown> }
-const DEFAULT: UiState = { role: 'paciente', actingPersonId: 'P-001', sound: false, drafts: {} };
+export type ThemePref = 'system' | 'light' | 'dark';
+interface UiState { role: ViewRole; actingPersonId: string; sound: boolean; theme: ThemePref; drafts: Record<string, unknown> }
+const DEFAULT: UiState = { role: 'paciente', actingPersonId: 'P-001', sound: false, theme: 'system', drafts: {} };
 
 function read(): UiState {
   try {
@@ -31,6 +32,7 @@ export const setRole = (role: ViewRole) => write({ ...ui, role });
 export const setActingPerson = (actingPersonId: string) => write({ ...ui, actingPersonId });
 export const resetUi = () => write(DEFAULT);
 export const setSoundPref = (sound: boolean) => write({ ...ui, sound });
+export const setThemePref = (theme: ThemePref) => write({ ...ui, theme });
 
 /** Borrador persistente por clave: sobrevive a navegar y recargar; se limpia al confirmar o con reset. */
 export function useDraft<T>(key: string, initial: T): [T, (v: T | ((p: T) => T)) => void, () => void] {

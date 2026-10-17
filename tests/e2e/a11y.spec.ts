@@ -64,11 +64,11 @@ async function renderedContrast(page: Page): Promise<{ checked: number; skipped:
   });
 }
 
-for (const width of [1440, 390]) {
-  test(`contraste renderizado AA en ${ROUTES.length} rutas a ${width} px`, async ({ page }) => {
+for (const scheme of ['light', 'dark'] as const) for (const width of [1440, 390]) {
+  test(`contraste renderizado AA en ${ROUTES.length} rutas a ${width} px · tema ${scheme === 'light' ? 'claro' : 'oscuro'}`, async ({ page }) => {
     test.setTimeout(90_000);
     await page.setViewportSize({ width, height: 900 });
-    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: scheme });
     await fresh(page);
     const all: (Fail & { route: string })[] = [];
     let checked = 0;

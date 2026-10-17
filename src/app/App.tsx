@@ -16,6 +16,7 @@ import { Kids } from '../pages/public/Kids';
 import { BrandMark } from '../ui/art/brand';
 import { sound, type Sfx } from '../ui/sound';
 import { CommandPalette } from '../ui/CommandPalette';
+import { ThemeSwitcher, useApplyTheme } from '../ui/ThemeSwitcher';
 
 // El panel de la clínica se carga aparte: el portal de pacientes no descarga su código.
 const Today = lazy(() => import('../pages/admin/Today').then((m) => ({ default: m.Today })));
@@ -231,6 +232,7 @@ export function App() {
   const prevText = useRef<string | null>(null);
 
   const ui = useUi();
+  useApplyTheme();
   // Sonidos de interfaz: preferencia del dispositivo; se escuchan solo resultados reales de comandos.
   useEffect(() => { sound.setEnabled(ui.sound); }, [ui.sound]);
   useEffect(() => {
@@ -306,6 +308,7 @@ export function App() {
             <a href="#/" aria-current={!admin ? 'true' : undefined} aria-label="Portal de pacientes"><Icon name="user" size={16} /> <span className="lbl-long">Portal de pacientes</span><span className="lbl-short">Pacientes</span></a>
             <a href="#/admin" aria-current={admin ? 'true' : undefined} aria-label="Panel de la clínica"><Icon name="calendar" size={16} /> <span className="lbl-long">Panel de la clínica</span><span className="lbl-short">Clínica</span></a>
           </nav>
+          <ThemeSwitcher />
           <SoundToggle />
           <RoleSwitch />
           {admin && <button type="button" className="search-btn btn btn-ghost btn-sm" onClick={() => setPaletteOpen(true)} aria-label="Buscar (Ctrl K)" aria-keyshortcuts="Control+K Meta+K"><Icon name="search" size={16} /><span>Buscar</span><kbd>Ctrl K</kbd></button>}
