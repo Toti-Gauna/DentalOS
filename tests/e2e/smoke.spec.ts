@@ -15,6 +15,7 @@ const ROUTES: [string, RegExp][] = [
   ['#/admin/personas/P-001/odontograma', /Odontograma/],
   ['#/admin/ortodoncia', /Continuidad de ortodoncia/],
   ['#/admin/presupuestos', /Presupuestos y caja ficticia/],
+  ['#/admin/campanas', /Campañas y seguimiento/],
   ['#/admin/espera', /Lista de espera y recordatorios/],
   ['#/admin/tareas', /Tareas/],
   ['#/admin/informes', /Informes calculados/],
@@ -36,7 +37,7 @@ async function fresh(page: Page) {
   await page.goto('/#/');
 }
 
-test('los 15 módulos navegan con indicador de demo, sin errores ni red externa', async ({ page }) => {
+test('los 16 módulos navegan con indicador de demo, sin errores ni red externa', async ({ page }) => {
   const g = guard(page);
   await fresh(page);
   for (const [hash, title] of ROUTES) {

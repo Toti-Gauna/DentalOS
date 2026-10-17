@@ -29,6 +29,10 @@ export interface Person {
   id: string; firstName: string; lastName: string; birthYear: number; kind: 'adulto' | 'menor';
   preferredChannel: 'whatsapp' | 'llamada' | 'portal' | null;
   reminderOptIn: boolean; adminNote: string; version: number;
+  /** Baja de campañas pedida por la persona (distinta de los recordatorios de turnos). Ausente en datos viejos. */
+  campaignOptOut?: boolean;
+  /** Exclusión administrativa de campañas con su motivo (sin datos clínicos). */
+  campaignExclusion?: string | null;
 }
 export interface ResponsibleLink { id: string; responsibleId: string; dependentId: string; relation: string }
 
@@ -131,6 +135,40 @@ export interface LedgerEntry {
 export type LearningState = 'nuevo' | 'en_curso' | 'comprendido' | 'completo';
 export interface LearningProgress { cardId: string; state: LearningState; attempts: number; lastChoiceId: string | null; opens: number; rereads: number; completedAt: Iso | null }
 
+// ---- Campañas administrativas (lote 6). Todo es simulado: nada se envía ni se cobra. ----
+export type SegmentId = 'controles_pendientes' | 'presupuestos_sin_respuesta' | 'consultas_sin_turno' | 'reprogramaciones';
+export type CampaignKind = 'individual' | 'segmentada' | 'masiva';
+export type CampaignTrigger = 'manual' | 'programada' | 'evento';
+export type CampaignCadence = 'unica' | 'semanal' | 'mensual' | 'bimestral' | 'estacional';
+export type CampaignStatus = 'borrador' | 'lista' | 'aprobada' | 'activa' | 'pausada' | 'finalizada';
+export type ContactChannel = 'whatsapp' | 'portal' | 'llamada';
+/** Valores por atención en centavos; null = no cargado (ND). */
+export interface CampaignEconomics {
+  listPriceMinor: number | null; discountMinor: number; serviceCostMinor: number | null; otherVariableMinor: number | null;
+  fixedCostMinor: number | null; responseRatePct: number | null;
+}
+export interface Campaign {
+  id: string; name: string; kind: CampaignKind; trigger: CampaignTrigger; cadence: CampaignCadence;
+  segmentIds: SegmentId[]; personId: string | null; templateId: string; extraNote: string;
+  serviceTypeId: string | null; scheduledFor: Iso | null; status: CampaignStatus; economics: CampaignEconomics;
+  createdAt: Iso; updatedAt: Iso; approvedAt: Iso | null; activatedAt: Iso | null; pausedAt: Iso | null; version: number;
+}
+/** Lo que se carga al crear o editar una campaña (sin estado ni fechas de ciclo de vida). */
+export type CampaignInput = Pick<Campaign, 'name' | 'kind' | 'trigger' | 'cadence' | 'segmentIds' | 'personId' | 'templateId' | 'extraNote' | 'serviceTypeId' | 'scheduledFor' | 'economics'>;
+export type DeliveryStatus = 'programado' | 'entregado_simulado' | 'pausado' | 'bloqueado';
+export interface CampaignDelivery {
+  id: string; campaignId: string; contactId: string; forPersonIds: string[]; channel: ContactChannel; status: DeliveryStatus;
+  dueAt: Iso; createdAt: Iso; text: string; dedupeKey: string; note: string;
+}
+export interface CampaignConfig {
+  /** Costo ficticio por contacto y canal, en centavos (null = no cargado). */
+  commCostMinor: Record<ContactChannel, number | null>;
+  /** Límite de frecuencia: máximo de mensajes de campaña por persona en 30 días. */
+  maxPer30d: number;
+  /** Días hacia adelante para medir capacidad de agenda. */
+  capacityDays: number;
+}
+
 export interface AuditEvent { id: string; at: Iso; type: string; entity: string; entityId: string; detail: string; commandId: string }
 
 export interface DemoSettings {
@@ -177,6 +215,9 @@ export interface DemoState {
   estimates: Estimate[];
   estimateLines: EstimateLine[];
   ledger: LedgerEntry[];
+  campaigns: Campaign[];
+  campaignDeliveries: CampaignDelivery[];
+  campaignConfig: CampaignConfig;
   learning: LearningProgress[];
   audit: AuditEvent[];
   processed: Record<string, CommandResult>;

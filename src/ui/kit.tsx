@@ -4,6 +4,7 @@ import { STATUS_LABEL } from '../domain/selectors';
 // ---------- Iconos propios (SVG inline, sin assets remotos) ----------
 const PATHS: Record<string, string> = {
   check: 'M4 12.5l5 5L20 6.5',
+  send: 'M3.5 11.5L20.5 4l-7.5 17-2.2-7.3-7.3-2.2zM10.8 13.7L20.5 4',
   clock: 'M12 7v5l3 2M12 21a9 9 0 110-18 9 9 0 010 18z',
   alert: 'M12 8v5M12 16.5v.5M10.3 3.9L2.6 17.5A2 2 0 004.3 20.5h15.4a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z',
   info: 'M12 11v6M12 7.5v.5M12 21a9 9 0 110-18 9 9 0 010 18z',
@@ -78,6 +79,7 @@ const TONE: Record<string, { tone: string; icon: string }> = {
   rechazada: { tone: 'muted', icon: 'x' }, tomada_por_otro: { tone: 'muted', icon: 'user' }, retirada: { tone: 'muted', icon: 'x' },
   derivada: { tone: 'warn', icon: 'user' }, cerrada: { tone: 'muted', icon: 'check' }, indicado: { tone: 'warn', icon: 'info' },
   reservado: { tone: 'info', icon: 'calendar' }, realizado: { tone: 'ok', icon: 'check' }, planificado: { tone: 'info', icon: 'clock' },
+  lista: { tone: 'info', icon: 'list' }, aprobada: { tone: 'ok', icon: 'check' }, pausada: { tone: 'warn', icon: 'pause' }, pausado: { tone: 'warn', icon: 'pause' }, bloqueado: { tone: 'muted', icon: 'stop' },
 };
 export function StatusBadge({ status, label }: { status: string; label?: string }) {
   const t = TONE[status] ?? { tone: 'muted', icon: 'info' };

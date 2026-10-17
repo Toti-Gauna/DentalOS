@@ -30,6 +30,14 @@ export const JOURNEYS: Journey[] = [
     ],
   },
   {
+    id: 'campana', title: 'Campaña administrativa', summary: 'Segmento → borrador → vista previa → aprobación → activación simulada. Nada se envía.',
+    steps: [
+      { role: 'direccion', to: '/admin/campanas', label: 'Segmentos, economía y asistente' },
+      { role: 'recepcion', to: '/admin/tareas', label: 'Llamadas que quedan como tareas' },
+      { role: 'paciente', to: '/whatsapp', label: 'Consultar turno, presupuesto o seguimiento' },
+    ],
+  },
+  {
     id: 'familia', title: 'Brisa Chicos en familia', summary: 'Turnos de los chicos desde el portal y los juegos, que maneja la persona adulta.',
     steps: [
       { role: 'paciente', to: '/mis-turnos', label: 'Turnos de Tomás y Lola', actingPersonId: 'P-003' },

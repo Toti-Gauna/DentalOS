@@ -472,3 +472,68 @@ Rama `feat/dentalos-l4-arte` desde `main` @ `03a91a7`.
 
 **Límites:** solo Chromium; no se probó con lector de pantalla real.
 
+# Lote 6 (seguimiento, campañas, economía y asistentes)
+
+**Comandos:**
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` · `npm run typecheck` · `npm run build` | 0 | sin errores; campañas en su propio chunk |
+| `npx vitest run` | 0 | 190/190 (23 nuevas en `src/domain/campaigns.test.ts`) |
+| `npx playwright test` | 0 | 92 pasadas + 1 omitida (6 nuevas en `tests/e2e/campaigns.spec.ts`; `#/admin/campanas` sumada a smoke y a la revisión de contraste/a11y) |
+
+**Pruebas nuevas:**
+
+- **S79–S82 · segmentos y audiencia:**
+  - los conteos salen del store;
+  - el menor se contacta por su responsable;
+  - quedan fuera la baja, la exclusión con motivo y el límite de frecuencia;
+  - quien aparece en dos segmentos recibe un mensaje;
+  - una consulta sin identificar deja la audiencia vacía y la vista previa falla.
+- **S83–S86 · ciclo de vida:**
+  - no se puede saltar pasos;
+  - editar una campaña aprobada la vuelve a borrador;
+  - reintentar la activación con el mismo `commandId` no duplica entregas;
+  - pausar retiene lo programado aunque avance el reloj;
+  - una baja pedida antes del envío lo bloquea;
+  - por evento, los contactos nuevos reciben una vez y sin duplicar por persona a cargo;
+  - una llamada queda como tarea de recepción.
+- **S87–S90 · economía:**
+  - 100 − 60 − 5 = 35; con descuento 10, neto 90, contribución 25 (27,8 %); con fijo 100, equilibrio en 4;
+  - ND con la lista de faltantes y la campaña en borrador;
+  - contribución ≤ 0 sin equilibrio;
+  - costo de canal sin cargar → ND;
+  - capacidad 0 tras bloquear la agenda → `CAPACIDAD_INSUFICIENTE`.
+- **S91 · resultados:** simulado y observado se cuentan aparte, y una reserva no cuenta como atención ni como cobro.
+- **S77 / R-GRW-07 · mensajes:** todas las plantillas pasan el control; un texto con urgencia, oferta, detalle clínico y signos repetidos se rechaza, también como nota agregada.
+- **S92–S94 · asistente de dirección:**
+  - entiende las cuatro preguntas;
+  - las cifras salen del store;
+  - pide los faltantes y lleva al campo;
+  - el costo muestra la cuenta;
+  - la capacidad cambia con un bloqueo;
+  - crea un borrador que no se activa;
+  - “Detener” deja la respuesta parcial y “Ver completa” la completa.
+- **S95/S96 · WhatsApp:**
+  - próximo turno, presupuesto y seguimiento por ID, también de dependientes;
+  - lo clínico deriva sin evaluar gravedad;
+  - la respuesta nueva aparece por palabras con el texto completo para lectores de pantalla.
+- **Persistencia:** datos guardados antes del lote 6 cargan sin error y se completan con colecciones vacías y A11.
+
+**Errores encontrados y corregidos:**
+
+- **Pregunta de costo no reconocida:** “¿cuánto cuesta…?” caía en ayuda porque el patrón solo reconocía “costo”. Ahora también reconoce “cuesta”.
+- **Campo duplicado:** el costo de servicio y el motivo de turno compartían el ID del campo. Ahora tienen IDs distintos, lo que importa para que el asistente lleve al campo correcto.
+- **Respuesta del asistente:** al cambiar de pregunta, la respuesta nueva aparecía completa por un instante antes de “pensando”. Ahora cada respuesta se monta de cero.
+- **Calendario a 390 px:** los rótulos se cortaban en “C…”. En móvil pasan a ser marcas de color y la lista de fechas previstas queda visible debajo.
+- **Mayúsculas:** dos frases empezaban en minúscula (canal de comunicación y seguimiento). Se corrigieron.
+
+**Capturas:** `docs/evidence/l6/campanas.jpg`, `docs/evidence/l6/asistentes.jpg` y `docs/evidence/l6/calendario-movil.jpg`.
+
+**Límites:**
+
+- Los costos de comunicación y los importes son ficticios.
+- Las plantillas requieren revisión de la clínica.
+- Las repeticiones del calendario son previstas, no envíos automáticos.
+- Solo Chromium; sin lector de pantalla real.
+

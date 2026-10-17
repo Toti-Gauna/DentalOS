@@ -1,4 +1,5 @@
 // Adaptador local de persistencia. Namespace propio "dentalos.demo.v1"; nunca toca otras claves.
+import { A11_RULE, defaultCampaignConfig } from './seed';
 import { SCHEMA_VERSION, SEED, type DemoState } from './types';
 
 export const NAMESPACE = 'dentalos.demo.v1';
@@ -53,6 +54,15 @@ export function validateState(x: unknown): string | null {
   return null;
 }
 
+/** Completa colecciones agregadas después de la v1 (lote 6) sin cambiar la versión de esquema: los datos guardados siguen valiendo. */
+export function normalizeState(s: DemoState): DemoState {
+  if (!Array.isArray(s.campaigns)) s.campaigns = [];
+  if (!Array.isArray(s.campaignDeliveries)) s.campaignDeliveries = [];
+  if (!s.campaignConfig || typeof s.campaignConfig !== 'object') s.campaignConfig = defaultCampaignConfig();
+  if (!s.automationRules.some((r) => r.id === 'A11')) s.automationRules.push({ ...A11_RULE });
+  return s;
+}
+
 // Migraciones explícitas por versión de esquema (vacío: v1 es la primera).
 const MIGRATIONS: Record<number, (env: Envelope) => Envelope> = {};
 
@@ -67,7 +77,7 @@ export function parseEnvelope(raw: string): LoadResult {
   while (env && typeof env.schemaVersion === 'number' && env.schemaVersion < SCHEMA_VERSION && MIGRATIONS[env.schemaVersion] && guard++ < 10) env = MIGRATIONS[env.schemaVersion](env);
   const reason = validateState(env?.state);
   if (reason) return { status: 'corrupt', raw, reason };
-  return { status: 'ok', state: env.state };
+  return { status: 'ok', state: normalizeState(env.state) };
 }
 
 export function loadState(kv: KV | null): LoadResult {
