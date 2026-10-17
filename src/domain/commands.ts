@@ -119,6 +119,7 @@ export type Command = Base & (
   | { type: 'toothDone'; entryId: string }
   | { type: 'episodeIndicateControl'; episodeId: string; note: string }
   | { type: 'episodeNote'; episodeId: string; text: string }
+  | { type: 'episodeSetAppliance'; episodeId: string; appliance: string }
   | { type: 'estimateCreate'; personId: string; professionalId: string }
   | { type: 'estimateAddLine'; estimateId: string; description: string; tooth: number | null; qty: number; unitMinor: number }
   | { type: 'estimateRemoveLine'; lineId: string }
@@ -520,7 +521,14 @@ const advanceClock: Handler<'advanceClock'> = (d, c) => {
 };
 
 // ---- Odontograma ----
-export const PROCEDURES = ['Restauración', 'Sellador', 'Extracción indicada', 'Tratamiento de conducto', 'Corona', 'Control'] as const;
+// Registros que la profesional puede cargar (cada uno tiene su ilustración en src/ui/art/teeth.tsx).
+// "Restauración" y "Corona" se mantienen por compatibilidad con fichas guardadas.
+export const PROCEDURES = [
+  'Caries (hallazgo)', 'Restauración de resina', 'Restauración de amalgama', 'Sellador', 'Corona de porcelana', 'Corona de oro',
+  'Tratamiento de conducto', 'Implante', 'Fractura (hallazgo)', 'Bracket', 'Extracción indicada', 'Pieza ausente', 'Control',
+  'Restauración', 'Corona',
+] as const;
+export const APPLIANCE_IDS = ['brackets_metalicos', 'brackets_esteticos', 'alineadores', 'retenedor_fijo', 'retenedor_removible'] as const;
 export function isValidTooth(dentition: 'permanente' | 'temporal', tooth: number): boolean {
   const q = Math.floor(tooth / 10); const n = tooth % 10;
   return dentition === 'permanente' ? q >= 1 && q <= 4 && n >= 1 && n <= 8 : q >= 5 && q <= 8 && n >= 1 && n <= 5;
@@ -566,6 +574,16 @@ const episodeIndicateControl: Handler<'episodeIndicateControl'> = (d, c) => {
   upsertTask(d, { kind: 'control_indicado', title: `Coordinar control indicado ${id} de ${personName(d, ep.personId)}`, detail: 'Ofrecer turno. Sin calcular frecuencia ni avance.', assigneeId: null, dueAt: null, personId: ep.personId, requestId: null, appointmentId: null, estimateId: null, dedupeKey: `control:${id}`, ruleId: null });
   audit(d, c.commandId, 'control_indicado', 'CareEpisode', ep.id, `Control ${id} indicado manualmente`);
   return ok('Control indicado y tarea creada para recepción. No se reservó turno.', { controlId: id });
+};
+const episodeSetAppliance: Handler<'episodeSetAppliance'> = (d, c) => {
+  const ep = d.careEpisodes.find((e) => e.id === c.episodeId) ?? fail('NO_EXISTE', 'Episodio inexistente.');
+  if (!(APPLIANCE_IDS as readonly string[]).includes(c.appliance)) fail('DATOS_INVALIDOS', 'Aparatología no reconocida.');
+  if (ep.appliance === c.appliance) fail('SIN_CAMBIOS', 'Ya estaba registrada esa aparatología.');
+  const before = ep.appliance ?? 'sin registrar';
+  ep.appliance = c.appliance as typeof ep.appliance;
+  ep.timeline.push({ at: d.clock, kind: 'aparatologia', text: `La profesional registró la aparatología: ${c.appliance.replace(/_/g, ' ')}.` });
+  audit(d, c.commandId, 'aparatologia', 'CareEpisode', ep.id, `${before} → ${c.appliance}`);
+  return ok('Aparatología registrada (dato administrativo; no evalúa el tratamiento).');
 };
 const episodeNote: Handler<'episodeNote'> = (d, c) => {
   const ep = d.careEpisodes.find((e) => e.id === c.episodeId) ?? fail('NO_EXISTE', 'Episodio inexistente.');
@@ -764,7 +782,7 @@ const callSave: Handler<'callSave'> = (d, c) => {
 const HANDLERS: Record<string, (d: DemoState, c: any) => CommandResultOk> = {
   book, reschedule, cancel, confirmAppointment, patientConfirm, transition, requestHumanChange, createRequest, updateRequest, chatStaffReply, createTask, updateTask,
   createPerson, updatePerson, setReminderOptIn, addBlock, removeBlock, updateRule, updateServiceDuration, setAutomationRule, setSetting, advanceClock,
-  toothMark, toothUndo, toothDone, episodeIndicateControl, episodeNote, estimateCreate, estimateAddLine, estimateRemoveLine,
+  toothMark, toothUndo, toothDone, episodeIndicateControl, episodeNote, episodeSetAppliance, estimateCreate, estimateAddLine, estimateRemoveLine,
   estimateTransition, estimateFollowUp, ledgerRecord, ledgerReverse, waitlistAdd, waitlistRemove, offerCreate, offerAccept, offerReject,
   learningOpen, learningAnswer, learningComplete, learningReset, callSave,
 };

@@ -79,6 +79,8 @@ Estados cubiertos:
 
 ## Audio (L2.4)
 
+> Fase 2b: además de estos dos tonos de la llamada, hay efectos de interfaz globales opt-in (apagados por defecto). Reglas en [`premium.md`](premium.md#4-sonidos-srcuisoundts).
+
 - **Dos tonos senoidales de 140–170 ms, sin voz ni melodía:**
   - “habla”, 523 Hz: turno del asistente.
   - “guardado”, 659 Hz: commit confirmado.

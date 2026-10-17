@@ -163,3 +163,48 @@ Rama `feat/fase2-ux-motion` sobre `main` @ `668dec4`. Mismo entorno y mismas ver
 - Lector de pantalla real (NVDA/VoiceOver) y audio audible: no disponibles en el contenedor. Se verificaron por semántica, foco y AudioContext instrumentado.
 - El zoom del navegador se aproximó con 720 px CSS (zoom 200 % sobre 1440). No se probó el zoom de texto solo.
 - Los textos sobre gradientes (bloqueos, esqueletos de carga) quedan fuera de la medición automática de contraste; su texto usa tokens que superan 4.5:1 sobre blanco.
+
+---
+
+# Fase 2b (análisis premium, arte SVG propio, Brisa Chicos y sonidos)
+
+Misma rama (`feat/fase2-ux-motion`), mismo entorno y sin dependencias nuevas. El análisis y las decisiones están en [`premium.md`](premium.md).
+
+## Comandos ejecutados
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` | 0 | sin errores |
+| `npm run typecheck` | 0 | sin errores |
+| `npm run test -- --run` | 0 | **69/69** (+2 de dominio: `episodeSetAppliance` y registros nuevos del odontograma; +4 pares de contraste: oro para texto, barra lateral, módulo en barra y pie) |
+| `npm run build` | 0 | entrada ~478 kB JS (144 kB gzip). En `dist/` solo aparecen los namespaces XML y `react.dev/errors`. |
+| `npm run test:e2e` × 3 corridas | 0 | **39 pasadas** + 1 omitida a propósito (capturas) en cada corrida |
+| `EVIDENCE_DIR=docs/evidence/after EVIDENCE_VIEWPORTS=320,390,768,1440 npm run evidence` | 0 | 48 capturas: 4 viewports × 12 rutas (se sumaron `chicos` y `ortodoncia`) |
+
+## Pruebas nuevas (`tests/e2e/premium.spec.ts`)
+
+| Prueba | Resultado |
+| --- | --- |
+| Inicio: 6 ilustraciones de motivo, 4 tarjetas de equipo con aviso de ilustración, banda que lleva a `#/chicos` con foco en el título y “Chicos” activo | Pass |
+| Brisa Chicos: 4 saludos dan 5 stickers (incluye “Equipo completo”) y se anuncian; volver a saludar no duplica; el cuento da sticker; persiste al recargar; “Vaciar álbum” pide confirmación y vuelve a 0 | Pass |
+| Reloj de cepillado con reloj controlado (`page.clock`): cambia de zona a los 5 s en la demo de 20 s; pausa sin avanzar (“Quedan 15 segundos”); al terminar suma cepillado y sticker | Pass |
+| Sonidos:<ul><li>apagados por defecto: 0 AudioContext y nada reproducido;</li><li>al activarlos se crea 1 contexto y se registran `toggle`, `pop` y `stamp`;</li><li>al recargar se recuerda la preferencia sin crear contexto hasta el próximo gesto;</li><li>al apagarlos no suena nada.</li></ul> | Pass |
+| Odontograma P-008: piezas 16, 25 y 38 ilustradas como corona de oro, implante y ausente; “Odontograma” activo en la navegación; catálogo de 13 estados; un “Implante” realizado nuevo en la 26 cambia la ilustración | Pass |
+| Ortodoncia: aparatología ilustrada con nombre accesible; cambiarla actualiza la ilustración y el timeline; catálogo de 5 | Pass |
+| `#/chicos` sumada al contraste renderizado (1440 y 390 px) y a la prueba de 320 px sin scroll horizontal | Pass (20 rutas) |
+
+## Fallos encontrados y corregidos
+
+1. **Robo de foco durante la carga diferida del panel** (bug real que ya existía en la fase 2). Lo destapó una corrida intermitente de la prueba del DateStrip.
+   - **Causa:** el reintento de foco al título (cada 50 ms mientras carga el panel) enfocaba el título aunque la persona ya hubiera puesto el foco en un control del contenido nuevo.
+   - **Corrección:** si el foco se movió dentro de `#main` desde que empezó la navegación, el título no lo toma.
+   - **Prueba de regresión determinista:** un `MutationObserver` enfoca el día apenas aparece. Falla sin la corrección y pasa con ella.
+2. **Navegación del panel en el odontograma:** se marcaba “Personas y familias” (por el prefijo de la ruta). Ahora se marca “Odontograma”.
+3. **Inicio:** se quitó un degradado del héroe que dibujaba un rectángulo visible arriba a la izquierda.
+4. **Brisa Chicos:** la zona actual del cepillado se anunciaba dos veces (región viva propia + anuncio global). Quedó solo el anuncio global.
+5. **Ortodoncia:** “Tareas del episodio” quedaba vacía sin texto. Ahora dice “Sin tareas de control para esta persona.”
+
+## Límites declarados
+
+- Audio audible y lector de pantalla real: no disponibles en el contenedor. Se verificaron con un AudioContext instrumentado, nombres accesibles y foco.
+- Los personajes y avatares son ilustraciones propias; no hay fotos ni personas reales.

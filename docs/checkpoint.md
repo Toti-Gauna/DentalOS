@@ -1,5 +1,48 @@
 # Checkpoint · DentalOS demo
 
+## Fase 2b — análisis premium, arte SVG propio, Brisa Chicos y sonidos · cerrada
+
+- **Rama:** `feat/fase2-ux-motion` (mismo PR #4 de la fase 2).
+- **Pedido:**
+  - análisis premium de toda la web;
+  - SVG propios por caso (dientes de oro, con caries, etc.) y para ortodoncia;
+  - terminar lo pendiente;
+  - sonidos, personajes y sección infantil.
+- **Archivos:**
+  - Nuevos:
+    - arte: `src/ui/art/{teeth,ortho,services,characters,brand}.tsx`;
+    - `src/ui/sound.ts`;
+    - `src/pages/public/Kids.tsx`;
+    - `tests/e2e/premium.spec.ts`;
+    - `docs/premium.md`.
+  - Actualizados:
+    - `src/app/App.tsx`: marca, botón de sonidos, ruta `#/chicos`, pie, foco, navegación del odontograma;
+    - `src/app/store.ts` (`onResult`);
+    - `src/app/ui-state.ts` (preferencia `sound`);
+    - `src/pages/public/Home.tsx`;
+    - `src/pages/admin/Odontogram.tsx`;
+    - `src/pages/admin/Ortho.tsx`;
+    - `src/styles/app.css` (tokens oro, barra lateral nocturna, arte y Brisa Chicos);
+    - dominio: `PROCEDURES` ampliado, `episodeSetAppliance`, `CareEpisode.appliance?` y 11 registros de odontograma en la seed;
+    - tests, docs y evidencia.
+- **Dominio:** `schemaVersion` sigue en 1 (el campo nuevo es opcional), con la seed `dentalos-v1` y el reloj en 19/10 09:00.
+- **Rutas nuevas:** `#/chicos`.
+- **Resultados:**
+  - lint 0 y typecheck 0;
+  - 69 unit;
+  - build 0;
+  - 39 e2e en 3 corridas;
+  - 48 capturas.
+
+  Detalle en `docs/validation.md`, sección Fase 2b.
+- **Decisiones:**
+  - La estética infantil queda solo en `#/chicos`.
+  - Los sonidos son opt-in, están apagados por defecto y el AudioContext solo se crea con un gesto.
+  - El oro es el único acento.
+  - La ilustración de cada pieza refleja lo realizado; lo planificado se marca con borde punteado.
+- **Deuda:** audio audible y lector de pantalla real (QA en un dispositivo físico).
+- **Próxima acción exacta:** revisión de Ignacio del PR #4. Después, fase 3 (QA) con `npm ci && npm run build && npm run test:e2e`.
+
 ## Fase 2 — PROMPT 2 (UX/UI premium, gamificación y motion) · cerrada
 
 - **Rama:** `feat/fase2-ux-motion` desde `main` @ `668dec4`. PR de la fase en GitHub, pendiente de aprobación.

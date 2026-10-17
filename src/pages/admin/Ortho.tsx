@@ -6,6 +6,7 @@ import { byId, personLabel, proName, STATUS_LABEL } from '../../domain/selectors
 import { fmtShort } from '../../domain/time';
 import { Button, EmptyState, Field, Icon, Notice, PageHeader, StatusBadge, useResult } from '../../ui/kit';
 import { RescheduleDrawer } from '../../ui/RescheduleDrawer';
+import { APPLIANCES, OrthoArt } from '../../ui/art/ortho';
 
 export function Ortho() {
   const s = useDemo();
@@ -30,6 +31,20 @@ export function Ortho() {
             <div className="card stack">
               <div className="row between"><h2 style={{ fontSize: 20, margin: 0 }}>{ep.title}</h2><StatusBadge status={ep.status === 'activo' ? 'activa' : 'cerrada'} label={ep.status === 'activo' ? 'Activo' : 'Cerrado'} /></div>
               <p className="muted">{personLabel(s, ep.personId)} · {proName(s, ep.professionalId)} · desde {fmtShort(ep.startedAt)}</p>
+              <div className="appliance">
+                <div className="appliance-art"><OrthoArt kind={ep.appliance ?? 'brackets_metalicos'} width={260} title={`Ilustración: ${APPLIANCES.find((x) => x.id === (ep.appliance ?? 'brackets_metalicos'))?.label}`} /></div>
+                <div className="stack" style={{ gap: 6 }}>
+                  <p className="eyebrow" style={{ margin: 0 }}>Aparatología registrada</p>
+                  <strong>{ep.appliance ? APPLIANCES.find((x) => x.id === ep.appliance)?.label : 'Sin registrar'}</strong>
+                  <span className="small muted">{ep.appliance ? APPLIANCES.find((x) => x.id === ep.appliance)?.detail : 'La profesional la registra; la ilustración muestra brackets metálicos como referencia.'}</span>
+                  <Field label="Cambiar registro (profesional)">{(p) => (
+                    <select {...p} value={ep.appliance ?? ''} onChange={(e) => show(dispatch({ type: 'episodeSetAppliance', episodeId: ep.id, appliance: e.target.value }))}>
+                      {!ep.appliance && <option value="" disabled>Elegí una opción</option>}
+                      {APPLIANCES.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
+                    </select>
+                  )}</Field>
+                </div>
+              </div>
               <h3>Controles indicados</h3>
               <p className="small muted" style={{ margin: 0 }}>Cada control lo indica la profesional. La demo no calcula frecuencia, avance ni fecha de finalización.</p>
               <ol className="ctl-steps">
@@ -77,8 +92,14 @@ export function Ortho() {
             </div>
             <div className="card stack">
               <h3>Tareas del episodio</h3>
-              {s.tasks.filter((t) => t.personId === ep.personId && t.kind === 'control_indicado').map((t) => <p key={t.id} className="small">{t.id} · {t.title} <StatusBadge status={t.status} /></p>)}
+              {s.tasks.filter((t) => t.personId === ep.personId && t.kind === 'control_indicado').length === 0 ? <p className="small muted" style={{ margin: 0 }}>Sin tareas de control para esta persona.</p> : s.tasks.filter((t) => t.personId === ep.personId && t.kind === 'control_indicado').map((t) => <p key={t.id} className="small">{t.id} · {t.title} <StatusBadge status={t.status} /></p>)}
             </div>
+            <details className="card appliance-catalog">
+              <summary><strong>Catálogo de aparatología</strong></summary>
+              <ul className="catalog-grid one">
+                {APPLIANCES.map((a) => <li key={a.id} className="catalog-item"><OrthoArt kind={a.id} width={180} /><strong>{a.label}</strong><span className="small muted">{a.detail}</span></li>)}
+              </ul>
+            </details>
             <Notice tone="info" title="Sin progreso clínico">No mostramos porcentajes de avance ni fechas estimadas de finalización.</Notice>
           </aside>
         </div>

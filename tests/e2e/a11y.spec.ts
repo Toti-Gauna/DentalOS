@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // L2.5 — revisión de accesibilidad y responsive sobre la UI renderizada (misma seed).
-const ROUTES = ['#/', '#/reservar', '#/mis-turnos', '#/whatsapp', '#/llamada', '#/aprender', '#/sedes/L-CEN', '#/servicios/ST-PRIMERA',
+const ROUTES = ['#/', '#/reservar', '#/mis-turnos', '#/whatsapp', '#/llamada', '#/aprender', '#/sedes/L-CEN', '#/servicios/ST-PRIMERA', '#/chicos',
   '#/admin', '#/admin/bandeja', '#/admin/personas', '#/admin/personas/P-003', '#/admin/personas/P-008/odontograma', '#/admin/ortodoncia',
   '#/admin/presupuestos', '#/admin/espera', '#/admin/tareas', '#/admin/informes', '#/admin/config'];
 
@@ -151,6 +151,22 @@ test('agenda: DateStrip con flechas; el drawer conserva fecha y filtros y devuel
   await expect(appt).toBeFocused();
   await expect(page.locator('.datestrip-day[data-date="2026-10-20"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByLabel('Profesional', { exact: true })).toHaveValue('PR-03');
+});
+
+test('el foco que la persona puso en el contenido no se lo roba el título mientras carga el panel diferido', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  // Enfoca un día de la agenda apenas aparece, antes del próximo reintento de foco al título.
+  await page.evaluate(() => {
+    const mo = new MutationObserver(() => {
+      const b = document.querySelector<HTMLElement>('.datestrip-day[data-date="2026-10-19"]');
+      if (b) { b.focus(); mo.disconnect(); }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  });
+  await page.goto('/#/admin');
+  await page.waitForTimeout(400);
+  await expect(page.locator('.datestrip-day[data-date="2026-10-19"]')).toBeFocused({ timeout: 300 });
 });
 
 test('reduced-motion: el cambio se ve igual sin animación (borde + texto)', async ({ page }) => {

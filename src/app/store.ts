@@ -34,6 +34,7 @@ function stableStringify(v: unknown): string {
 class DemoStore {
   private kv: KV | null = null;
   private listeners = new Set<() => void>();
+  private resultListeners = new Set<(cmd: CommandInput, result: CommandResult & { replayed?: boolean }) => void>();
   snap!: StoreSnapshot;
 
   init() {
@@ -77,8 +78,13 @@ class DemoStore {
       this.persist();
       this.listeners.forEach((l) => l());
     }
-    return { ...r.result, replayed: r.replayed };
+    const out = { ...r.result, replayed: r.replayed };
+    this.resultListeners.forEach((l) => l(rest as CommandInput, out));
+    return out;
   };
+
+  /** Observadores de resultados (p. ej. sonidos de interfaz). No modifican el estado. */
+  onResult = (l: (cmd: CommandInput, result: CommandResult & { replayed?: boolean }) => void) => { this.resultListeners.add(l); return () => this.resultListeners.delete(l); };
 
   reset() {
     clearNamespace(this.kv);

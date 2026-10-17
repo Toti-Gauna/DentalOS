@@ -11,6 +11,7 @@ const ROUTES: [string, string][] = [
   ['inicio', '#/'], ['reserva', '#/reservar'], ['mis-turnos', '#/mis-turnos'], ['whatsapp', '#/whatsapp'],
   ['agenda', '#/admin'], ['bandeja', '#/admin/bandeja'], ['ficha', '#/admin/personas/P-003'],
   ['odontograma', '#/admin/personas/P-008/odontograma'], ['presupuestos', '#/admin/presupuestos'], ['aprender', '#/aprender'],
+  ['chicos', '#/chicos'], ['ortodoncia', '#/admin/ortodoncia'],
 ];
 
 test('capturas por viewport', async ({ page }) => {
