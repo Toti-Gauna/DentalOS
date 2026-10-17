@@ -10,6 +10,19 @@ export interface StoreSnapshot {
   corrupt: { raw: string; reason: string } | null;
   externalChange: boolean;
   notice: string | null;
+  /** Último turno creado o modificado (transitorio, no se persiste): permite resaltar la misma cita en portal y recepción. */
+  lastChange: { appointmentId: string; revision: number; kind: 'nuevo' | 'cambio' | 'estado' } | null;
+}
+
+function diffAppointment(prev: DemoState, next: DemoState): StoreSnapshot['lastChange'] {
+  const before = new Map(prev.appointments.map((a) => [a.id, a]));
+  for (const a of next.appointments) {
+    const b = before.get(a.id);
+    if (!b) return { appointmentId: a.id, revision: next.revision, kind: 'nuevo' };
+    if (b.version !== a.version || b.start !== a.start || b.chairId !== a.chairId) return { appointmentId: a.id, revision: next.revision, kind: 'cambio' };
+    if (b.status !== a.status || b.patientConfirmedVersion !== a.patientConfirmedVersion) return { appointmentId: a.id, revision: next.revision, kind: 'estado' };
+  }
+  return null;
 }
 
 function stableStringify(v: unknown): string {
@@ -21,15 +34,16 @@ function stableStringify(v: unknown): string {
 class DemoStore {
   private kv: KV | null = null;
   private listeners = new Set<() => void>();
+  private resultListeners = new Set<(cmd: CommandInput, result: CommandResult & { replayed?: boolean }) => void>();
   snap!: StoreSnapshot;
 
   init() {
     this.kv = getStorage();
     const loaded = loadState(this.kv);
-    if (loaded.status === 'ok') this.snap = { state: loaded.state, mode: 'local', corrupt: null, externalChange: false, notice: null };
-    else if (loaded.status === 'empty') { this.snap = { state: createSeedState(), mode: 'local', corrupt: null, externalChange: false, notice: null }; this.persist(); }
-    else if (loaded.status === 'corrupt') this.snap = { state: createSeedState(), mode: 'memory', corrupt: { raw: loaded.raw, reason: loaded.reason }, externalChange: false, notice: null };
-    else this.snap = { state: createSeedState(), mode: 'memory', corrupt: null, externalChange: false, notice: loaded.reason };
+    if (loaded.status === 'ok') this.snap = { state: loaded.state, mode: 'local', corrupt: null, externalChange: false, notice: null, lastChange: null };
+    else if (loaded.status === 'empty') { this.snap = { state: createSeedState(), mode: 'local', corrupt: null, externalChange: false, notice: null, lastChange: null }; this.persist(); }
+    else if (loaded.status === 'corrupt') this.snap = { state: createSeedState(), mode: 'memory', corrupt: { raw: loaded.raw, reason: loaded.reason }, externalChange: false, notice: null, lastChange: null };
+    else this.snap = { state: createSeedState(), mode: 'memory', corrupt: null, externalChange: false, notice: loaded.reason, lastChange: null };
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', (e) => {
         if (e.key !== STATE_KEY) return;
@@ -59,16 +73,22 @@ class DemoStore {
     const id = commandId ?? `ui:${this.snap.state.revision}:${stableStringify(rest)}`;
     const r = execute(this.snap.state, { ...(rest as CommandInput), commandId: id } as never);
     if (r.state !== this.snap.state) {
-      this.snap = { ...this.snap, state: r.state };
+      const changed = diffAppointment(this.snap.state, r.state);
+      this.snap = { ...this.snap, state: r.state, lastChange: changed ?? this.snap.lastChange };
       this.persist();
       this.listeners.forEach((l) => l());
     }
-    return { ...r.result, replayed: r.replayed };
+    const out = { ...r.result, replayed: r.replayed };
+    this.resultListeners.forEach((l) => l(rest as CommandInput, out));
+    return out;
   };
+
+  /** Observadores de resultados (p. ej. sonidos de interfaz). No modifican el estado. */
+  onResult = (l: (cmd: CommandInput, result: CommandResult & { replayed?: boolean }) => void) => { this.resultListeners.add(l); return () => this.resultListeners.delete(l); };
 
   reset() {
     clearNamespace(this.kv);
-    this.snap = { state: createSeedState(), mode: this.kv ? 'local' : 'memory', corrupt: null, externalChange: false, notice: null };
+    this.snap = { state: createSeedState(), mode: this.kv ? 'local' : 'memory', corrupt: null, externalChange: false, notice: null, lastChange: null };
     this.persist();
     this.listeners.forEach((l) => l());
   }
@@ -82,7 +102,7 @@ class DemoStore {
       this.set({ corrupt: loaded.status === 'corrupt' ? { raw: loaded.raw, reason: loaded.reason } : { raw: '', reason: 'Simulado' }, mode: 'memory', state: createSeedState() });
       return;
     }
-    this.snap = { ...this.snap, state: p.build(), corrupt: null, externalChange: false };
+    this.snap = { ...this.snap, state: p.build(), corrupt: null, externalChange: false, lastChange: null };
     this.persist();
     this.listeners.forEach((l) => l());
   }
@@ -107,3 +127,6 @@ export function useDemo() {
   return useStore().state;
 }
 export const dispatch = store.dispatch;
+export function useLastChange() {
+  return useStore().lastChange;
+}

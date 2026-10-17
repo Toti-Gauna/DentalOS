@@ -1,16 +1,20 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { fmtShort } from '../domain/time';
 import type { ViewRole } from '../domain';
 import { navigate, useRoute } from './router';
 import { store, useStore } from './store';
-import { resetUi, setRole, useUi } from './ui-state';
+import { resetUi, setRole, setSoundPref, useUi } from './ui-state';
 import { Button, ConfirmDialog, Icon, LiveRegion, Notice } from '../ui/kit';
+import { LoadingState } from '../ui/components';
 import { Home, LocationPage, ServicePage } from '../pages/public/Home';
 import { Booking } from '../pages/public/Booking';
 import { MyAppointments } from '../pages/public/MyAppointments';
 import { WhatsApp } from '../pages/public/WhatsApp';
 import { CallSim } from '../pages/public/CallSim';
 import { Learn } from '../pages/public/Learn';
+import { Kids } from '../pages/public/Kids';
+import { BrandMark } from '../ui/art/brand';
+import { sound, type Sfx } from '../ui/sound';
 
 // El panel de la clínica se carga aparte: el portal de pacientes no descarga su código.
 const Today = lazy(() => import('../pages/admin/Today').then((m) => ({ default: m.Today })));
@@ -43,6 +47,7 @@ const PUBLIC_NAV = [
   { to: '/whatsapp', label: 'WhatsApp', icon: 'chat', m: 'M06' },
   { to: '/llamada', label: 'Llamada', icon: 'phone', m: 'M07' },
   { to: '/aprender', label: 'Tu primera visita', icon: 'book', m: 'M15' },
+  { to: '/chicos', label: 'Chicos', icon: 'smile', m: 'M15' },
 ];
 const ADMIN_NAV = [
   { to: '/admin', label: 'Hoy y agenda', icon: 'calendar', m: 'M04' },
@@ -67,6 +72,7 @@ function route(segments: string[]): ReactNode {
   if (a === 'whatsapp') return <WhatsApp />;
   if (a === 'llamada') return <CallSim />;
   if (a === 'aprender') return <Learn />;
+  if (a === 'chicos') return <Kids />;
   if (a === 'admin') {
     if (!b) return <Today />;
     if (b === 'bandeja') return <Inbox />;
@@ -97,9 +103,36 @@ function NotFound() {
 function Logo() {
   return (
     <a className="logo" href="#/" aria-label="Clínica Brisa, inicio (demo ficticia)">
-      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#245E59" /><path d="M9 11c0-2 1.5-3.5 3.5-3.5 1.6 0 2.3.9 3.5.9s1.9-.9 3.5-.9c2 0 3.5 1.5 3.5 3.5 0 2.4-1.2 3.5-1.6 5.6-.4 2-.8 6.4-2.3 6.4-1.3 0-1.4-3.8-3.1-3.8s-1.8 3.8-3.1 3.8c-1.5 0-1.9-4.4-2.3-6.4C10.2 14.5 9 13.4 9 11z" fill="#F6F4EE" /></svg>
+      <BrandMark size={38} />
       <span><strong>Clínica Brisa</strong><small>DentalOS · demo</small></span>
     </a>
+  );
+}
+
+const SILENT = new Set(['chatOpen', 'learningOpen', 'callSave']);
+function soundFor(type: string, ok: boolean, info?: Record<string, unknown>): Sfx | null {
+  if (SILENT.has(type)) return null;
+  if (!ok) return 'error';
+  if (type === 'chatSend' || type === 'chatChoose' || type === 'chatStaffReply') return 'message';
+  if (type === 'learningComplete') return 'stamp';
+  if (type === 'learningAnswer') return info?.correct ? 'success' : 'tap';
+  if (type === 'advanceClock') return 'tick';
+  return 'success';
+}
+
+function SoundToggle() {
+  const ui = useUi();
+  return (
+    <button type="button" className="sound-toggle btn btn-ghost btn-sm" aria-pressed={ui.sound}
+      onClick={() => {
+        const on = !ui.sound;
+        sound.setEnabled(on);
+        setSoundPref(on);
+        if (on && sound.ensure()) sound.play('toggle');
+      }}>
+      <Icon name={ui.sound ? 'volume' : 'mute'} size={16} />
+      <span>Sonidos: {ui.sound ? 'sí' : 'no'}</span>
+    </button>
   );
 }
 
@@ -107,7 +140,7 @@ function RoleSwitch() {
   const ui = useUi();
   return (
     <div className="role-switch">
-      <label htmlFor="role">Vista de muestra <span className="muted">(no es inicio de sesión)</span></label>
+      <label htmlFor="role">Vista de muestra · no es inicio de sesión</label>
       <select id="role" value={ui.role} onChange={(e) => { const r = ROLES.find((x) => x.id === e.target.value)!; setRole(r.id); navigate(r.home); }}>
         {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
       </select>
@@ -160,23 +193,45 @@ export function App() {
   const { segments, path } = useRoute();
   const admin = segments[0] === 'admin';
   const [menuOpen, setMenuOpen] = useState(false);
+  const prevTitle = useRef<HTMLElement | null>(null);
+  const prevText = useRef<string | null>(null);
 
   const ui = useUi();
+  // Sonidos de interfaz: preferencia del dispositivo; se escuchan solo resultados reales de comandos.
+  useEffect(() => { sound.setEnabled(ui.sound); }, [ui.sound]);
   useEffect(() => {
-    // La vista de muestra acompaña al área elegida (no es seguridad).
+    const off = store.onResult((cmd, r) => {
+      if (r.replayed) return; // un doble clic idempotente no vuelve a sonar
+      const sfx = soundFor(cmd.type, r.ok, r.ok ? r.info : undefined);
+      if (sfx) sound.play(sfx);
+    });
+    return () => { off(); };
+  }, []);
+  useEffect(() => {
+    // La vista de muestra acompaña al área elegida (no es seguridad). Solo reacciona al cambio de área,
+    // así elegir una vista no se pisa antes de que cambie la ruta.
     if (admin && (ui.role === 'visitante' || ui.role === 'paciente')) setRole('recepcion');
     if (!admin && ui.role !== 'visitante' && ui.role !== 'paciente') setRole('paciente');
-  }, [admin, ui.role]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [admin]);
 
   useEffect(() => {
     setMenuOpen(false);
     // El panel se carga en diferido: reintenta hasta que exista el título de la página.
     let tries = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const startActive = document.activeElement;
     const focusTitle = () => {
       const h = document.querySelector<HTMLElement>('[data-page-title]');
-      if (h) { if (document.activeElement?.tagName !== 'INPUT') h.focus({ preventScroll: false }); }
-      else if (tries++ < 20) timer = setTimeout(focusTitle, 50);
+      // Mientras el panel diferido carga, puede seguir montado el título anterior: esperar al nuevo.
+      if (h && (h !== prevTitle.current || h.textContent !== prevText.current)) {
+        prevTitle.current = h;
+        prevText.current = h.textContent;
+        // No robar el foco si la persona ya se movió dentro del contenido nuevo mientras cargaba.
+        const a = document.activeElement;
+        const movedOn = a && a !== startActive && a !== document.body && !!document.getElementById('main')?.contains(a);
+        if (a?.tagName !== 'INPUT' && !movedOn) h.focus({ preventScroll: false });
+      } else if (tries++ < 40) timer = setTimeout(focusTitle, 50);
     };
     focusTitle();
     window.scrollTo?.(0, 0);
@@ -184,7 +239,12 @@ export function App() {
   }, [path]);
 
   const nav = admin ? ADMIN_NAV : PUBLIC_NAV;
-  const isActive = (to: string) => (to === '/' || to === '/admin' ? path === to : path.startsWith(to));
+  const isActive = (to: string) => {
+    if (to === '/' || to === '/admin') return path === to;
+    // La ruta del odontograma vive bajo /admin/personas/:id: se marca su módulo, no Personas.
+    if (path.endsWith('/odontograma')) return to === '/admin/odontograma';
+    return path.startsWith(to);
+  };
 
   return (
     <div className={admin ? 'app admin' : 'app public'}>
@@ -196,9 +256,13 @@ export function App() {
       <header className="topbar">
         <div className="topbar-inner">
           <Logo />
-          <button className="menu-toggle btn btn-ghost" aria-expanded={menuOpen} aria-controls="main-nav" onClick={() => setMenuOpen((v) => !v)}><Icon name="list" /> <span>Menú</span></button>
+          <nav className="area-switch" aria-label="Área de la demo">
+            <a href="#/" aria-current={!admin ? 'true' : undefined} aria-label="Portal de pacientes"><Icon name="user" size={16} /> <span className="lbl-long">Portal de pacientes</span><span className="lbl-short">Pacientes</span></a>
+            <a href="#/admin" aria-current={admin ? 'true' : undefined} aria-label="Panel de la clínica"><Icon name="calendar" size={16} /> <span className="lbl-long">Panel de la clínica</span><span className="lbl-short">Clínica</span></a>
+          </nav>
+          <SoundToggle />
           <RoleSwitch />
-          <a className="switch-area" href={admin ? '#/' : '#/admin'}>{admin ? 'Ver portal de pacientes' : 'Ver panel de la clínica'} <Icon name="arrow" size={14} /></a>
+          {admin && <button className="menu-toggle btn btn-ghost" aria-expanded={menuOpen} aria-controls="main-nav" onClick={() => setMenuOpen((v) => !v)}><Icon name="list" /> <span>Menú</span></button>}
         </div>
       </header>
       <div className="layout">
@@ -211,11 +275,17 @@ export function App() {
         </nav>
         <main id="main" tabIndex={-1}>
           <SystemNotices />
-          <Suspense fallback={<p className="muted" role="status">Cargando panel…</p>}>{route(segments)}</Suspense>
+          <Suspense fallback={<LoadingState label="Cargando panel de la clínica…" />}>{route(segments)}</Suspense>
         </main>
       </div>
       <footer className="footer">
-        <p>DentalOS · demostración pre-venta con datos sintéticos. No es un producto clínico ni historia clínica productiva. Sin backend, sin IA, sin mensajes, llamadas ni cobros reales.</p>
+        <div className="footer-inner">
+          <div className="footer-brand"><BrandMark size={40} /><div><strong>Clínica Brisa</strong><span>Cada consulta tiene un próximo paso.</span></div></div>
+          <nav aria-label="Pie de página" className="footer-links">
+            <a href="#/">Inicio</a><a href="#/reservar">Reservar</a><a href="#/mis-turnos">Mis turnos</a><a href="#/chicos">Chicos</a><a href="#/admin">Panel de la clínica (recepción)</a>
+          </nav>
+          <p className="footer-note">DentalOS · demostración pre-venta con datos sintéticos. No es un producto clínico ni historia clínica productiva. Sin backend, sin IA, sin mensajes, llamadas ni cobros reales.</p>
+        </div>
       </footer>
       <LiveRegion />
     </div>

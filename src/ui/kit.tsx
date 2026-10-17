@@ -34,6 +34,8 @@ const PATHS: Record<string, string> = {
   link: 'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1',
   family: 'M8 11a3 3 0 100-6 3 3 0 000 6zM17 12a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM2 20a6 6 0 0112 0M13 20a4.5 4.5 0 019 0',
   pause: 'M8 5v14M16 5v14',
+  star: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
+  smile: 'M12 21a9 9 0 110-18 9 9 0 010 18zM8.5 14a4.5 4.5 0 007 0M9 9.5h.01M15 9.5h.01',
 };
 export function Icon({ name, size = 18, title }: { name: keyof typeof PATHS | string; size?: number; title?: string }) {
   return (

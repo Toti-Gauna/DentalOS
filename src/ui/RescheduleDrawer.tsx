@@ -5,6 +5,7 @@ import { slotKey } from '../domain/scheduling';
 import { byId, chairName, locName, proName, serviceName } from '../domain/selectors';
 import { addDays, at, fmtLong, fmtShort, parts, toMs } from '../domain/time';
 import { Button, Drawer, EmptyState, Icon, Notice, announce } from './kit';
+import { ConflictNotice, agendaLink } from './components';
 
 /** Reprogramación atómica: mismo Appointment.id, versión +1, recordatorio viejo anulado. Ante fallo se conserva el original. */
 export function RescheduleDrawer({ appointmentId, channel, onClose, onDone }: { appointmentId: string; channel: Channel; onClose: () => void; onDone?: (id: string) => void }) {
@@ -41,13 +42,13 @@ export function RescheduleDrawer({ appointmentId, channel, onClose, onDone }: { 
         <p><strong className="tabular">{fmtLong(a.start)}</strong><br />{proName(s, a.professionalId)} · {locName(s, a.locationId)} · {chairName(s, a.chairId)}</p>
       </div>
       {changedMeanwhile && <Notice tone="warn" title="El turno cambió mientras mirabas">Ahora es versión {a.version}. Revisá antes de confirmar.</Notice>}
-      {result && (
-        <Notice tone={result.ok ? 'ok' : 'error'} title={result.message}>
-          {result.ok
-            ? <>Recepción ve el mismo turno <span className="code">{a.id}</span> actualizado (versión {a.version}). El recordatorio de la versión anterior quedó anulado. No enviamos mensajes reales.</>
-            : result.conflicts?.length ? <ul className="plain">{result.conflicts.map((c, i) => <li key={i}>{c.message}</li>)}</ul> : null}
+      {result && (result.ok ? (
+        <Notice tone="ok" title={result.message} action={channel !== 'recepcion' ? <a className="btn btn-sm btn-secondary" href={agendaLink(a)} onClick={onClose}><Icon name="calendar" size={16} /> Ver el mismo turno en recepción</a> : undefined}>
+          Recepción ve el mismo turno <span className="code">{a.id}</span> actualizado (versión {a.version}). El recordatorio de la versión anterior quedó anulado. No enviamos mensajes reales.
         </Notice>
-      )}
+      ) : (
+        <ConflictNotice title={result.message.replace(' Conservamos tu turno anterior.', '')} conflicts={result.conflicts} keptLabel={`Conservamos tu turno anterior: ${fmtShort(a.start)} (versión ${a.version}).`} />
+      ))}
       {inWindow ? (
         <Notice tone="warn" title={`Faltan menos de ${s.settings.changeWindowHours} h para el turno`} action={
           <Button variant="primary" onClick={() => { const r = dispatch({ type: 'requestHumanChange', appointmentId: a.id, channel }); setResult({ ok: r.ok, message: r.message }); announce(r.message); }}>Pedir ayuda a recepción</Button>}>

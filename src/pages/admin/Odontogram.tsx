@@ -6,6 +6,8 @@ import { isValidTooth, PROCEDURES, surfacesFor, type Surface } from '../../domai
 import { byId, personLabel } from '../../domain/selectors';
 import { fmtShort } from '../../domain/time';
 import { Button, EmptyState, Field, Notice, PageHeader, StatusBadge, announce, useResult } from '../../ui/kit';
+import { ToothGlyph } from '../../ui/components';
+import { kindFor, primaryState, ToothArt, TOOTH_STATES } from '../../ui/art/teeth';
 
 const PERM = { upper: [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28], lower: [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38] };
 const TEMP = { upper: [55, 54, 53, 52, 51, 61, 62, 63, 64, 65], lower: [85, 84, 83, 82, 81, 71, 72, 73, 74, 75] };
@@ -57,16 +59,19 @@ export function Odontogram({ personId }: { personId: string }) {
     show(r.ok ? { ok: true, message: `Línea agregada al borrador ${estId}. No es cobro ni tratamiento realizado.` } : r);
   };
 
-  const arch = (teeth: number[]) => (
-    <div className="arch">
+  const arch = (teeth: number[], upper: boolean) => (
+    <div className={`arch ${upper ? 'is-upper' : 'is-lower'}`}>
       {teeth.map((n, i) => {
         const es = vigentes.filter((t) => t.tooth === n);
+        const art = primaryState(es.filter((e) => e.state === 'realizado').map((e) => e.procedure));
+        const planned = es.some((e) => e.state === 'planificado');
         return (
           <span key={n} style={{ display: 'contents' }}>
             {i === teeth.length / 2 && <span className="mid" aria-hidden="true" />}
-            <button className="tooth-btn" aria-pressed={tooth === n} onClick={() => pick(n)} aria-label={`Pieza ${n}${es.length ? `, ${es.length} registro(s): ${es.map((e) => `${e.procedure} ${e.state}`).join('; ')}` : ''}`}>
+            <button className="tooth-btn" data-art={art} aria-pressed={tooth === n} onClick={() => pick(n)} aria-label={`Pieza ${n}${es.length ? `, ${es.length} registro(s): ${es.map((e) => `${e.procedure} ${e.state}`).join('; ')}` : ''}`}>
+              <ToothArt kind={kindFor(n)} state={art} flip={upper} temporal={dentition === 'temporal'} planned={planned} width={40} className="tooth-art-cell" />
+              <ToothGlyph tooth={n} entries={es} />
               <span className="tabular">{n}</span>
-              <span className="marks" aria-hidden="true">{es.slice(0, 3).map((e) => <span key={e.id} className={`dot ${e.state}`} />)}</span>
             </button>
           </span>
         );
@@ -83,16 +88,32 @@ export function Odontogram({ personId }: { personId: string }) {
         <div className="seg" role="group" aria-label="Dentición">
           {(['permanente', 'temporal'] as const).map((d) => <button key={d} aria-pressed={dentition === d} onClick={() => { setDentition(d); setTooth(null); }}>{d === 'permanente' ? 'Permanente' : 'Temporal'}</button>)}
         </div>
-        <div className="legend" aria-label="Leyenda">
-          <span><span className="dot planificado" /> Planificado</span><span><span className="dot realizado" /> Realizado</span><span className="muted">Deshacer conserva el evento en la auditoría.</span>
-        </div>
+        <ul className="legend" aria-label="Leyenda del odontograma">
+          <li><ToothGlyph tooth={16} entries={[]} /> Sin registro</li>
+          <li><ToothGlyph tooth={16} entries={[{ surface: 'pieza', state: 'planificado' } as never]} /> Planificado</li>
+          <li><ToothGlyph tooth={16} entries={[{ surface: 'pieza', state: 'realizado' } as never]} /> Realizado</li>
+          <li><ToothArt kind="molar" planned width={18} /> Borde punteado: hay algo planificado</li>
+          <li className="muted">La ilustración muestra lo realizado; el cuadro de superficies indica dónde. Centro: oclusal (posteriores) o incisal (anteriores). Bordes: vestibular, lingual/palatina, mesial y distal. Deshacer conserva el evento en la auditoría.</li>
+        </ul>
       </div>
       <div className="card odonto" role="group" aria-label={`Dentición ${dentition}, numeración FDI`}>
         <p className="small muted" style={{ margin: 0 }}>Superior (derecha de la persona a la izquierda)</p>
-        {arch(layout.upper)}
-        {arch(layout.lower)}
+        {arch(layout.upper, true)}
+        {arch(layout.lower, false)}
         <p className="small muted" style={{ margin: 0 }}>Inferior</p>
       </div>
+      <details className="card tooth-catalog">
+        <summary><strong>Catálogo de registros ilustrados</strong> <span className="muted small">({TOOTH_STATES.length} estados · referencia visual, no diagnóstico)</span></summary>
+        <ul className="catalog-grid" aria-label="Estados ilustrados del odontograma">
+          {TOOTH_STATES.map((t) => (
+            <li key={t.state} className="catalog-item">
+              <div className="catalog-art" aria-hidden="true"><ToothArt kind="molar" state={t.state} width={44} /><ToothArt kind="incisivo" state={t.state} width={36} flip /></div>
+              <strong>{t.label}</strong>
+              <span className="small muted">{t.detail}</span>
+            </li>
+          ))}
+        </ul>
+      </details>
       <div className="row wrap" style={{ alignItems: 'end' }}>
         <Field label="O escribí la pieza (FDI)" hint={dentition === 'permanente' ? '11–48' : '51–85'}>{(p) => <input {...p} inputMode="numeric" value={typed} onChange={(e) => setTyped(e.target.value.replace(/\D/g, '').slice(0, 2))} style={{ maxWidth: 120 }} />}</Field>
         <Button onClick={() => { const n = Number(typed); if (!isValidTooth(dentition, n)) { show({ ok: false, message: `La pieza ${typed || '—'} no corresponde a la dentición ${dentition} (FDI). Elegí una válida.` }); return; } pick(n); }}>Seleccionar</Button>
@@ -134,6 +155,17 @@ export function Odontogram({ personId }: { personId: string }) {
           )}
         </div>
         <div className="card stack">
+          <h2 style={{ fontSize: 20, margin: 0 }}>Resumen por pieza</h2>
+          {vigentes.length === 0 ? <p className="muted" style={{ margin: 0 }}>Sin registros vigentes en la ficha.</p> : (
+            <ul className="list" aria-label="Registros vigentes por pieza">
+              {[...new Set(vigentes.map((t) => t.tooth))].sort((x, y) => x - y).map((n) => (
+                <li key={n} className="list-item">
+                  <button className="btn btn-ghost btn-sm" style={{ justifySelf: 'start' }} onClick={() => { if (isValidTooth(dentition, n)) pick(n); else { setDentition(dentition === 'permanente' ? 'temporal' : 'permanente'); pick(n); } }}>Pieza {n}</button>
+                  <span className="small">{vigentes.filter((t) => t.tooth === n).map((t) => `${t.procedure} · ${SURFACE_LABEL[t.surface]} · ${t.state}`).join(' / ')}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="row between"><h2 style={{ fontSize: 20, margin: 0 }}>Historial</h2>{lastVigente && <Button size="sm" variant="ghost" icon="undo" onClick={() => show(dispatch({ type: 'toothUndo', entryId: lastVigente.id }))}>Deshacer último</Button>}</div>
           {entries.length === 0 ? <p className="muted">Sin registros.</p> : (
             <div className="table-wrap"><table><caption className="sr-only">Registros</caption><thead><tr><th>Pieza</th><th>Registro</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>

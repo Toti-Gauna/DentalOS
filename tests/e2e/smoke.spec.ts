@@ -68,16 +68,22 @@ test('protagonista por WhatsApp: ocupado, original conservado, mismo ID con nuev
   await expect(page.locator('.bubble.asistente').last()).toContainText('Cambio guardado en esta demo. Recepción ve el mismo turno actualizado. No enviamos mensajes reales.');
 
   await page.goto('/#/mis-turnos');
-  const card = page.locator('.list-item', { hasText: 'A-0012' });
-  await expect(card).toContainText('martes 20 de octubre, 11:00 h');
+  const card = page.locator('.turno[data-appointment="A-0012"]');
+  await expect(card).toContainText('20 de oct');
+  await expect(card).toContainText('11:00–11:30');
+  await expect(card).toContainText('Actualizado recién');
   await expect(card).toContainText('versión 2');
 
-  await page.reload();
-  await expect(page.locator('.list-item', { hasText: 'A-0012' })).toContainText('versión 2');
+  await page.getByRole('link', { name: 'Ver el mismo turno en recepción' }).click();
+  const cell = page.locator('.res-appt[data-appointment="A-0012"]');
+  await expect(cell).toBeVisible();
+  await expect(cell).toContainText('A-0012 v2');
+  await expect(cell).toHaveClass(/is-updated/);
 
-  await page.goto('/#/admin');
-  await page.getByLabel('Fecha').fill('2026-10-20');
-  await expect(page.locator('.list-item', { hasText: 'A-0012 v2' })).toBeVisible();
+  await page.reload();
+  await expect(page.locator('.res-appt[data-appointment="A-0012"]')).toContainText('A-0012 v2');
+  await page.goto('/#/mis-turnos');
+  await expect(page.locator('.turno[data-appointment="A-0012"]')).toContainText('versión 2');
   expect(g.errors).toEqual([]);
   expect(g.external).toEqual([]);
 });
@@ -115,7 +121,7 @@ test('llamada: silencio no confirma, detener limpia y no deja registros duplicad
   await page.getByRole('button', { name: 'Detener' }).click();
   await expect(page.getByText('Llamada detenida', { exact: false }).first()).toBeVisible();
   await page.goto('/#/mis-turnos');
-  await expect(page.locator('.list-item', { hasText: 'A-0012' })).toContainText('versión 1');
+  await expect(page.locator('.turno[data-appointment="A-0012"]')).toContainText('versión 1');
   expect(g.errors).toEqual([]);
 });
 
@@ -131,5 +137,8 @@ test('móvil 390 px: sin scroll horizontal y agenda como lista', async ({ page }
   await page.goto('/#/admin');
   await page.getByRole('button', { name: 'Semana' }).click();
   await expect(page.locator('.week')).toBeHidden();
-  await expect(page.locator('.week-fallback')).toBeVisible();
+  await expect(page.locator('.mobile-only .day-grid')).toBeVisible();
+  await page.getByRole('button', { name: 'Por profesional' }).click();
+  await expect(page.locator('.res-grid')).toBeHidden();
+  await expect(page.locator('.mobile-only .turno').first()).toBeVisible();
 });

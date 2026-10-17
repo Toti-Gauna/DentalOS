@@ -1,38 +1,58 @@
-import { useMemo, useState } from 'react';
-import { dispatch, useDemo } from '../../app/store';
-import { navigate } from '../../app/router';
+import { useEffect, useMemo, useState } from 'react';
+import { dispatch, useDemo, useLastChange } from '../../app/store';
+import { navigate, useRoute } from '../../app/router';
 import { useDraft } from '../../app/ui-state';
 import type { Appointment, Block } from '../../domain';
 import { validateSlot } from '../../domain/scheduling';
 import { byId, chairName, computeKpis, locName, personLabel, proName, ratioText, serviceName, sortByStart, STATUS_LABEL, staffName } from '../../domain/selectors';
-import { addDays, addMinutes, at, fmtDateOnly, fmtShort, fmtTime, overlaps, parts, startOfWeek, toMs } from '../../domain/time';
-import { Button, Drawer, EmptyState, Field, Icon, Kpi, Notice, PageHeader, StatusBadge, announce } from '../../ui/kit';
+import { DateStrip, DisabledReason, SummaryStrip, TurnoCard } from '../../ui/components';
+import { addDays, addMinutes, at, fmtDateOnly, fmtShort, fmtTime, hhmmToMinutes, overlaps, parts, startOfWeek, toMs } from '../../domain/time';
+import { Button, Drawer, EmptyState, Field, Icon, Notice, PageHeader, StatusBadge, announce } from '../../ui/kit';
 import { AppointmentActions, AppointmentDrawer } from '../../ui/AppointmentPanel';
 
 interface Filters { professionalId: string; locationId: string; status: string }
 const NO_FILTERS: Filters = { professionalId: '', locationId: '', status: '' };
+type View = 'recursos' | 'dia' | 'semana' | 'lista';
+const VIEWS: [View, string][] = [['recursos', 'Por profesional'], ['dia', 'Lista del día'], ['semana', 'Semana'], ['lista', '14 días']];
 
 export function Today() {
   const s = useDemo();
+  const { query } = useRoute();
   const today = parts(s.clock).date;
   const [day, setDay] = useDraft('agenda:day', today);
-  const [view, setView] = useDraft<'dia' | 'semana' | 'lista'>('agenda:view', 'dia');
+  const [view, setView] = useDraft<View>('agenda:view2', 'recursos');
   const [f, setF] = useDraft<Filters>('agenda:filters', NO_FILTERS);
   const [detail, setDetail] = useState<string | null>(null);
   const [newAppt, setNewAppt] = useState(false);
   const [newBlock, setNewBlock] = useState(false);
+  const linked = query.get('turno');
+
+  // Enlace visual portal → agenda: ?dia=YYYY-MM-DD&turno=A-0012 abre el día y resalta la misma cita.
+  const linkedDay = query.get('dia');
+  useEffect(() => {
+    if (linkedDay && /^\d{4}-\d{2}-\d{2}$/.test(linkedDay)) { setDay(linkedDay); if (view === 'semana' || view === 'lista') setView('recursos'); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedDay]);
 
   const match = (a: Appointment) => (!f.professionalId || a.professionalId === f.professionalId) && (!f.locationId || a.locationId === f.locationId) && (!f.status || a.status === f.status);
   const blockMatch = (b: Block) => (!f.professionalId || (b.scope === 'professional' && b.targetId === f.professionalId) || b.scope !== 'professional') && (!f.locationId || b.scope !== 'location' || b.targetId === f.locationId);
-  const range = view === 'dia' ? [day, day] : view === 'semana' ? [startOfWeek(day), addDays(startOfWeek(day), 4)] : [day, addDays(day, 13)];
+  const range = view === 'semana' ? [startOfWeek(day), addDays(startOfWeek(day), 4)] : view === 'lista' ? [day, addDays(day, 13)] : [day, day];
   const inRange = (start: string, end: string) => overlaps(start, end, at(range[0], '00:00'), at(addDays(range[1], 1), '00:00'));
   const all = s.appointments.filter((a) => inRange(a.start, a.end)).sort(sortByStart);
   const shown = all.filter(match);
   const blocks = s.blocks.filter((b) => inRange(b.start, b.end) && blockMatch(b));
-  const kpi = computeKpis(s, { from: today, to: today, professionalId: f.professionalId || undefined, locationId: f.locationId || undefined });
+  const kpi = computeKpis(s, { from: day, to: day, professionalId: f.professionalId || undefined, locationId: f.locationId || undefined });
   const pendingConfirm = s.appointments.filter((a) => a.status === 'solicitada' && toMs(a.end) > toMs(s.clock)).sort(sortByStart);
   const openTasks = s.tasks.filter((t) => t.status !== 'resuelta').sort((a, b) => (a.dueAt ?? '9').localeCompare(b.dueAt ?? '9'));
   const changed = s.audit.filter((e) => e.type === 'cita_reprogramada').slice(-3).reverse();
+  const activeFilters = [f.professionalId, f.locationId, f.status].filter(Boolean).length;
+  const inRoom = s.appointments.filter((a) => parts(a.start).date === day && (a.status === 'en_sala' || a.status === 'en_atencion')).length;
+  const dayNote = (d: string) => {
+    const wd = parts(at(d, '12:00')).weekday;
+    if (!s.availabilityRules.some((r) => r.weekday === wd)) return 'Cerrado';
+    const n = s.appointments.filter((a) => parts(a.start).date === d && a.status !== 'cancelada').length;
+    return n ? `${n} turno${n === 1 ? '' : 's'}` : 'Libre';
+  };
 
   return (
     <section className="page">
@@ -40,47 +60,59 @@ export function Today() {
         <Button variant="primary" icon="plus" onClick={() => setNewAppt(true)}>Alta manual</Button>
         <Button icon="stop" onClick={() => setNewBlock(true)}>Bloquear horario</Button>
       </>}>
-        {fmtDateOnly(today)} · reloj de muestra {fmtTime(s.clock)}. Profesional y sillón se validan juntos; sin sobreturnos silenciosos.
+        {fmtDateOnly(day)}{day === today ? ` · hoy, reloj de muestra ${fmtTime(s.clock)}` : ''}. Profesional y sillón se validan juntos; sin sobreturnos silenciosos.
       </PageHeader>
 
-      <div className="kpis">
-        <Kpi label="Turnos de hoy (activos)" value={String(kpi.active)} detail="excluye cancelados" n={`n=${kpi.n}`} />
-        <Kpi label="Pendientes de confirmación" value={String(kpi.pendingConfirmation)} detail="solicitudes con cupo reservado" />
-        <Kpi label="Confirmación (futuros de hoy)" value={ratioText(kpi.confirmation)} detail={kpi.confirmation.detail} n={`${kpi.confirmation.num}/${kpi.confirmation.den}`} />
-        <Kpi label="Tareas abiertas" value={String(kpi.tasksOpen)} detail={`${kpi.tasksUnassigned} sin responsable · ${kpi.tasksOverdue} vencidas`} />
-      </div>
+      <SummaryStrip label={`Resumen del ${fmtDateOnly(day)}`} items={[
+        { label: 'Turnos activos', value: String(kpi.active), detail: `n=${kpi.n}, sin cancelados` },
+        { label: 'Por confirmar', value: String(kpi.pendingConfirmation), detail: 'cupo reservado', tone: kpi.pendingConfirmation ? 'warn' : undefined },
+        { label: 'Confirmados (futuros)', value: ratioText(kpi.confirmation), detail: `${kpi.confirmation.num}/${kpi.confirmation.den}` },
+        { label: 'En sala o atención', value: String(inRoom) },
+        { label: 'Tareas abiertas', value: String(kpi.tasksOpen), detail: `${kpi.tasksUnassigned} sin responsable`, tone: kpi.tasksUnassigned ? 'warn' : undefined },
+      ]} />
 
-      <div className="agenda-toolbar" role="group" aria-label="Controles de agenda">
-        <div className="seg" role="group" aria-label="Vista">
-          {(['dia', 'semana', 'lista'] as const).map((v) => <button key={v} aria-pressed={view === v} onClick={() => setView(v)}>{v === 'dia' ? 'Día' : v === 'semana' ? 'Semana' : 'Lista 14 días'}</button>)}
+      <div className="toolbar" role="group" aria-label="Controles de agenda">
+        <DateStrip label="Día" value={day} start={startOfWeek(day)} days={7} onChange={setDay} note={dayNote} />
+        <div className="stack" style={{ gap: 4 }}>
+          <span className="label" id="view-label">Vista</span>
+          <div className="seg" role="group" aria-labelledby="view-label">
+            {VIEWS.map(([v, l]) => <button key={v} aria-pressed={view === v} onClick={() => setView(v)}>{l}</button>)}
+          </div>
         </div>
-        <Button size="sm" icon="back" aria-label="Día anterior" onClick={() => setDay(addDays(day, view === 'semana' ? -7 : -1))} />
-        <Field label="Fecha">{(p) => <input {...p} type="date" value={day} onChange={(e) => setDay(e.target.value || today)} />}</Field>
-        <Button size="sm" icon="arrow" aria-label="Día siguiente" onClick={() => setDay(addDays(day, view === 'semana' ? 7 : 1))} />
-        <Button size="sm" variant="ghost" onClick={() => setDay(today)}>Hoy</Button>
-        <Field label="Profesional">{(p) => <select {...p} value={f.professionalId} onChange={(e) => setF({ ...f, professionalId: e.target.value })}><option value="">Todos</option>{s.professionals.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>}</Field>
-        <Field label="Sede">{(p) => <select {...p} value={f.locationId} onChange={(e) => setF({ ...f, locationId: e.target.value })}><option value="">Todas</option>{s.locations.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>}</Field>
-        <Field label="Estado">{(p) => <select {...p} value={f.status} onChange={(e) => setF({ ...f, status: e.target.value })}><option value="">Todos</option>{['solicitada', 'confirmada', 'en_sala', 'en_atencion', 'finalizada', 'ausente', 'cancelada'].map((x) => <option key={x} value={x}>{STATUS_LABEL[x]}</option>)}</select>}</Field>
-        <Button size="sm" variant="ghost" onClick={() => setF(NO_FILTERS)} disabled={!f.professionalId && !f.locationId && !f.status}>Limpiar filtros</Button>
+        <Button size="sm" variant="ghost" onClick={() => setDay(today)} disabled={day === today}>Ir a hoy</Button>
       </div>
-      <p className="muted small" role="status">Mostrando <span className="tabular">{shown.length}</span> de <span className="tabular">{all.length}</span> turnos · {range[0] === range[1] ? fmtDateOnly(range[0]) : `${fmtDateOnly(range[0])} al ${fmtDateOnly(range[1])}`}. Filtrar no cambia datos.</p>
+      <details className="filters" open={activeFilters > 0 || undefined}>
+        <summary><Icon name="list" size={16} /> Filtros{activeFilters ? ` (${activeFilters} activo${activeFilters === 1 ? '' : 's'})` : ''}</summary>
+        <div className="agenda-toolbar">
+          <Field label="Profesional">{(p) => <select {...p} value={f.professionalId} onChange={(e) => setF({ ...f, professionalId: e.target.value })}><option value="">Todos</option>{s.professionals.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>}</Field>
+          <Field label="Sede">{(p) => <select {...p} value={f.locationId} onChange={(e) => setF({ ...f, locationId: e.target.value })}><option value="">Todas</option>{s.locations.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>}</Field>
+          <Field label="Estado">{(p) => <select {...p} value={f.status} onChange={(e) => setF({ ...f, status: e.target.value })}><option value="">Todos</option>{['solicitada', 'confirmada', 'en_sala', 'en_atencion', 'finalizada', 'ausente', 'cancelada'].map((x) => <option key={x} value={x}>{STATUS_LABEL[x]}</option>)}</select>}</Field>
+          <Button size="sm" variant="ghost" onClick={() => setF(NO_FILTERS)} disabled={!activeFilters} aria-describedby={!activeFilters ? 'nofilters' : undefined}>Limpiar filtros</Button>
+          {!activeFilters && <DisabledReason id="nofilters">No hay filtros activos.</DisabledReason>}
+        </div>
+      </details>
+      <p className="muted small" role="status" style={{ margin: 0 }}>Mostrando <span className="tabular">{shown.length}</span> de <span className="tabular">{all.length}</span> turnos · {range[0] === range[1] ? fmtDateOnly(range[0]) : `${fmtDateOnly(range[0])} al ${fmtDateOnly(range[1])}`}. Filtrar no cambia datos.</p>
 
       <div className="ops">
         <div className="stack">
-          {view === 'semana' && <p className="muted small">En pantallas angostas la semana se muestra como lista diaria.</p>}
           {shown.length === 0 && blocks.length === 0 ? (
             <EmptyState title={all.length ? 'Sin coincidencias con estos filtros' : 'Sin turnos en este período'} icon="calendar" action={all.length ? <Button onClick={() => setF(NO_FILTERS)}>Restablecer filtros</Button> : <Button variant="primary" onClick={() => setNewAppt(true)}>Crear turno de muestra</Button>} />
+          ) : view === 'recursos' ? (
+            <>
+              <div className="desktop-only"><ResourceGrid day={day} appts={shown} blocks={blocks} filters={f} onOpen={setDetail} linked={linked} /></div>
+              <div className="mobile-only"><p className="small muted">En pantallas angostas la agenda se muestra como lista diaria.</p><DayList appts={shown} blocks={blocks} onOpen={setDetail} linked={linked} /></div>
+            </>
           ) : view === 'semana' ? (
             <>
-              <WeekGrid start={range[0]} appts={shown} blocks={blocks} onOpen={setDetail} />
-              <DayList appts={shown} blocks={blocks} onOpen={setDetail} className="week-fallback" />
+              <div className="desktop-only"><WeekGrid start={range[0]} appts={shown} blocks={blocks} onOpen={setDetail} /></div>
+              <div className="mobile-only"><p className="small muted">En pantallas angostas la semana se muestra como lista diaria.</p><DayList appts={shown} blocks={blocks} onOpen={setDetail} linked={linked} /></div>
             </>
-          ) : view === 'lista' ? <ListTable appts={shown} onOpen={setDetail} /> : <DayList appts={shown} blocks={blocks} onOpen={setDetail} />}
+          ) : view === 'lista' ? <ListTable appts={shown} onOpen={setDetail} /> : <DayList appts={shown} blocks={blocks} onOpen={setDetail} linked={linked} />}
         </div>
-        <aside className="stack">
+        <aside className="stack" aria-label="Pendientes de recepción">
           <div className="card stack">
-            <h2 style={{ fontSize: 20 }}>Por confirmar</h2>
-            {pendingConfirm.length === 0 ? <p className="muted">Nada pendiente.</p> : pendingConfirm.map((a) => (
+            <div className="section-title"><h2>Por confirmar</h2><span className="muted small tabular">{pendingConfirm.length}</span></div>
+            {pendingConfirm.length === 0 ? <p className="muted" style={{ margin: 0 }}>Nada pendiente.</p> : pendingConfirm.map((a) => (
               <div key={a.id} className="list-item">
                 <strong>{personLabel(s, a.personId)}</strong>
                 <span className="small muted tabular">{serviceName(s, a.serviceTypeId)} · {fmtShort(a.start)} · {a.requestId}</span>
@@ -89,8 +121,8 @@ export function Today() {
             ))}
           </div>
           <div className="card stack">
-            <div className="row between"><h2 style={{ fontSize: 20, margin: 0 }}>Pendientes</h2><Button size="sm" variant="ghost" onClick={() => navigate('/admin/tareas')}>Ver todas</Button></div>
-            {openTasks.length === 0 ? <p className="muted">Sin tareas abiertas.</p> : openTasks.slice(0, 6).map((t) => (
+            <div className="section-title"><h2>Pendientes</h2><Button size="sm" variant="ghost" onClick={() => navigate('/admin/tareas')}>Ver todas</Button></div>
+            {openTasks.length === 0 ? <p className="muted" style={{ margin: 0 }}>Sin tareas abiertas.</p> : openTasks.slice(0, 5).map((t) => (
               <div key={t.id} className="list-item">
                 <div className="row between"><strong className="small">{t.title}</strong><StatusBadge status={t.status} /></div>
                 <span className="small muted">{staffName(s, t.assigneeId)}{t.dueAt ? ` · vence ${fmtShort(t.dueAt)}` : ''}{t.ruleId ? ` · ${t.ruleId}` : ''}</span>
@@ -99,8 +131,8 @@ export function Today() {
           </div>
           {changed.length > 0 && (
             <div className="card stack">
-              <h2 style={{ fontSize: 20 }}>Cambios recientes</h2>
-              {changed.map((e) => <p key={e.id} className="small"><button className="btn btn-ghost btn-sm" onClick={() => setDetail(e.entityId)}><span className="code">{e.entityId}</span></button> {e.detail}</p>)}
+              <h2>Cambios recientes</h2>
+              {changed.map((e) => <div key={e.id} className="small"><button className="btn btn-ghost btn-sm" onClick={() => setDetail(e.entityId)}><span className="code">{e.entityId}</span></button> {e.detail}</div>)}
             </div>
           )}
         </aside>
@@ -112,43 +144,104 @@ export function Today() {
   );
 }
 
-function ApptCard({ a, onOpen }: { a: Appointment; onOpen: (id: string) => void }) {
+const ROW_MIN = 15;
+
+/** Agenda por recursos: columnas por profesional, filas de 15 min; los turnos ocupan su intervalo [inicio, fin). */
+function ResourceGrid({ day, appts, blocks, filters, onOpen, linked }: { day: string; appts: Appointment[]; blocks: Block[]; filters: Filters; onOpen: (id: string) => void; linked: string | null }) {
   const s = useDemo();
-  const recent = s.audit.slice(-1)[0]?.entityId === a.id;
+  const last = useLastChange();
+  const wd = parts(at(day, '12:00')).weekday;
+  const rules = s.availabilityRules.filter((r) => r.weekday === wd && (!filters.professionalId || r.professionalId === filters.professionalId) && (!filters.locationId || r.locationId === filters.locationId));
+  const pros = s.professionals.filter((p) => rules.some((r) => r.professionalId === p.id) || appts.some((a) => a.professionalId === p.id));
+  const visible = appts.filter((a) => a.status !== 'cancelada');
+  const cancelled = appts.length - visible.length;
+  if (!pros.length) return <EmptyState title="Sin jornada de atención este día" icon="calendar">Los turnos de la lista aparecen igual en la vista “Lista del día”.</EmptyState>;
+  const mins = [...rules.map((r) => hhmmToMinutes(r.start)), ...visible.map((a) => parts(a.start).minutes)];
+  const maxs = [...rules.map((r) => hhmmToMinutes(r.end)), ...visible.map((a) => parts(a.end).minutes)];
+  const startMin = Math.floor(Math.min(...mins, 9 * 60) / 60) * 60;
+  const endMin = Math.ceil(Math.max(...maxs, 13 * 60) / 60) * 60;
+  const rows = (endMin - startMin) / ROW_MIN;
+  const row = (m: number) => Math.round((m - startMin) / ROW_MIN) + 2;
+  const open = (proId: string, m: number) => rules.some((r) => r.professionalId === proId && hhmmToMinutes(r.start) <= m && m < hhmmToMinutes(r.end));
+  const otherBlocks = blocks.filter((b) => b.scope !== 'professional');
   return (
-    <div className={`list-item appt st-${a.status} ${recent ? 'highlight' : ''}`}>
-      <div className="row between">
-        <strong>{personLabel(s, a.personId)}</strong>
-        <StatusBadge status={a.status} />
+    <div className="stack">
+      <div className="res-wrap">
+        <div className="res-grid" role="group" aria-label={`Agenda por profesional, ${fmtDateOnly(day)}`}
+          style={{ gridTemplateColumns: `56px repeat(${pros.length}, minmax(150px, 1fr))`, gridTemplateRows: `auto repeat(${rows}, 26px)` }}>
+          <div className="res-head" style={{ gridColumn: 1, gridRow: 1 }}><span className="sr-only">Hora</span></div>
+          {pros.map((p, i) => {
+            const locs = [...new Set(rules.filter((r) => r.professionalId === p.id).map((r) => locName(s, r.locationId)))];
+            return <div key={p.id} className="res-head" style={{ gridColumn: i + 2, gridRow: 1 }}>{p.name}<small>{locs.join(' · ') || 'Sin jornada'}</small></div>;
+          })}
+          {Array.from({ length: rows }, (_, r) => {
+            const m = startMin + r * ROW_MIN;
+            return [
+              m % 60 === 0 ? <div key={`t${r}`} className="res-time" style={{ gridColumn: 1, gridRow: `${r + 2} / span 4` }} aria-hidden="true">{`${String(m / 60).padStart(2, '0')}:00`}</div> : null,
+              ...pros.map((p, i) => <div key={`c${p.id}${r}`} className={`res-cell ${open(p.id, m) ? '' : 'closed'} ${m % 60 === 0 ? 'hour' : ''}`} style={{ gridColumn: i + 2, gridRow: r + 2 }} aria-hidden="true" />),
+            ];
+          })}
+          {blocks.filter((b) => b.scope === 'professional').map((b) => {
+            const col = pros.findIndex((p) => p.id === b.targetId);
+            if (col < 0) return null;
+            const a = Math.max(parts(b.start).date === day ? parts(b.start).minutes : 0, startMin);
+            const z = Math.min(parts(b.end).date === day ? parts(b.end).minutes : 24 * 60, endMin);
+            if (z <= a) return null;
+            return <div key={b.id} className="res-block" style={{ gridColumn: col + 2, gridRow: `${row(a)} / ${row(z)}` }}><Icon name="stop" size={12} /> {b.reason}</div>;
+          })}
+          {visible.map((a) => {
+            const col = pros.findIndex((p) => p.id === a.professionalId);
+            const updated = last?.appointmentId === a.id || linked === a.id;
+            return (
+              <button key={a.id} type="button" className={`res-appt st-${a.status} ${updated ? 'is-updated' : ''}`} data-appointment={a.id}
+                style={{ gridColumn: col + 2, gridRow: `${row(parts(a.start).minutes)} / ${row(parts(a.end).minutes)}` }}
+                onClick={() => onOpen(a.id)}
+                aria-label={`${fmtTime(a.start)} a ${fmtTime(a.end)}, ${personLabel(s, a.personId)}, ${serviceName(s, a.serviceTypeId)}, ${chairName(s, a.chairId)}, ${STATUS_LABEL[a.status]}, turno ${a.id} versión ${a.version}${updated ? ', actualizado recién' : ''}`}>
+                <strong className="tabular">{fmtTime(a.start)} · {byId(s.persons, a.personId)?.firstName ?? a.personId}</strong>
+                <span>{serviceName(s, a.serviceTypeId)}</span>
+                <span className="small">{chairName(s, a.chairId)} · {STATUS_LABEL[a.status]} · {a.id} v{a.version}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
-      <div className="meta"><span className="tabular">{fmtTime(a.start)}–{fmtTime(a.end)}</span><span>{serviceName(s, a.serviceTypeId)}</span><span>{proName(s, a.professionalId)}</span><span>{locName(s, a.locationId)} · {chairName(s, a.chairId)}</span><span className="code">{a.id} v{a.version}</span></div>
-      <AppointmentActions a={a} compact onOpen={() => onOpen(a.id)} />
+      <ul className="legend" aria-label="Leyenda de la agenda">
+        <li><span className="swatch" style={{ background: 'var(--primary-50)', borderColor: 'var(--primary)' }} /> Confirmado</li>
+        <li><span className="swatch" style={{ background: 'var(--warn-50)', borderColor: 'var(--warn)' }} /> Pendiente de confirmación</li>
+        <li><span className="swatch" style={{ background: 'var(--info-50)', borderColor: 'var(--info)' }} /> En sala o en atención</li>
+        <li><span className="swatch" style={{ background: 'repeating-linear-gradient(135deg,#fff,#fff 3px,#f1eee6 3px,#f1eee6 6px)' }} /> Fuera de jornada o bloqueado</li>
+        {cancelled > 0 && <li>{cancelled} cancelado(s): solo en “Lista del día”</li>}
+      </ul>
+      {otherBlocks.map((b) => <BlockRow key={b.id} b={b} />)}
     </div>
   );
 }
 
-function DayList({ appts, blocks, onOpen, className = '' }: { appts: Appointment[]; blocks: Block[]; onOpen: (id: string) => void; className?: string }) {
+function BlockRow({ b }: { b: Block }) {
   const s = useDemo();
-  const items = [...appts.map((a) => ({ t: a.start, a })), ...blocks.map((b) => ({ t: b.start, b }))].sort((x, y) => toMs(x.t) - toMs(y.t));
-  let lastDate = '';
   return (
-    <div className={`day-grid ${className}`}>
-      {items.map((it) => {
-        const d = parts(it.t).date;
-        const header = d !== lastDate ? <h3 key={`h-${d}`} style={{ marginTop: 8 }}>{fmtDateOnly(d)}</h3> : null;
-        lastDate = d;
-        return (
-          <div key={'a' in it && it.a ? it.a.id : (it as { b: Block }).b.id}>
-            {header}
-            <div className="slot-row">
-              <time dateTime={it.t}>{fmtTime(it.t)}</time>
-              {'a' in it && it.a ? <ApptCard a={it.a} onOpen={onOpen} /> : (() => { const b = (it as { b: Block }).b; return (
-                <div className="list-item appt block"><div className="row between"><strong><Icon name="stop" size={14} /> Bloqueo · {b.reason}</strong><Button size="sm" variant="ghost" onClick={() => { const r = dispatch({ type: 'removeBlock', blockId: b.id }); announce(r.message); }}>Quitar</Button></div>
-                  <span className="small muted tabular">{fmtTime(b.start)}–{fmtTime(b.end)} · {b.scope === 'professional' ? proName(s, b.targetId) : b.scope === 'chair' ? chairName(s, b.targetId) : locName(s, b.targetId)} · {b.id}</span></div>); })()}
-            </div>
-          </div>
-        );
-      })}
+    <div className="block-row">
+      <span><strong><Icon name="stop" size={14} /> Bloqueo · {b.reason}</strong><br /><span className="small muted tabular">{fmtTime(b.start)}–{fmtTime(b.end)} · {b.scope === 'professional' ? proName(s, b.targetId) : b.scope === 'chair' ? chairName(s, b.targetId) : locName(s, b.targetId)} · {b.id}</span></span>
+      <Button size="sm" variant="ghost" onClick={() => { const r = dispatch({ type: 'removeBlock', blockId: b.id }); announce(r.message); }}>Quitar bloqueo</Button>
+    </div>
+  );
+}
+
+function DayList({ appts, blocks, onOpen, linked }: { appts: Appointment[]; blocks: Block[]; onOpen: (id: string) => void; linked: string | null }) {
+  const items = [...appts.map((a) => ({ t: a.start, a })), ...blocks.map((b) => ({ t: b.start, b }))].sort((x, y) => toMs(x.t) - toMs(y.t));
+  const days = [...new Set(items.map((it) => parts(it.t).date))];
+  return (
+    <div className="day-grid">
+      {days.map((d) => (
+        <section key={d} className="stack" style={{ gap: 8 }} aria-label={fmtDateOnly(d)}>
+          <h3 className="day-head">{fmtDateOnly(d)}</h3>
+          <ul className="turno-list">
+            {items.filter((it) => parts(it.t).date === d).map((it) => 'a' in it && it.a
+              ? <li key={it.a.id}><TurnoCard a={it.a} variant="admin" showPerson forceHighlight={linked === it.a.id} actions={<AppointmentActions a={it.a} compact onOpen={() => onOpen(it.a!.id)} />} /></li>
+              : <li key={(it as { b: Block }).b.id}><BlockRow b={(it as { b: Block }).b} /></li>)}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }

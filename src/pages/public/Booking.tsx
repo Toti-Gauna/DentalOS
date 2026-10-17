@@ -5,7 +5,8 @@ import { setActingPerson, useDraft, useUi } from '../../app/ui-state';
 import { findSlots, validateNewPerson, type SlotRef } from '../../domain';
 import { slotKey } from '../../domain/scheduling';
 import { byId, chairName, locName, personLabel, proName, serviceName } from '../../domain/selectors';
-import { addDays, at, fmtLong, fmtShort, parts } from '../../domain/time';
+import { addDays, at, fmtDateOnly, fmtLong, parts } from '../../domain/time';
+import { ConflictNotice, DateStrip } from '../../ui/components';
 import { Button, EmptyState, ErrorSummary, Field, Icon, Notice, PageHeader, StatusBadge, announce } from '../../ui/kit';
 import { PersonPicker } from './PersonPicker';
 
@@ -43,6 +44,12 @@ export function Booking() {
   const slots = useMemo(() => (st && services.some((x) => x.id === st.id)
     ? findSlots(s, { serviceTypeId: st.id, professionalId: draft.professionalId || null, locationId: draft.locationId || null, from: at(draft.fromDate || today, '00:00'), limit: 8, period: draft.period, personId })
     : []), [s, st, services, draft.professionalId, draft.locationId, draft.fromDate, draft.period, personId, today]);
+  const dayNote = (d: string) => {
+    if (!st) return null;
+    const wd = parts(at(d, '12:00')).weekday;
+    if (!s.availabilityRules.some((r) => r.weekday === wd && st && pros.some((p) => p.id === r.professionalId))) return 'Sin atención';
+    return null;
+  };
   const chosen = draft.chosen;
   const chosenListed = !!chosen && slots.some((x) => slotKey(x) === slotKey(chosen));
 
@@ -147,8 +154,6 @@ export function Booking() {
                 <select {...p} value={draft.professionalId} onChange={(e) => up({ professionalId: e.target.value, chosen: null })}>
                   <option value="">Cualquiera</option>{pros.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
                 </select>)}</Field>
-              <Field label="Desde" hint={`Hasta ${fmtShort(at(addDays(today, s.settings.horizonDays - 1), '18:00')).split(' · ')[0]}`}>{(p) => (
-                <input {...p} type="date" min={today} max={addDays(today, s.settings.horizonDays - 1)} value={draft.fromDate} onChange={(e) => up({ fromDate: e.target.value || today, chosen: null })} />)}</Field>
               <Field label="Franja">{(p) => (
                 <select {...p} value={draft.period} onChange={(e) => up({ period: e.target.value as BookingDraft['period'], chosen: null })}>
                   <option value="cualquiera">Cualquiera</option><option value="mañana">Mañana</option><option value="tarde">Tarde</option>
@@ -161,6 +166,8 @@ export function Booking() {
 
         <div className="stack">
           <h2>3. Horarios disponibles</h2>
+          <DateStrip label="Buscar desde" value={draft.fromDate} start={today} days={14} min={today} max={addDays(today, s.settings.horizonDays - 1)}
+            onChange={(d) => up({ fromDate: d, chosen: null })} note={dayNote} />
           {slots.length === 0 ? (
             <EmptyState title="No hay cupos con estos filtros" icon="calendar" action={
               <div className="row wrap">
@@ -172,27 +179,30 @@ export function Booking() {
           ) : (
             <fieldset>
               <legend className="sr-only">Elegí un horario</legend>
-              <ul className="list">
-                {slots.map((x) => (
-                  <li key={slotKey(x)}>
-                    <label className="list-item" style={{ cursor: 'pointer', gridTemplateColumns: 'auto 1fr', display: 'grid', alignItems: 'center' }}>
-                      <input type="radio" name="slot" checked={!!chosen && slotKey(chosen) === slotKey(x)} onChange={() => { up({ chosen: x }); setCommitError(null); }} />
-                      <span><strong className="tabular">{fmtLong(x.start)}</strong><br /><span className="muted small">{proName(s, x.professionalId)} · {locName(s, x.locationId)} · {chairName(s, x.chairId)}</span></span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
+              {[...new Set(slots.map((x) => parts(x.start).date))].map((d) => (
+                <div key={d}>
+                  <h3 className="slot-day">{fmtDateOnly(d)}</h3>
+                  <ul className="list">
+                    {slots.filter((x) => parts(x.start).date === d).map((x) => (
+                      <li key={slotKey(x)}>
+                        <label className="list-item slot-option">
+                          <input type="radio" name="slot" checked={!!chosen && slotKey(chosen) === slotKey(x)} onChange={() => { up({ chosen: x }); setCommitError(null); }} />
+                          <span><strong className="tabular">{fmtLong(x.start)}</strong><br /><span className="muted small">{proName(s, x.professionalId)} · {locName(s, x.locationId)} · {chairName(s, x.chairId)}</span></span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </fieldset>
           )}
           {commitError && (
-            <Notice tone="error" title={commitError.message}>
-              {commitError.conflicts && <ul className="plain">{commitError.conflicts.map((c, i) => <li key={i}>{c.message}</li>)}</ul>}
-              {commitError.existingId && <Button size="sm" onClick={() => navigate('/mis-turnos')}>Abrir turno {commitError.existingId}</Button>}
-              <p className="small">Tus datos siguen en el formulario.</p>
-            </Notice>
+            <ConflictNotice title={commitError.message} conflicts={commitError.conflicts} keptLabel="Tus datos siguen en el formulario.">
+              {commitError.existingId && <div><Button size="sm" onClick={() => navigate('/mis-turnos')}>Abrir turno {commitError.existingId}</Button></div>}
+            </ConflictNotice>
           )}
           {chosen && st && (
-            <div className="card stack">
+            <div className="card stack review-card">
               <h3>Revisá antes de confirmar</h3>
               {!chosenListed && <Notice tone="warn" title="Este horario ya no figura como libre">Si confirmás, lo revalidamos y te mostramos alternativas sin perder tus datos.</Notice>}
               <dl className="kv">

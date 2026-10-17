@@ -98,7 +98,7 @@ export function createSeedState(): DemoState {
     preset: 'inicial',
     clock: INITIAL_CLOCK,
     revision: 0,
-    seq: { P: 12, A: 18, R: 5, C: 3, M: 7, CS: 0, O: outbox.length, T: 3, W: 2, OF: 0, IC: 3, TC: 5, EST: 3, EL: 5, L: 10, EV: 1, B: 3, RL: 2 },
+    seq: { P: 12, A: 18, R: 5, C: 3, M: 7, CS: 0, O: outbox.length, T: 3, W: 2, OF: 0, IC: 3, TC: 16, EST: 3, EL: 5, L: 10, EV: 1, B: 3, RL: 2 },
     settings: { failNextCommits: 0, reminderQuota: 20, changeWindowHours: 12, minLeadHours: 2, horizonDays: 30, holdMinutes: 10, reminderLeadHours: 24 },
     clinic: { id: 'CL-1', name: 'Clínica Brisa', tagline: 'Cada consulta tiene un próximo paso.' },
     locations: [
@@ -201,7 +201,7 @@ export function createSeedState(): DemoState {
     ],
     offers: [],
     careEpisodes: [
-      { id: 'E-001', personId: 'P-001', kind: 'ortodoncia', title: 'Seguimiento de ortodoncia (muestra)', professionalId: 'PR-03', status: 'activo', startedAt: '2026-03-10T10:00:00-03:00',
+      { id: 'E-001', personId: 'P-001', kind: 'ortodoncia', title: 'Seguimiento de ortodoncia (muestra)', professionalId: 'PR-03', status: 'activo', startedAt: '2026-03-10T10:00:00-03:00', appliance: 'brackets_esteticos',
         timeline: [
           { at: '2026-03-10T10:00:00-03:00', kind: 'inicio', text: 'Inicio administrativo del seguimiento.' },
           { at: '2026-09-17T10:30:00-03:00', kind: 'control', text: 'Control registrado por la profesional.' },
@@ -209,7 +209,7 @@ export function createSeedState(): DemoState {
           { at: '2026-10-09T17:41:00-03:00', kind: 'reserva', text: 'Control IC-001 reservado: A-0012.' },
         ],
         controls: [{ id: 'IC-001', note: 'Próximo control indicado por la profesional.', indicatedBy: 'PR-03', indicatedAt: '2026-09-17T10:35:00-03:00', status: 'reservado', appointmentId: 'A-0012' }] },
-      { id: 'E-002', personId: 'P-009', kind: 'ortodoncia', title: 'Seguimiento de ortodoncia (muestra)', professionalId: 'PR-03', status: 'activo', startedAt: '2026-05-04T09:00:00-03:00',
+      { id: 'E-002', personId: 'P-009', kind: 'ortodoncia', title: 'Seguimiento de ortodoncia (muestra)', professionalId: 'PR-03', status: 'activo', startedAt: '2026-05-04T09:00:00-03:00', appliance: 'brackets_metalicos',
         timeline: [
           { at: '2026-05-04T09:00:00-03:00', kind: 'inicio', text: 'Inicio administrativo del seguimiento.' },
           { at: '2026-09-22T09:30:00-03:00', kind: 'indicacion', text: 'La profesional indicó control (IC-002).' },
@@ -226,6 +226,17 @@ export function createSeedState(): DemoState {
       { id: 'TC-003', personId: 'P-006', dentition: 'permanente', tooth: 36, surface: 'O', procedure: 'Restauración', state: 'planificado', status: 'vigente', createdAt: '2026-10-12T09:20:00-03:00', by: 'PR-01' },
       { id: 'TC-004', personId: 'P-001', dentition: 'permanente', tooth: 16, surface: 'O', procedure: 'Sellador', state: 'realizado', status: 'vigente', createdAt: '2026-04-02T10:00:00-03:00', by: 'PR-01' },
       { id: 'TC-005', personId: 'P-004', dentition: 'temporal', tooth: 75, surface: 'O', procedure: 'Restauración', state: 'planificado', status: 'vigente', createdAt: '2026-10-01T11:00:00-03:00', by: 'PR-01' },
+      { id: 'TC-006', personId: 'P-008', dentition: 'permanente', tooth: 16, surface: 'pieza', procedure: 'Corona de oro', state: 'realizado', status: 'vigente', createdAt: '2025-06-10T10:00:00-03:00', by: 'PR-01' },
+      { id: 'TC-007', personId: 'P-008', dentition: 'permanente', tooth: 36, surface: 'O', procedure: 'Restauración de amalgama', state: 'realizado', status: 'vigente', createdAt: '2024-03-02T10:00:00-03:00', by: 'PR-01' },
+      { id: 'TC-008', personId: 'P-008', dentition: 'permanente', tooth: 25, surface: 'pieza', procedure: 'Implante', state: 'realizado', status: 'vigente', createdAt: '2025-11-20T10:00:00-03:00', by: 'PR-01' },
+      { id: 'TC-009', personId: 'P-008', dentition: 'permanente', tooth: 38, surface: 'pieza', procedure: 'Pieza ausente', state: 'realizado', status: 'vigente', createdAt: '2023-08-01T10:00:00-03:00', by: 'PR-01' },
+      { id: 'TC-010', personId: 'P-008', dentition: 'permanente', tooth: 47, surface: 'O', procedure: 'Caries (hallazgo)', state: 'realizado', status: 'vigente', createdAt: '2026-10-07T10:10:00-03:00', by: 'PR-01' },
+      { id: 'TC-011', personId: 'P-008', dentition: 'permanente', tooth: 47, surface: 'O', procedure: 'Restauración de resina', state: 'planificado', status: 'vigente', createdAt: '2026-10-07T10:12:00-03:00', by: 'PR-01' },
+      { id: 'TC-012', personId: 'P-008', dentition: 'permanente', tooth: 11, surface: 'I', procedure: 'Fractura (hallazgo)', state: 'realizado', status: 'vigente', createdAt: '2026-10-07T10:14:00-03:00', by: 'PR-01' },
+      { id: 'TC-013', personId: 'P-009', dentition: 'permanente', tooth: 11, surface: 'V', procedure: 'Bracket', state: 'realizado', status: 'vigente', createdAt: '2026-05-04T09:30:00-03:00', by: 'PR-03' },
+      { id: 'TC-014', personId: 'P-009', dentition: 'permanente', tooth: 21, surface: 'V', procedure: 'Bracket', state: 'realizado', status: 'vigente', createdAt: '2026-05-04T09:30:00-03:00', by: 'PR-03' },
+      { id: 'TC-015', personId: 'P-001', dentition: 'permanente', tooth: 46, surface: 'pieza', procedure: 'Corona de porcelana', state: 'realizado', status: 'vigente', createdAt: '2025-02-12T10:00:00-03:00', by: 'PR-01' },
+      { id: 'TC-016', personId: 'P-001', dentition: 'permanente', tooth: 36, surface: 'pieza', procedure: 'Tratamiento de conducto', state: 'realizado', status: 'vigente', createdAt: '2025-02-01T10:00:00-03:00', by: 'PR-01' },
     ],
     estimates: [
       { id: 'EST-001', personId: 'P-006', professionalId: 'PR-01', status: 'emitido', validUntil: '2026-10-26T18:00:00-03:00', issuedAt: '2026-10-12T09:30:00-03:00', decidedAt: null, createdAt: '2026-10-12T09:25:00-03:00', coverageNote: 'Cobertura a verificar por recepción (muestra).' },

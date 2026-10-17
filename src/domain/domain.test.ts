@@ -266,6 +266,29 @@ describe('odontograma y episodios', () => {
     expect(r.state.appointments).toHaveLength(18);
     expect(r.state.tasks.some((t) => t.kind === 'control_indicado' && t.personId === 'P-001')).toBe(true);
   });
+  it('aparatología: la registra la profesional, valida el valor y queda en el timeline', () => {
+    const s = createSeedState();
+    expect(s.careEpisodes.find((e) => e.id === 'E-001')!.appliance).toBe('brackets_esteticos');
+    const r = run(s, { type: 'episodeSetAppliance', episodeId: 'E-001', appliance: 'alineadores' });
+    expect(r.result.ok).toBe(true);
+    const ep = r.state.careEpisodes.find((e) => e.id === 'E-001')!;
+    expect(ep.appliance).toBe('alineadores');
+    expect(ep.timeline.at(-1)!.kind).toBe('aparatologia');
+    expect(r.state.appointments).toHaveLength(18);
+    const same = run(r.state, { type: 'episodeSetAppliance', episodeId: 'E-001', appliance: 'alineadores' });
+    expect(same.result.ok === false && same.result.code).toBe('SIN_CAMBIOS');
+    const bad = run(r.state, { type: 'episodeSetAppliance', episodeId: 'E-001', appliance: 'imán' });
+    expect(bad.result.ok === false && bad.result.code).toBe('DATOS_INVALIDOS');
+    expect(bad.state).toBe(r.state);
+  });
+  it('odontograma: cada registro nuevo (oro, implante, ausente…) se guarda con su pieza', () => {
+    const s = createSeedState();
+    const r = run(s, { type: 'toothMark', personId: 'P-002', dentition: 'permanente', tooth: 26, surface: 'pieza', procedure: 'Corona de oro', state: 'realizado' });
+    expect(r.result.ok).toBe(true);
+    expect(r.state.toothChart.at(-1)).toMatchObject({ tooth: 26, procedure: 'Corona de oro', state: 'realizado', status: 'vigente' });
+    const bad = run(s, { type: 'toothMark', personId: 'P-002', dentition: 'permanente', tooth: 26, surface: 'pieza', procedure: 'Blanqueamiento mágico', state: 'realizado' });
+    expect(bad.result.ok).toBe(false);
+  });
   it('control de ortodoncia sólo con control indicado', () => {
     const s = createSeedState();
     const r = run(s, { type: 'book', personId: 'P-002', serviceTypeId: 'ST-ORTO-CTRL', professionalId: 'PR-03', locationId: 'L-CEN', start: '2026-10-21T15:00:00-03:00', channel: 'web' });

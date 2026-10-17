@@ -39,6 +39,12 @@ export function CallSim() {
   const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current.clear(); };
   const hardStop = useCallback(() => { alive.current = false; clearTimers(); tones.current.stop(); setPending(false); }, []);
   useEffect(() => () => hardStop(), [hardStop]); // salir de la ruta: limpia sin commits ni mensajes tardíos
+  // Pestaña oculta: se cierra el audio (no suena en segundo plano). Se reactiva solo con un gesto ("Activar sonido").
+  useEffect(() => {
+    const onVis = () => { if (document.hidden) tones.current.stop(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
 
   useEffect(() => { tones.current.muted = muted || reading; tones.current.volume = volume; }, [muted, reading, volume]);
 
@@ -55,7 +61,7 @@ export function CallSim() {
   const advance = (next: Session) => {
     setSession({ ...next, step: { line: next.step.line, options: [] } });
     setPending(true);
-    tones.current.chime();
+    tones.current.cue(next.committedAppointmentId && next.committedAppointmentId !== session?.committedAppointmentId ? 'guardado' : 'habla');
     const t = setTimeout(() => { timers.current.delete(t); if (!alive.current) return; setSession(next); setPending(false); announce(next.step.line); }, 350);
     timers.current.add(t);
   };
@@ -223,6 +229,11 @@ export function CallSim() {
   };
 
   const active = session?.status === 'activa';
+  const soundState = !soundOptIn ? { on: false, label: 'Tonos no activados' }
+    : audioNote ? { on: false, label: 'Audio no disponible' }
+    : reading ? { on: false, label: 'Modo lectura: sin sonido' }
+    : muted ? { on: false, label: 'Silenciado' }
+    : { on: true, label: 'Tonos suaves activos' };
   return (
     <section className="page">
       <PageHeader eyebrow="M07 · Canal simulado" title="Llamada simulada">
@@ -258,7 +269,11 @@ export function CallSim() {
                 <span><Icon name="phone" /> {active ? (pending ? 'Asistente hablando (texto)…' : 'Llamada activa · simulada') : session.status === 'detenida' ? 'Llamada detenida' : 'Llamada terminada'}</span>
                 <span className="muted small">{session.personId ? personLabel(s, session.personId) : 'Sin identificar'}{session.requestId ? ` · ${session.requestId}` : ''}</span>
               </div>
-              <p className="call-line" aria-live="off">{session.step.line}</p>
+              <div className="call-status" aria-label="Estado de la llamada">
+                <span className={`call-chip ${soundState.on ? '' : 'is-off'}`}><Icon name={soundState.on ? 'volume' : 'mute'} size={14} /> {soundState.label}</span>
+                <span className="call-chip"><Icon name="info" size={14} /> Sin micrófono · sin voz</span>
+              </div>
+              <p className={`call-line ${pending ? '' : 'is-speaking'}`} aria-live="off" key={session.transcript.length}>{session.step.line}</p>
               {active && !pending && session.step.options.length > 0 && (
                 <div className="call-controls" role="group" aria-label="Respuestas">
                   {session.step.options.map((o) => <Button key={o.id} variant={o.id === 'confirm' || o.id === 'bconfirm' ? 'primary' : 'secondary'} onClick={() => choose(o)}>{o.label}</Button>)}
@@ -267,7 +282,7 @@ export function CallSim() {
               <div className="call-controls" role="group" aria-label="Controles de la llamada">
                 {active && <Button icon="pause" onClick={silence} disabled={pending}>Simular silencio</Button>}
                 {active && <Button icon="refresh" onClick={() => choose({ id: 'repeat', label: 'Repetir' })} disabled={pending}>Repetir</Button>}
-                <Button icon={muted ? 'volume' : 'mute'} onClick={() => setMuted(!muted)} aria-pressed={muted}>{muted ? 'Activar sonido' : 'Silenciar'}</Button>
+                <Button icon={muted ? 'volume' : 'mute'} onClick={() => { if (muted && soundOptIn && !reading) { const ok = tones.current.start(); setAudioNote(ok ? null : 'El audio no está disponible o fue bloqueado: la llamada sigue en texto completo.'); } setMuted(!muted); }} aria-pressed={muted}>{muted ? 'Activar sonido' : 'Silenciar'}</Button>
                 <Button icon="book" onClick={() => setReading(!reading)} aria-pressed={reading}>{reading ? 'Salir de modo lectura' : 'Modo lectura'}</Button>
                 {active && <Button variant="danger" icon="stop" onClick={stop}>Detener</Button>}
                 <Button icon="refresh" onClick={restart}>Reiniciar</Button>

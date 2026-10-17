@@ -5,6 +5,8 @@ import type { Appointment } from '../domain';
 import { byId, chairName, locName, personLabel, proName, serviceName } from '../domain/selectors';
 import { fmtLong, fmtShort, parts, toMs } from '../domain/time';
 import { Button, ConfirmDialog, Drawer, StatusBadge, announce, useResult } from './kit';
+import { OutboxPipeline, TurnoCard } from './components';
+import { setActingPerson } from '../app/ui-state';
 import { RescheduleDrawer } from './RescheduleDrawer';
 
 /** Acciones de recepción sobre un turno, según estado permitido. */
@@ -49,6 +51,8 @@ export function AppointmentDrawer({ id, onClose }: { id: string; onClose: () => 
   const req = byId(s.requests, a.requestId);
   return (
     <Drawer open title={`${serviceName(s, a.serviceTypeId)} · ${a.id}`} onClose={onClose}>
+      <TurnoCard a={a} variant="admin" showPerson />
+      <p className="small" style={{ margin: 0 }}><a href={`#/mis-turnos`} onClick={() => setActingPerson(a.personId)}>Ver como lo ve {personLabel(s, a.personId)} en el portal</a></p>
       <div className="row wrap"><StatusBadge status={a.status} /><span className="tag">versión {a.version}</span><span className="tag">origen {a.origin}</span>{a.patientConfirmedVersion === a.version && <span className="tag">asistencia confirmada por la persona</span>}</div>
       <dl className="kv">
         <dt>Persona</dt><dd><a href={`#/admin/personas/${a.personId}`}>{personLabel(s, a.personId)}</a></dd>
@@ -62,7 +66,7 @@ export function AppointmentDrawer({ id, onClose }: { id: string; onClose: () => 
       <section>
         <h3>Outbox simulado</h3>
         {outbox.length === 0 ? <p className="muted">Sin elementos.</p> : (
-          <ul className="list">{outbox.map((o) => <li key={o.id} className="list-item"><div className="row between"><span><span className="code">{o.id}</span> {o.kind.replace('_', ' ')} · v{o.appointmentVersion}</span><StatusBadge status={o.status} /></div><span className="small muted">{o.text} · clave <span className="code">{o.dedupeKey}</span> · {o.ruleId}</span></li>)}</ul>
+          <ul className="list">{outbox.map((o) => <li key={o.id} className="list-item"><div className="row between"><span><span className="code">{o.id}</span> {o.kind.replace('_', ' ')} · v{o.appointmentVersion}</span><StatusBadge status={o.status} /></div><span className="small muted">{o.text} · clave <span className="code">{o.dedupeKey}</span> · {o.ruleId}</span><OutboxPipeline o={o} /></li>)}</ul>
         )}
       </section>
       <section>

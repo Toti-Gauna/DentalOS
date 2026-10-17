@@ -100,3 +100,111 @@ Distinción de evidencia:
 - Audio audible: el contenedor no tiene salida de sonido. La limpieza se midió con un AudioContext instrumentado, no con el de un navegador real.
 - El zoom real del navegador se aproximó con su equivalente en píxeles CSS (720 px).
 - Concurrencia entre pestañas: solo hay aviso y elección; no se prometen merges.
+
+
+---
+
+# Fase 2 (PROMPT 2 — UX/UI, gamificación y motion)
+
+Rama `feat/fase2-ux-motion` sobre `main` @ `668dec4`. Mismo entorno y mismas versiones que en la fase 1 (Node 22.22.0, npm 10.9.4, TypeScript 5.9.3, Vite 7.3.7, Vitest 3.2.7, ESLint 9.39.5, Playwright 1.56.1 con Chromium local). No se agregaron dependencias.
+
+## Comandos ejecutados
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` | 0 | sin errores |
+| `npm run typecheck` | 0 | sin errores |
+| `npm run test -- --run` | 0 | 63/63 (dominio y contraste de tokens; sin cambios de dominio salvo el contenido de `learning.ts`) |
+| `npm run build` | 0 | entrada ~429 kB JS (131 kB gzip), panel en diferido; sin URLs de red en `dist/` salvo los namespaces XML y el texto de errores de React |
+| `npm run test:e2e` | 0 | **32 pasadas** + 1 omitida a propósito (capturas), en 3 corridas consecutivas. Archivos: `smoke`, `flows`, `coverage` y `a11y` (nuevo) |
+| `EVIDENCE_DIR=docs/evidence/before npm run evidence` (sobre `main`, antes de cambiar) | 0 | 30 capturas: 390, 768 y 1440 px × 10 rutas |
+| `EVIDENCE_DIR=docs/evidence/after EVIDENCE_VIEWPORTS=320,390,768,1440 npm run evidence` | 0 | 40 capturas: 320, 390, 768 y 1440 px × 10 rutas |
+
+## Pruebas nuevas de L2.5 (`tests/e2e/a11y.spec.ts`)
+
+| Prueba | Resultado |
+| --- | --- |
+| Contraste renderizado AA en 19 rutas a 1440 px (cada texto visible contra su fondo efectivo) | Pass |
+| Contraste renderizado AA en 19 rutas a 390 px | Pass |
+| 320 px: 19 rutas sin scroll horizontal de página | Pass, después de corregir el overflow de 10 px de `/aprender` |
+| Teclado virtual simulado (alto de 420 px): el campo del chat y “Enviar” quedan visibles y operables | Pass |
+| Teclado virtual en reserva: el CTA se alcanza con foco y no queda tapado (`elementFromPoint`) | Pass |
+| Menú de vista por teclado: cambia de área y el foco llega al título | Pass, después de corregir el foco (ver abajo) |
+| DateStrip con flechas; el drawer de la agenda conserva día y filtro, y Escape devuelve el foco a la celda | Pass |
+| Movimiento reducido: sin animación; resalte con borde sólido y texto “Actualizado recién” | Pass |
+| Audio: no hay AudioContext antes del gesto; suenan exactamente los dos tonos (523/659 Hz) | Pass |
+
+## Regresión del protagonista y casos afectados
+
+| Caso | Estado | Evidencia |
+| --- | --- | --- |
+| S13 / S29 / A03 | Pass | E: WhatsApp → ocupado → mar 11:00 → v2. TurnoCard “Actualizado recién”. El enlace abre la agenda del 20/10 con la celda resaltada. Tras recargar sigue en v2. |
+| S14 | Pass | U (preset de fallo de commit) |
+| S32 | Pass | U (reapertura con estado actual) |
+| S33 / S35 / A04 / A10 | Pass | E: misma gestión R-006 por llamada → mié 15:00 v2. Bandeja resuelta. |
+| S24 | Pass | E: reserva táctil completa a 390 px; 320 px sin overflow |
+| S46 | Pass | E: respuesta incorrecta → explicación con foco → correcta → sello. La relectura no suma y persiste al recargar. |
+| S47 | Pass | E: teclado, Escape, foco, movimiento reducido, 720 px (equivalente a zoom 200 %), contraste renderizado |
+| S48 | Pass | E: 16 rutas sin requests fuera de 127.0.0.1; auditoría de `dist/` |
+| S01–S26, S39–S45, A01–A10 | Pass | Las suites de dominio y e2e de la fase 1 siguen en verde con los componentes nuevos. Se actualizaron selectores (`[data-appointment]`, vista “Lista del día”) sin cambiar ninguna aserción de dominio. |
+
+## Fallos encontrados y corregidos en esta fase
+
+1. **Navegación del portal:** el ítem activo quedaba blanco sobre blanco por especificidad CSS. Se corrigió y lo cubre el contraste renderizado.
+2. **Vista de muestra desde el portal:** al elegir “Recepción”, un efecto devolvía la vista a “paciente” antes del cambio de ruta y el foco caía en `body`.
+   - Ahora el efecto solo reacciona al cambio de área.
+   - El enfoque del título espera al título nuevo cuando el panel carga en diferido.
+3. **`/aprender` a 320 px:** 10 px de overflow por los sellos. Corregido con un flex que envuelve, sin achicar la letra.
+4. **Odontograma:** la leyenda usaba cuadrados que parecían casillas de verificación. Pasó a usar el mismo glifo de las piezas.
+5. **Ficha:** la etiqueta de familia estaba invertida (“Dependiente · Madre”). Ahora dice “Responsable · madre”.
+
+## Deuda o límites declarados
+
+- Lector de pantalla real (NVDA/VoiceOver) y audio audible: no disponibles en el contenedor. Se verificaron por semántica, foco y AudioContext instrumentado.
+- El zoom del navegador se aproximó con 720 px CSS (zoom 200 % sobre 1440). No se probó el zoom de texto solo.
+- Los textos sobre gradientes (bloqueos, esqueletos de carga) quedan fuera de la medición automática de contraste; su texto usa tokens que superan 4.5:1 sobre blanco.
+
+---
+
+# Fase 2b (análisis premium, arte SVG propio, Brisa Chicos y sonidos)
+
+Misma rama (`feat/fase2-ux-motion`), mismo entorno y sin dependencias nuevas. El análisis y las decisiones están en [`premium.md`](premium.md).
+
+## Comandos ejecutados
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` | 0 | sin errores |
+| `npm run typecheck` | 0 | sin errores |
+| `npm run test -- --run` | 0 | **69/69** (+2 de dominio: `episodeSetAppliance` y registros nuevos del odontograma; +4 pares de contraste: oro para texto, barra lateral, módulo en barra y pie) |
+| `npm run build` | 0 | entrada ~478 kB JS (144 kB gzip). En `dist/` solo aparecen los namespaces XML y `react.dev/errors`. |
+| `npm run test:e2e` × 3 corridas | 0 | **39 pasadas** + 1 omitida a propósito (capturas) en cada corrida |
+| `EVIDENCE_DIR=docs/evidence/after EVIDENCE_VIEWPORTS=320,390,768,1440 npm run evidence` | 0 | 48 capturas: 4 viewports × 12 rutas (se sumaron `chicos` y `ortodoncia`) |
+
+## Pruebas nuevas (`tests/e2e/premium.spec.ts`)
+
+| Prueba | Resultado |
+| --- | --- |
+| Inicio: 6 ilustraciones de motivo, 4 tarjetas de equipo con aviso de ilustración, banda que lleva a `#/chicos` con foco en el título y “Chicos” activo | Pass |
+| Brisa Chicos: 4 saludos dan 5 stickers (incluye “Equipo completo”) y se anuncian; volver a saludar no duplica; el cuento da sticker; persiste al recargar; “Vaciar álbum” pide confirmación y vuelve a 0 | Pass |
+| Reloj de cepillado con reloj controlado (`page.clock`): cambia de zona a los 5 s en la demo de 20 s; pausa sin avanzar (“Quedan 15 segundos”); al terminar suma cepillado y sticker | Pass |
+| Sonidos:<ul><li>apagados por defecto: 0 AudioContext y nada reproducido;</li><li>al activarlos se crea 1 contexto y se registran `toggle`, `pop` y `stamp`;</li><li>al recargar se recuerda la preferencia sin crear contexto hasta el próximo gesto;</li><li>al apagarlos no suena nada.</li></ul> | Pass |
+| Odontograma P-008: piezas 16, 25 y 38 ilustradas como corona de oro, implante y ausente; “Odontograma” activo en la navegación; catálogo de 13 estados; un “Implante” realizado nuevo en la 26 cambia la ilustración | Pass |
+| Ortodoncia: aparatología ilustrada con nombre accesible; cambiarla actualiza la ilustración y el timeline; catálogo de 5 | Pass |
+| `#/chicos` sumada al contraste renderizado (1440 y 390 px) y a la prueba de 320 px sin scroll horizontal | Pass (20 rutas) |
+
+## Fallos encontrados y corregidos
+
+1. **Robo de foco durante la carga diferida del panel** (bug real que ya existía en la fase 2). Lo destapó una corrida intermitente de la prueba del DateStrip.
+   - **Causa:** el reintento de foco al título (cada 50 ms mientras carga el panel) enfocaba el título aunque la persona ya hubiera puesto el foco en un control del contenido nuevo.
+   - **Corrección:** si el foco se movió dentro de `#main` desde que empezó la navegación, el título no lo toma.
+   - **Prueba de regresión determinista:** un `MutationObserver` enfoca el día apenas aparece. Falla sin la corrección y pasa con ella.
+2. **Navegación del panel en el odontograma:** se marcaba “Personas y familias” (por el prefijo de la ruta). Ahora se marca “Odontograma”.
+3. **Inicio:** se quitó un degradado del héroe que dibujaba un rectángulo visible arriba a la izquierda.
+4. **Brisa Chicos:** la zona actual del cepillado se anunciaba dos veces (región viva propia + anuncio global). Quedó solo el anuncio global.
+5. **Ortodoncia:** “Tareas del episodio” quedaba vacía sin texto. Ahora dice “Sin tareas de control para esta persona.”
+
+## Límites declarados
+
+- Audio audible y lector de pantalla real: no disponibles en el contenedor. Se verificaron con un AudioContext instrumentado, nombres accesibles y foco.
+- Los personajes y avatares son ilustraciones propias; no hay fotos ni personas reales.

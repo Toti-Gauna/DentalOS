@@ -105,6 +105,8 @@ export interface TimelineItem { at: Iso; kind: string; text: string }
 export interface CareEpisode {
   id: string; personId: string; kind: 'ortodoncia'; title: string; professionalId: string; status: 'activo' | 'cerrado';
   startedAt: Iso; timeline: TimelineItem[]; controls: IndicatedControl[];
+  /** Opcional: fichas guardadas antes de la fase 2 no lo tienen (sin migración de esquema). */
+  appliance?: 'brackets_metalicos' | 'brackets_esteticos' | 'alineadores' | 'retenedor_fijo' | 'retenedor_removible';
 }
 
 export type Surface = 'V' | 'L' | 'M' | 'D' | 'O' | 'I' | 'pieza';

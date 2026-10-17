@@ -1,32 +1,50 @@
+import { useState } from 'react';
 import { useDemo } from '../../app/store';
 import { navigate } from '../../app/router';
 import { useUi } from '../../app/ui-state';
 import { byId, locName, proName, serviceName, upcomingFor } from '../../domain/selectors';
-import { fmtLong } from '../../domain/time';
+import { fmtLong, parts } from '../../domain/time';
+import { agendaLink } from '../../ui/components';
+import { SmileArt } from '../../ui/art/teeth';
+import { ServiceArt } from '../../ui/art/services';
+import { ProAvatar } from '../../ui/art/brand';
+import { ToothCharacter } from '../../ui/art/characters';
 import { Button, EmptyState, Icon, StatusBadge } from '../../ui/kit';
+
+const DOW = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+const MON = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 function NextAppointmentCard() {
   const s = useDemo();
   const ui = useUi();
   const person = byId(s.persons, ui.actingPersonId);
   const next = person ? upcomingFor(s, person.id)[0] : undefined;
+  const p = next ? parts(next.start) : null;
   return (
     <aside className="next-card" aria-labelledby="next-title">
-      <p className="eyebrow" id="next-title">Tu próximo paso{person ? ` · ${person.firstName} (${person.id})` : ''}</p>
-      {next ? (
+      <p className="eyebrow" id="next-title" style={{ margin: 0 }}>Tu próximo paso{person ? ` · ${person.firstName} (${person.id})` : ''}</p>
+      {next && p ? (
         <>
-          <p className="big">{serviceName(s, next.serviceTypeId)}</p>
-          <p className="tabular">{fmtLong(next.start)}<br />{proName(s, next.professionalId)} · {locName(s, next.locationId)}</p>
+          <div className="next-when">
+            <div className="turno-when" aria-hidden="true"><span className="turno-dow">{DOW[p.weekday]}</span><span className="turno-day tabular">{p.day}</span><span className="turno-month">{MON[p.month - 1]}</span></div>
+            <div>
+              <p className="big">{serviceName(s, next.serviceTypeId)}</p>
+              <p className="tabular" style={{ margin: 0 }}>{fmtLong(next.start)}</p>
+            </div>
+          </div>
+          <p style={{ margin: 0 }}>{proName(s, next.professionalId)} · {locName(s, next.locationId)}</p>
           <StatusBadge status={next.status} />
+          {next.status === 'solicitada' && <p className="on-dark-muted small" style={{ margin: 0 }}>Es una solicitud: recepción la confirma. Todavía no es un turno confirmado.</p>}
           <div className="row wrap">
             <Button variant="secondary" icon="list" onClick={() => navigate('/mis-turnos')}>Ver o cambiar</Button>
-            <Button variant="ghost" icon="chat" onClick={() => navigate('/whatsapp')} style={{ color: '#fff' }}>Escribir por WhatsApp</Button>
+            <Button variant="ghost" icon="chat" onClick={() => navigate('/whatsapp')}>Escribir por WhatsApp</Button>
           </div>
+          <a className="on-dark-muted small" href={agendaLink(next)} style={{ color: 'var(--on-dark-muted)' }}>Ver este mismo turno en la agenda de recepción</a>
         </>
       ) : (
         <>
           <p className="big">Sin turnos próximos</p>
-          <p className="muted">Pedí tu primera consulta o un control. Revalidamos la disponibilidad al confirmar.</p>
+          <p className="on-dark-muted">Pedí tu primera consulta o un control. Revalidamos la disponibilidad al confirmar.</p>
           <Button variant="secondary" icon="calendar" onClick={() => navigate('/reservar')}>Pedir turno</Button>
         </>
       )}
@@ -36,27 +54,58 @@ function NextAppointmentCard() {
 
 export function Home() {
   const s = useDemo();
+  const [filter, setFilter] = useState<'todos' | 'general' | 'ortodoncia'>('todos');
+  const services = s.serviceTypes.filter((st) => filter === 'todos' || st.specialty === filter);
+  const daysOf = (proId: string) => [...new Set(s.availabilityRules.filter((r) => r.professionalId === proId).map((r) => ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][r.weekday]))].join(', ');
   return (
-    <section className="page">
+    <section className="page home">
       <div className="hero">
-        <div>
-          <p className="eyebrow">{s.clinic.name} · odontología general y ortodoncia</p>
-          <h1 tabIndex={-1} data-page-title>Cada consulta tiene un próximo paso.</h1>
+        <div className="hero-copy">
+          <p className="pill"><span className="pill-dot" aria-hidden="true" /> {s.clinic.name} · odontología general y ortodoncia</p>
+          <h1 tabIndex={-1} data-page-title>Cada consulta tiene un <span className="accent">próximo paso.</span></h1>
           <p className="lede">Pedí tu primera visita, cambiá un turno o hablá con recepción. Información administrativa clara; las decisiones clínicas las toma tu profesional en consulta.</p>
           <div className="row wrap">
             <Button variant="primary" size="lg" icon="calendar" onClick={() => navigate('/reservar?motivo=ST-PRIMERA')}>Pedir primera consulta</Button>
             <Button size="lg" icon="book" onClick={() => navigate('/aprender')}>Cómo es la primera visita</Button>
           </div>
+          <dl className="trust">
+            <div><dt>Sedes</dt><dd className="tabular">{s.locations.length}</dd></div>
+            <div><dt>Profesionales</dt><dd className="tabular">{s.professionals.length}</dd></div>
+            <div><dt>Motivos para reservar online</dt><dd className="tabular">{s.serviceTypes.filter((x) => x.selfService).length}</dd></div>
+          </dl>
         </div>
-        <NextAppointmentCard />
+        <div className="hero-visual">
+          <div className="hero-stage" aria-hidden="true">
+            <SmileArt width={420} />
+            <span className="sparkle s1" /><span className="sparkle s2" /><span className="sparkle s3" />
+          </div>
+          <NextAppointmentCard />
+        </div>
       </div>
 
+      <section aria-labelledby="how-title" className="how">
+        <h2 id="how-title" className="sr-only">Cómo funciona</h2>
+        <ol className="how-steps">
+          <li><span className="how-n">1</span><div><strong>Elegís motivo y horario</strong><p>Por web, WhatsApp o llamada. Revalidamos profesional y sillón al confirmar.</p></div></li>
+          <li><span className="how-n">2</span><div><strong>Recepción confirma</strong><p>Si es una solicitud, una persona la revisa. Nada se confirma solo.</p></div></li>
+          <li><span className="how-n">3</span><div><strong>Seguís tu próximo paso</strong><p>Mismo número de turno en tu portal y en la clínica, siempre actualizado.</p></div></li>
+        </ol>
+      </section>
+
       <section aria-labelledby="services-title" className="stack">
-        <h2 id="services-title">Motivos de consulta</h2>
-        <p className="muted">Elegí un motivo administrativo. Si no sabés cuál, recepción te orienta: no hace falta adivinar.</p>
-        <div className="service-grid">
-          {s.serviceTypes.map((st) => (
-            <article key={st.id} className="card service">
+        <div className="section-title">
+          <div><p className="eyebrow">Motivos de consulta</p><h2 id="services-title">¿Qué necesitás hoy?</h2></div>
+          <div className="chips" role="group" aria-label="Filtrar motivos">
+            {([['todos', 'Todos'], ['general', 'Odontología general'], ['ortodoncia', 'Ortodoncia']] as const).map(([k, l]) => (
+              <button key={k} className="chip" aria-pressed={filter === k} onClick={() => setFilter(k)}>{l} <span className="tabular">({s.serviceTypes.filter((st) => k === 'todos' || st.specialty === k).length})</span></button>
+            ))}
+          </div>
+        </div>
+        <p className="muted" style={{ margin: 0 }}>Elegí un motivo administrativo. Si no sabés cuál, recepción te orienta: no hace falta adivinar.</p>
+        <div className="service-grid" aria-live="polite">
+          {services.map((st) => (
+            <article key={st.id} className="card service lift">
+              <ServiceArt serviceTypeId={st.id} size={84} />
               <h3>{st.name}</h3>
               <span className="duration tabular"><Icon name="clock" size={14} /> {st.durationMin} min · {st.specialty === 'ortodoncia' ? 'Ortodoncia' : 'Odontología general'}</span>
               <p>{st.summary}</p>
@@ -70,6 +119,7 @@ export function Home() {
             </article>
           ))}
           <article className="card service sand">
+            <ToothCharacter who="ivo" mood="guino" size={80} />
             <h3>No sé qué motivo elegir</h3>
             <p>Recepción te ayuda a elegir. El asistente no evalúa síntomas ni indica tratamientos.</p>
             <Button onClick={() => navigate('/whatsapp')} icon="chat">Hablar con recepción</Button>
@@ -77,11 +127,42 @@ export function Home() {
         </div>
       </section>
 
+      <section aria-labelledby="team-title" className="stack">
+        <div><p className="eyebrow">Equipo</p><h2 id="team-title">Profesionales de la clínica</h2></div>
+        <div className="team-grid">
+          {s.professionals.map((p, i) => (
+            <article key={p.id} className="card team-card lift">
+              <ProAvatar name={p.name} specialty={p.specialty} index={i} size={64} />
+              <div className="stack" style={{ gap: 4 }}>
+                <h3 style={{ margin: 0 }}>{p.name}</h3>
+                <p className="muted small" style={{ margin: 0 }}>{p.specialty} · {daysOf(p.id)}</p>
+                <p className="small" style={{ margin: 0 }}>{p.bio}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+        <p className="small muted" style={{ margin: 0 }}>Equipo ficticio de la demo. Los avatares son ilustraciones, no fotos de personas reales.</p>
+      </section>
+
+      <section className="kids-band" aria-labelledby="kids-title">
+        <div className="kids-band-art" aria-hidden="true">
+          <ToothCharacter who="coco" mood="valiente" size={96} />
+          <ToothCharacter who="lia" mood="feliz" size={80} />
+          <ToothCharacter who="mora" mood="guino" size={104} />
+        </div>
+        <div className="stack">
+          <p className="eyebrow">Brisa Chicos</p>
+          <h2 id="kids-title">Una primera visita sin miedo</h2>
+          <p style={{ margin: 0 }}>Personajes, un cuento de la primera visita y un reloj de cepillado de dos minutos con stickers. Para jugar en familia.</p>
+          <div><Button variant="primary" icon="smile" onClick={() => navigate('/chicos')}>Ir a Brisa Chicos</Button></div>
+        </div>
+      </section>
+
       <section aria-labelledby="sedes-title" className="grid-2">
         <div className="stack">
           <h2 id="sedes-title">Sedes</h2>
           {s.locations.map((l) => (
-            <article key={l.id} className="card">
+            <article key={l.id} className="card lift">
               <h3>{l.name}</h3>
               <p className="row"><Icon name="map" /> {l.address}</p>
               <p className="muted">{l.hoursText}</p>

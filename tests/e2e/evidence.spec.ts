@@ -1,22 +1,30 @@
+import { mkdirSync } from 'node:fs';
 import { test } from '@playwright/test';
 
-// Capturas de evidencia: solo con EVIDENCE=1 (npm run evidence). Se guardan en docs/evidence.
+// Capturas reproducibles sobre la seed inicial: solo con EVIDENCE=1 (npm run evidence).
+// EVIDENCE_DIR elige carpeta (p. ej. docs/evidence/before o docs/evidence/after).
 test.skip(!process.env.EVIDENCE, 'Solo para regenerar evidencia visual');
 
-const SHOTS: [string, number, string][] = [
-  ['inicio-1440', 1440, '#/'], ['inicio-390', 390, '#/'], ['reserva-1440', 1440, '#/reservar'],
-  ['whatsapp-1440', 1440, '#/whatsapp'], ['agenda-1440', 1440, '#/admin'], ['agenda-390', 390, '#/admin'],
-  ['odontograma-1440', 1440, '#/admin/personas/P-001/odontograma'], ['presupuestos-1440', 1440, '#/admin/presupuestos'],
-  ['informes-1440', 1440, '#/admin/informes'], ['llamada-1440', 1440, '#/llamada'],
+const DIR = process.env.EVIDENCE_DIR ?? 'docs/evidence/after';
+const VIEWPORTS = (process.env.EVIDENCE_VIEWPORTS ?? '390,768,1440').split(',').map(Number);
+const ROUTES: [string, string][] = [
+  ['inicio', '#/'], ['reserva', '#/reservar'], ['mis-turnos', '#/mis-turnos'], ['whatsapp', '#/whatsapp'],
+  ['agenda', '#/admin'], ['bandeja', '#/admin/bandeja'], ['ficha', '#/admin/personas/P-003'],
+  ['odontograma', '#/admin/personas/P-008/odontograma'], ['presupuestos', '#/admin/presupuestos'], ['aprender', '#/aprender'],
+  ['chicos', '#/chicos'], ['ortodoncia', '#/admin/ortodoncia'],
 ];
 
-test('capturas', async ({ page }) => {
+test('capturas por viewport', async ({ page }) => {
+  test.setTimeout(120_000);
+  mkdirSync(DIR, { recursive: true });
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
-  for (const [name, w, hash] of SHOTS) {
-    await page.setViewportSize({ width: w, height: 900 });
-    await page.goto(`/${hash}`);
-    await page.waitForTimeout(300);
-    await page.screenshot({ path: `docs/evidence/${name}.png` });
+  for (const w of VIEWPORTS) {
+    await page.setViewportSize({ width: w, height: w < 800 ? 844 : 900 });
+    for (const [name, hash] of ROUTES) {
+      await page.goto(`/${hash}`);
+      await page.waitForTimeout(350);
+      await page.screenshot({ path: `${DIR}/${name}-${w}.jpg`, type: 'jpeg', quality: 62 });
+    }
   }
 });

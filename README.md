@@ -20,10 +20,10 @@ Aplicación **solo frontend y local** que muestra un circuito administrativo odo
 | Tests de dominio (Vitest) | `npm run test -- --run` |
 | Build estático | `npm run build` → `dist/` |
 | Preview del build | `npm run preview -- --host 127.0.0.1` |
-| Capturas de evidencia | `npm run evidence` → `docs/evidence/*.png` |
+| Capturas de evidencia | `EVIDENCE_DIR=docs/evidence/after EVIDENCE_VIEWPORTS=320,390,768,1440 npm run evidence` (requiere build) |
 | Smoke/flujos en navegador (Playwright) | `npm run test:e2e` (levanta el preview; usa `/opt/pw-browsers/chromium` si existe, o el Chromium instalado por Playwright) |
 
-Resultados reales en [`docs/validation.md`](docs/validation.md). Estado de la fase en [`docs/checkpoint.md`](docs/checkpoint.md).
+Resultados reales en [`docs/validation.md`](docs/validation.md). Estado de la fase en [`docs/checkpoint.md`](docs/checkpoint.md). Dirección visual, tokens, componentes y reglas de motion, audio y colección en [`docs/design.md`](docs/design.md). Análisis premium, arte SVG propio, Brisa Chicos y sonidos en [`docs/premium.md`](docs/premium.md).
 
 ## Deploy
 
@@ -43,6 +43,7 @@ React 19 + TypeScript 5.9 + Vite 7, CSS propio, store de comandos propio (sin ro
 | `#/whatsapp` | M06 WhatsApp local | paciente / recepción |
 | `#/llamada` | M07 Llamada simulada | paciente |
 | `#/aprender` | M15 Exploración educativa | paciente |
+| `#/chicos` | Brisa Chicos (personajes, cuento, reloj de cepillado, álbum; parte de M15) | familias |
 | `#/admin` | M04 Hoy / agenda (día, semana, lista) | recepción |
 | `#/admin/bandeja` | M05 Bandeja | recepción |
 | `#/admin/personas`, `#/admin/personas/:id` | M08 Ficha / familia | recepción / profesional |
@@ -94,4 +95,4 @@ Persistencia: `localStorage["dentalos.demo.v1"]` con `{schemaVersion, seed, cloc
 
 ## Assets y licencias
 
-Ver [`docs/assets-licenses.md`](docs/assets-licenses.md). Manrope y Source Sans 3 (OFL-1.1) empaquetadas localmente vía `@fontsource`; íconos y logo propios en SVG inline.
+Ver [`docs/assets-licenses.md`](docs/assets-licenses.md). Manrope y Source Sans 3 (OFL-1.1) empaquetadas localmente vía `@fontsource`; íconos, logo, ilustraciones dentales y de ortodoncia, avatares y personajes propios en SVG inline; sonidos sintetizados con Web Audio (sin archivos).

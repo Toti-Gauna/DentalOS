@@ -4,8 +4,8 @@ import { NAMESPACE } from '../domain/storage';
 import type { ViewRole } from '../domain';
 
 const UI_KEY = `${NAMESPACE}:ui`;
-interface UiState { role: ViewRole; actingPersonId: string; drafts: Record<string, unknown> }
-const DEFAULT: UiState = { role: 'paciente', actingPersonId: 'P-001', drafts: {} };
+interface UiState { role: ViewRole; actingPersonId: string; sound: boolean; drafts: Record<string, unknown> }
+const DEFAULT: UiState = { role: 'paciente', actingPersonId: 'P-001', sound: false, drafts: {} };
 
 function read(): UiState {
   try {
@@ -30,6 +30,7 @@ export function useUi() {
 export const setRole = (role: ViewRole) => write({ ...ui, role });
 export const setActingPerson = (actingPersonId: string) => write({ ...ui, actingPersonId });
 export const resetUi = () => write(DEFAULT);
+export const setSoundPref = (sound: boolean) => write({ ...ui, sound });
 
 /** Borrador persistente por clave: sobrevive a navegar y recargar; se limpia al confirmar o con reset. */
 export function useDraft<T>(key: string, initial: T): [T, (v: T | ((p: T) => T)) => void, () => void] {
