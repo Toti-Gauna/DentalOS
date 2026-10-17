@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ButtonHTMLAttributes, type MouseEvent, type ReactNode } from 'react';
 import { STATUS_LABEL } from '../domain/selectors';
 
 // ---------- Iconos propios (SVG inline, sin assets remotos) ----------
@@ -8,6 +8,8 @@ const PATHS: Record<string, string> = {
   alert: 'M12 8v5M12 16.5v.5M10.3 3.9L2.6 17.5A2 2 0 004.3 20.5h15.4a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z',
   info: 'M12 11v6M12 7.5v.5M12 21a9 9 0 110-18 9 9 0 010 18z',
   x: 'M6 6l12 12M18 6L6 18',
+  search: 'M10.5 18a7.5 7.5 0 110-15 7.5 7.5 0 010 15zM16 16l5 5',
+  sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z',
   arrow: 'M5 12h14M13 6l6 6-6 6',
   back: 'M19 12H5M11 6l-6 6 6 6',
   calendar: 'M4 7h16M8 3v4M16 3v4M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z',
@@ -128,52 +130,61 @@ export function ErrorSummary({ errors, labels }: { errors: Record<string, string
   );
 }
 
-// ---------- Drawer / diálogo con foco atrapado y Escape ----------
-function useFocusTrap(open: boolean, onClose: () => void) {
-  const ref = useRef<HTMLDivElement>(null);
+// ---------- Capas modales nativas (<dialog> + showModal) ----------
+const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Abre un <dialog> nativo en modo modal: capa superior, ::backdrop y resto de la página inerte sin código propio.
+ * Escape llega como evento `cancel` (lo decide React); al cerrar, el foco vuelve explícitamente a quien abrió.
+ */
+export function useNativeDialog(open: boolean, onClose: () => void) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; });
   useEffect(() => {
-    if (!open) return;
+    const d = ref.current;
+    if (!open || !d) return;
     const prev = document.activeElement as HTMLElement | null;
-    const node = ref.current;
-    const focusables = () => Array.from(node?.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])') ?? []);
-    (node?.querySelector<HTMLElement>('[data-autofocus]') ?? focusables()[0] ?? node)?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
-      if (e.key === 'Tab') {
-        const f = focusables(); if (!f.length) return;
-        const first = f[0]; const last = f[f.length - 1];
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
+    if (!d.open) {
+      try { d.showModal(); } catch { d.setAttribute('open', ''); }
+    }
+    (d.querySelector<HTMLElement>('[data-autofocus]') ?? d.querySelector<HTMLElement>(FOCUSABLE) ?? d).focus();
+    const onCancel = (e: Event) => { e.preventDefault(); closeRef.current(); };
+    d.addEventListener('cancel', onCancel);
+    return () => {
+      d.removeEventListener('cancel', onCancel);
+      if (d.open) d.close();
+      prev?.focus?.();
     };
-    node?.addEventListener('keydown', onKey);
-    return () => { node?.removeEventListener('keydown', onKey); prev?.focus?.(); };
-  }, [open, onClose]);
+  }, [open]);
   return ref;
 }
 
+/** Clic en el ::backdrop: el evento llega al <dialog> mismo (el contenido ocupa todo su interior). */
+const onBackdrop = (close: () => void) => (e: MouseEvent<HTMLDialogElement>) => { if (e.target === e.currentTarget) close(); };
+
 export function Drawer({ open, title, onClose, children, footer }: { open: boolean; title: string; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
-  const ref = useFocusTrap(open, onClose);
+  const ref = useNativeDialog(open, onClose);
   const tid = useId();
   if (!open) return null;
   return (
-    <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="drawer" role="dialog" aria-modal="true" aria-labelledby={tid} ref={ref} tabIndex={-1}>
+    <dialog ref={ref} className="drawer-dialog" aria-labelledby={tid} onMouseDown={onBackdrop(onClose)}>
+      <div className="drawer">
         <header className="drawer-head"><h2 id={tid}>{title}</h2><Button variant="ghost" icon="x" onClick={onClose} aria-label="Cerrar" /></header>
         <div className="drawer-body">{children}</div>
         {footer && <footer className="drawer-foot">{footer}</footer>}
       </div>
-    </div>
+    </dialog>
   );
 }
 
 export function ConfirmDialog({ open, title, children, confirmLabel, cancelLabel = 'Cancelar', tone = 'primary', onConfirm, onCancel }: { open: boolean; title: string; children: ReactNode; confirmLabel: string; cancelLabel?: string; tone?: 'primary' | 'danger'; onConfirm: () => void; onCancel: () => void }) {
-  const ref = useFocusTrap(open, onCancel);
+  const ref = useNativeDialog(open, onCancel);
   const tid = useId();
   if (!open) return null;
   return (
-    <div className="overlay center" onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
-      <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby={tid} ref={ref} tabIndex={-1}>
+    <dialog ref={ref} className="dialog-native" role="alertdialog" aria-labelledby={tid} onMouseDown={onBackdrop(onCancel)}>
+      <div className="dialog">
         <h2 id={tid}>{title}</h2>
         <div className="dialog-body">{children}</div>
         <div className="row end">
@@ -181,7 +192,7 @@ export function ConfirmDialog({ open, title, children, confirmLabel, cancelLabel
           <Button variant={tone} onClick={onConfirm}>{confirmLabel}</Button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }
 
@@ -189,17 +200,18 @@ export function EmptyState({ title, children, action, icon = 'info' }: { title: 
   return <div className="empty"><Icon name={icon} size={28} /><strong>{title}</strong>{children && <p>{children}</p>}{action}</div>;
 }
 
-export function PageHeader({ eyebrow, title, children, actions }: { eyebrow?: string; title: string; children?: ReactNode; actions?: ReactNode }) {
+export function PageHeader({ eyebrow, title, children, actions, art }: { eyebrow?: string; title: string; children?: ReactNode; actions?: ReactNode; art?: ReactNode }) {
   return (
-    <header className="page-head">
+    <header className={`page-head ${art ? 'has-art' : ''}`}>
       <div>{eyebrow && <p className="eyebrow">{eyebrow}</p>}<h1 tabIndex={-1} data-page-title>{title}</h1>{children && <div className="lede">{children}</div>}</div>
       {actions && <div className="page-actions">{actions}</div>}
+      {art && <div className="page-art" aria-hidden="true">{art}</div>}
     </header>
   );
 }
 
 export function Kpi({ label, value, detail, n }: { label: string; value: string; detail: string; n?: string }) {
-  return <div className="kpi"><span className="kpi-label">{label}</span><span className="kpi-value tabular">{value}</span><span className="kpi-detail">{detail}{n && <> · <span className="tabular">{n}</span></>}</span></div>;
+  return <div className="kpi"><span className="kpi-label">{label}</span><span className={`kpi-value tabular${value.startsWith('Sin datos') ? ' is-empty' : ''}`}>{value}</span><span className="kpi-detail">{detail}{n && <> · <span className="tabular">{n}</span></>}</span></div>;
 }
 
 /** Feedback de resultado de comando: éxito solo tras cambio real; error recuperable inline. */

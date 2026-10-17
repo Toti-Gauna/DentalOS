@@ -3,6 +3,7 @@ import { useDraft } from '../../app/ui-state';
 import { computeKpis, filteredAppointments, money, proName, ratioText, STATUS_LABEL } from '../../domain/selectors';
 import { addDays, fmtDateOnly, parts, startOfWeek } from '../../domain/time';
 import { Button, EmptyState, Field, Kpi, Notice, PageHeader } from '../../ui/kit';
+import type { CSSProperties } from 'react';
 
 export function Reports() {
   const s = useDemo();
@@ -19,6 +20,8 @@ export function Reports() {
   const appts = filteredAppointments(s, filter);
   const byStatus = Object.keys(STATUS_LABEL).filter((st) => ['solicitada', 'confirmada', 'en_sala', 'en_atencion', 'finalizada', 'ausente', 'cancelada'].includes(st)).map((st) => ({ st, n: appts.filter((a) => a.status === st).length }));
   const byPro = s.professionals.map((p) => ({ p, n: appts.filter((a) => a.professionalId === p.id && a.status !== 'cancelada').length }));
+  const maxStatus = Math.max(0, ...byStatus.map((x) => x.n));
+  const maxPro = Math.max(0, ...byPro.map((x) => x.n));
   const ruleRuns = s.automationRules.map((r) => ({ r, outbox: s.outbox.filter((o) => o.ruleId === r.id).length, tasks: s.tasks.filter((t) => t.ruleId === r.id).length }));
   return (
     <section className="page">
@@ -51,11 +54,11 @@ export function Reports() {
       <div className="grid-2" style={{ alignItems: 'start' }}>
         <div className="table-wrap">
           <table><caption style={{ textAlign: 'left', padding: 12, fontWeight: 700 }}>Turnos por estado</caption><thead><tr><th>Estado</th><th>n</th></tr></thead>
-            <tbody>{byStatus.map(({ st, n }) => <tr key={st}><td>{STATUS_LABEL[st]}</td><td className="tabular">{n}</td></tr>)}</tbody></table>
+            <tbody>{byStatus.map(({ st, n }) => <tr key={st}><td>{STATUS_LABEL[st]}<span className="databar" aria-hidden="true"><i style={{ '--v': `${maxStatus ? (n / maxStatus) * 100 : 0}%` } as CSSProperties} /></span></td><td className="tabular">{n}</td></tr>)}</tbody></table>
         </div>
         <div className="table-wrap">
           <table><caption style={{ textAlign: 'left', padding: 12, fontWeight: 700 }}>No cancelados por profesional</caption><thead><tr><th>Profesional</th><th>n</th></tr></thead>
-            <tbody>{byPro.map(({ p, n }) => <tr key={p.id}><td>{proName(s, p.id)}</td><td className="tabular">{n}</td></tr>)}</tbody></table>
+            <tbody>{byPro.map(({ p, n }) => <tr key={p.id}><td>{proName(s, p.id)}<span className="databar" aria-hidden="true"><i style={{ '--v': `${maxPro ? (n / maxPro) * 100 : 0}%` } as CSSProperties} /></span></td><td className="tabular">{n}</td></tr>)}</tbody></table>
         </div>
       </div>
       <div className="table-wrap">

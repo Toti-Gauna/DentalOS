@@ -1,5 +1,42 @@
 # Checkpoint · DentalOS demo
 
+## Fase 2c — análisis premium total, componentes nativos, fondo animado y dientes premium · cerrada
+
+- **Rama:** `feat/fase2c-premium` desde `main` @ `5f10a70`.
+- **Pedido:**
+  - análisis de diseño premium total (qué mejorar, pulir y agregar);
+  - aplicarlo con componentes nativos;
+  - fondos animados;
+  - dientes SVG todavía más premium.
+- **Archivos:**
+  - Nuevos: `docs/premium-v3.md`, `src/ui/CommandPalette.tsx`, `src/ui/art/pages.tsx`, `tests/e2e/native.spec.ts`.
+  - Reescritos o ampliados:
+    - `src/ui/art/teeth.tsx` (esmalte en capas, materiales por estado);
+    - `src/ui/art/ortho.tsx`;
+    - `src/ui/art/characters.tsx`;
+    - `src/ui/kit.tsx` (`useNativeDialog`, Drawer y ConfirmDialog sobre `<dialog>`, `PageHeader` con `art`);
+    - `src/app/router.ts` (View Transitions);
+    - `src/app/App.tsx` (fondo ambiental, cabecera fija, popover, paleta);
+    - `src/styles/app.css`;
+    - páginas del portal y del panel;
+    - tests y docs.
+- **Dominio:** sin cambios (`schemaVersion` 1, seed `dentalos-v1`, reloj 19/10 09:00).
+- **Resultados:**
+  - lint 0 y typecheck 0;
+  - 78 unit;
+  - build 0;
+  - 49 e2e en 3 corridas;
+  - 48 capturas.
+
+  Detalle en `docs/validation.md`, sección Fase 2c.
+- **Decisiones:**
+  - Todo nuevo es nativo o mejora progresiva con alternativa.
+  - El fondo animado es solo decorativo, con el peor caso de contraste medido.
+  - La transición de vista se aplica solo a la raíz (costo de captura medido).
+  - La cabecera es fija solo desde 1100 px.
+- **Deuda:** probar en Firefox y Safari y con GPU real; lector de pantalla real y audio audible.
+- **Próxima acción exacta:** revisión de Ignacio del PR de la fase 2c. Después, fase 3 (QA).
+
 ## Fase 2b — análisis premium, arte SVG propio, Brisa Chicos y sonidos · cerrada
 
 - **Rama:** `feat/fase2-ux-motion` (mismo PR #4 de la fase 2).

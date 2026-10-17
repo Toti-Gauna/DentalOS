@@ -165,8 +165,12 @@ test('el foco que la persona puso en el contenido no se lo roba el título mient
     mo.observe(document.body, { childList: true, subtree: true });
   });
   await page.goto('/#/admin');
+  const day = page.locator('.datestrip-day[data-date="2026-10-19"]');
+  // Espera a que el panel diferido (y la transición de vista, si la hay) termine de montar; después da tiempo
+  // de sobra a los reintentos de foco al título (cada 50 ms) antes de verificar que el foco no se movió.
+  await expect(day).toBeAttached();
   await page.waitForTimeout(400);
-  await expect(page.locator('.datestrip-day[data-date="2026-10-19"]')).toBeFocused({ timeout: 300 });
+  await expect(day).toBeFocused({ timeout: 300 });
 });
 
 test('reduced-motion: el cambio se ve igual sin animación (borde + texto)', async ({ page }) => {

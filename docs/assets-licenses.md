@@ -8,6 +8,7 @@
 | Logo / favicon (`public/favicon.svg`, `src/ui/art/brand.tsx`) | SVG propio (diente estilizado con brisa en oro) | Propio del proyecto | Marca ficticia Clínica Brisa |
 | Tonos de llamada | Generados en runtime con Web Audio (`src/ui/tones.ts`): “habla” 523 Hz/140 ms y “guardado” 659 Hz/170 ms | No es un asset | Opcional, tras gesto |
 | Ilustraciones dentales, de ortodoncia, motivos, personajes “Brisitos”, marca y avatares (`src/ui/art/*.tsx`) | SVG inline dibujados para este repo (sin trazos de terceros) | Propios del proyecto | Odontograma, ortodoncia, inicio, Brisa Chicos |
+| Ilustraciones de encabezado del portal (`src/ui/art/pages.tsx`), patrón de fondo del chat, grano del fondo ambiental y chevron de selects | SVG propios (inline o `data:` URI en `app.css`, permitido por la CSP `img-src 'self' data:`) | Propios del proyecto | Encabezados, WhatsApp, fondo animado, formularios |
 | Efectos de sonido de interfaz | Sintetizados en runtime con Web Audio (`src/ui/sound.ts`): 9 envolventes cortas de osciladores | No es un asset | Opt-in, apagados por defecto, tras gesto |
 | Glifos (odontograma, sellos, bloque de fecha) | SVG inline propios (`src/ui/components.tsx`, `src/pages/public/Learn.tsx`) | Propios del proyecto | UI |
 | Capturas `docs/evidence/` | Generadas por `tests/e2e/evidence.spec.ts` sobre la seed sintética | Propias | Documentación |

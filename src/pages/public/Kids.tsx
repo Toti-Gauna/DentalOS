@@ -87,7 +87,7 @@ export function Kids() {
         <div className="section-title"><h2 id="meet">Conocé a los Brisitos</h2><span className="muted small tabular">{p.greeted.length} de 4 saludados</span></div>
         <div className="kids-grid">
           {CHARACTERS.map((c) => (
-            <article key={c.id} className="kid-card">
+            <article key={c.id} className={`kid-card ${waving === c.id ? 'is-waving' : ''}`}>
               <ToothCharacter who={c.id} mood={waving === c.id ? 'guino' : p.greeted.includes(c.id) ? 'feliz' : 'sorpresa'} size={120} title={`${c.name}, ${waving === c.id ? 'te guiña un ojo' : 'te mira'}`} />
               <h3>{c.name}</h3>
               <p className="kid-tooth">{c.tooth}</p>

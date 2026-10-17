@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { dispatch, useDemo } from '../../app/store';
 import { useDraft } from '../../app/ui-state';
-import { byId, estimateTotals, ledgerNet, money, personLabel, proName } from '../../domain/selectors';
+import { byId, estimateTotals, ledgerNet, money, personLabel, personName, proName } from '../../domain/selectors';
 import { fmtShort } from '../../domain/time';
 import { Button, ConfirmDialog, EmptyState, Field, Kpi, Notice, PageHeader, StatusBadge, announce, useResult } from '../../ui/kit';
 import { MoneySummary } from '../../ui/components';
@@ -135,13 +135,13 @@ function LedgerPanel({ show }: { show: Show }) {
       <div className="table-wrap">
         <table>
           <caption className="sr-only">Movimientos</caption>
-          <thead><tr><th>ID</th><th>Fecha</th><th>Persona</th><th>Tipo</th><th>Importe</th><th><span className="sr-only">Acciones</span></th></tr></thead>
+          <thead><tr><th>ID</th><th>Fecha</th><th>Persona</th><th>Tipo</th><th className="num">Importe</th><th><span className="sr-only">Acciones</span></th></tr></thead>
           <tbody>
             {[...s.ledger].reverse().map((l) => (
               <tr key={l.id}>
-                <td className="code">{l.id}</td><td className="tabular small">{fmtShort(l.at)}</td><td className="small">{personLabel(s, l.personId)}{l.estimateId ? ` · ${l.estimateId}` : ''}</td>
+                <td className="code">{l.id}</td><td className="tabular small nowrap">{fmtShort(l.at)}</td><td className="small">{personName(s, l.personId)} · <span className="nowrap">{l.personId}</span>{l.estimateId ? <> · <span className="nowrap">{l.estimateId}</span></> : ''}</td>
                 <td className="small">{l.kind === 'contrapartida' ? `Contrapartida de ${l.reversesId}` : 'Movimiento simulado'}{l.reversedById ? ` · revertido por ${l.reversedById}` : ''}</td>
-                <td className="tabular">{money(l.amountMinor)}</td>
+                <td className={`tabular num${l.amountMinor < 0 ? ' neg' : ''}`}>{money(l.amountMinor)}</td>
                 <td>{l.kind === 'pago_simulado' && !l.reversedById && <Button size="sm" variant="ghost" onClick={() => setReverse(l.id)}>Revertir</Button>}</td>
               </tr>
             ))}

@@ -6,6 +6,8 @@ import { byId, personLabel, upcomingFor } from '../../domain/selectors';
 import { fmtShort } from '../../domain/time';
 import { Button, Icon, Notice, PageHeader, StatusBadge, announce } from '../../ui/kit';
 import { TurnoCard, agendaLink } from '../../ui/components';
+import { PageArt } from '../../ui/art/pages';
+import { BrandMark } from '../../ui/art/brand';
 
 export function WhatsApp() {
   const s = useDemo();
@@ -41,14 +43,17 @@ export function WhatsApp() {
   const upcoming = conv.personId ? upcomingFor(s, conv.personId) : [];
   return (
     <section className="page">
-      <PageHeader eyebrow="M06 · Canal simulado" title="WhatsApp de la demo">
+      <PageHeader eyebrow="M06 · Canal simulado" title="WhatsApp de la demo" art={<PageArt kind="chat" />}>
         Emulador local: no abre WhatsApp ni envía mensajes. Reglas de texto simples, sin IA. Todo lo que pasa acá se ve igual en recepción.
       </PageHeader>
       <div className="grid-2" style={{ alignItems: 'start' }}>
         <div className="phone" aria-label="Emulador de WhatsApp">
           <div className="phone-head">
-            <strong>Clínica Brisa · asistente administrativo</strong>
-            <small>{conv.contactLabel} · emulador local · sin envíos reales</small>
+            <span className="chat-avatar" aria-hidden="true"><BrandMark size={30} /></span>
+            <div>
+              <strong>Clínica Brisa · asistente administrativo</strong>
+              <small>{conv.contactLabel} · emulador local · sin envíos reales</small>
+            </div>
           </div>
           <div className="chat-log" ref={logRef} role="log" aria-live="polite" aria-relevant="additions" tabIndex={0} aria-label="Mensajes">
             {msgs.map((m, i) => (

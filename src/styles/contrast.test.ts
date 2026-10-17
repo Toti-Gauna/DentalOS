@@ -42,6 +42,25 @@ const PAIRS: [string, string, string, number][] = [
   ['borde de campo sobre fondo (no texto, 3:1)', token('line-strong'), token('bg'), 3],
 ];
 
+// Fondo ambiental: peor caso = dos manchas superpuestas en su alfa máximo sobre el fondo.
+const alpha = (name: string) => {
+  const m = css.match(new RegExp(`--${name}:\\s*([\\d.]+)`));
+  if (!m) throw new Error(`alfa ${name} no encontrado`);
+  return Number(m[1]);
+};
+const mix = (fg: string, a: number, bg: string) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(fg.slice(i, i + 2), 16) * a + parseInt(bg.slice(i, i + 2), 16) * (1 - a)).toString(16).padStart(2, '0')).join('');
+const a1 = alpha('aurora-a1');
+const AMBIENT: [string, string][] = [
+  ['teal + cielo', mix(token('aurora-sky'), a1, mix(token('aurora-teal'), a1, token('bg')))],
+  ['oro', mix(token('aurora-gold'), alpha('aurora-a2'), token('bg'))],
+  ['chicos: sol + rosa', mix(token('kids-pink'), a1, mix(token('kids-sun'), a1, token('bg')))],
+];
+for (const [name, bg] of AMBIENT) {
+  PAIRS.push([`texto sobre fondo animado (${name})`, token('ink'), bg, 4.5]);
+  PAIRS.push([`secundario sobre fondo animado (${name})`, token('secondary'), bg, 4.5]);
+  PAIRS.push([`primario sobre fondo animado (${name})`, token('primary'), bg, 4.5]);
+}
+
 describe('contraste AA de tokens', () => {
   for (const [name, fg, bg, min] of PAIRS) {
     it(`${name}: ${fg} / ${bg} ≥ ${min}`, () => {

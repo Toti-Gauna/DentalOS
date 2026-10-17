@@ -42,3 +42,13 @@ export function ProAvatar({ name, specialty, index = 0, size = 56 }: { name: str
     </span>
   );
 }
+
+const PERSON_PALETTES = [['#2c6f69', '#173c3a'], ['#2d5770', '#1d3a4b'], ['#7a5410', '#5c430d'], ['#5a4a7a', '#3a2f52'], ['#8a3f4a', '#5e2a32'], ['#526865', '#33423f']];
+
+/** Avatar de persona con iniciales sobre un degradé estable por ID (ilustración, nunca foto). */
+export function PersonAvatar({ id, name, size = 36 }: { id: string; name: string; size?: number }) {
+  const n = [...id].reduce((a, c) => a + c.charCodeAt(0), 0);
+  const [a, b] = PERSON_PALETTES[n % PERSON_PALETTES.length];
+  const initials = name.split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  return <span className="person-avatar" aria-hidden="true" style={{ width: size, height: size, fontSize: Math.round(size * 0.38), background: `linear-gradient(135deg, ${a}, ${b})` }}>{initials}</span>;
+}
