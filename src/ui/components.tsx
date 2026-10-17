@@ -1,7 +1,7 @@
 // Sistema de componentes de DentalOS demo. Ver docs/design.md (reglas, variantes y descartes).
 import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useDemo, useLastChange } from '../app/store';
-import type { Appointment, OutboxItem, Surface, ToothChartEntry } from '../domain';
+import type { Appointment, OutboxItem } from '../domain';
 import { byId, chairName, locName, money, personLabel, proName, serviceName } from '../domain/selectors';
 import { addDays, at, diffMinutes, parts } from '../domain/time';
 import { Icon, StatusBadge } from './kit';
@@ -221,30 +221,3 @@ export function PersonLine({ personId }: { personId: string | null }) {
   return <span className="person-line">{p.firstName} {p.lastName} <IdChip id={p.id} /></span>;
 }
 
-// ---------- Odontograma: glifo de 5 superficies ----------
-export function ToothGlyph({ tooth, entries }: { tooth: number; entries: ToothChartEntry[] }) {
-  const q = Math.floor(tooth / 10);
-  const upper = q === 1 || q === 2 || q === 5 || q === 6;
-  const mesialRight = q === 1 || q === 4 || q === 5 || q === 8; // lado derecho de la persona: mesial hacia la línea media
-  const anterior = tooth % 10 <= 3;
-  const state = (sf: Surface) => {
-    const es = entries.filter((e) => e.surface === sf || e.surface === 'pieza');
-    if (es.some((e) => e.state === 'realizado')) return 'realizado';
-    if (es.some((e) => e.state === 'planificado')) return 'planificado';
-    return '';
-  };
-  const top: Surface = upper ? 'V' : 'L';
-  const bottom: Surface = upper ? 'L' : 'V';
-  const right: Surface = mesialRight ? 'M' : 'D';
-  const left: Surface = mesialRight ? 'D' : 'M';
-  const center: Surface = anterior ? 'I' : 'O';
-  return (
-    <svg className="tooth-glyph" viewBox="0 0 30 30" aria-hidden="true">
-      <polygon points="0,0 30,0 21,9 9,9" className={`sf ${state(top)}`} />
-      <polygon points="30,0 30,30 21,21 21,9" className={`sf ${state(right)}`} />
-      <polygon points="30,30 0,30 9,21 21,21" className={`sf ${state(bottom)}`} />
-      <polygon points="0,30 0,0 9,9 9,21" className={`sf ${state(left)}`} />
-      <rect x="9" y="9" width="12" height="12" className={`sf ${state(center)}`} />
-    </svg>
-  );
-}

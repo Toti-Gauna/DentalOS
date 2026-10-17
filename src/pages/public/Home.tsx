@@ -5,7 +5,7 @@ import { useUi } from '../../app/ui-state';
 import { byId, locName, proName, serviceName, upcomingFor } from '../../domain/selectors';
 import { fmtLong, parts } from '../../domain/time';
 import { agendaLink } from '../../ui/components';
-import { SmileArt } from '../../ui/art/teeth';
+import { DentitionFront } from '../../ui/art/dentition';
 import { ServiceArt } from '../../ui/art/services';
 import { ProAvatar } from '../../ui/art/brand';
 import { ToothCharacter } from '../../ui/art/characters';
@@ -92,7 +92,7 @@ export function Home() {
         </div>
         <div className="hero-visual">
           <div className="hero-stage" aria-hidden="true">
-            <SmileArt width={420} />
+            <DentitionFront gold width={420} />
             <span className="sparkle s1" /><span className="sparkle s2" /><span className="sparkle s3" />
           </div>
           <NextAppointmentCard />
