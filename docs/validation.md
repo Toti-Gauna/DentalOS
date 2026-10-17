@@ -393,3 +393,53 @@ Rama `feat/dentalos-l3-sistema` desde `main` @ `a1f1b62`.
 
 - Solo Chromium. En Safari el error de `import()` no trae la URL, así que solo queda “Recargar la página”, como está previsto.
 - Guía y tráiler todavía no existen y no se muestran en la botonera.
+
+# Mejora L1–L10 · lote 4 (SVG, arte y mockups con acabado final)
+
+Rama `feat/dentalos-l4-arte` desde `main` @ `03a91a7`.
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` · `npm run typecheck` · `npm run build` | 0 | sin errores; la galería va en un chunk aparte |
+| `npx vitest run` | 0 | 158/158 (4 nuevas en `src/ui/art/art.test.tsx`) |
+| `npx playwright test` | 0 | 80 pasadas + 1 omitida (7 nuevas en `tests/e2e/mockups.spec.ts`; ese archivo ×3 seguidas: 21/21) |
+
+**Pruebas nuevas:**
+
+- **S59/S60 · galería:**
+  - renderiza en claro y oscuro;
+  - no tiene IDs repetidos en el DOM real;
+  - muestra la nota de revisión odontológica;
+  - no hay errores ni pedidos externos.
+- **Unitarias de arte:**
+  - todo el arte renderizado dos veces en el mismo documento no repite IDs;
+  - cada `url(#…)` y `href="#…"` existe;
+  - cada SVG tiene `viewBox` y es decorativo o tiene nombre.
+- **S61 · WhatsApp en pantalla completa:**
+  - conserva lo escrito y la conversación;
+  - un envío hecho en modo ampliado se guarda una sola vez;
+  - al restaurar, el foco vuelve al botón.
+- **S62 · sin Fullscreen API:**
+  - se abre como diálogo con el fondo inerte;
+  - Escape cierra y devuelve el foco y la posición de la página;
+  - Atrás cierra sin salir de la ruta;
+  - cerrar con el botón no retrocede de más en el historial.
+- **S63 · 390×844 y 844×390:**
+  - la superficie ocupa la ventana con el fondo de papel, sin velo;
+  - el campo de texto queda a la vista;
+  - no hay scroll horizontal.
+- **S64 · llamada ampliada:** sigue en el mismo paso y la misma transcripción, y responder ampliado agrega exactamente dos líneas.
+
+**Errores encontrados y corregidos:**
+
+- **Scroll al restaurar:** la superficie ampliada sacaba su alto del flujo y la página volvía a otra posición. Ahora su lugar queda reservado y la restauración es instantánea.
+- **Avatar de profesional:** el SVG no tenía `aria-hidden`. El contenedor sí lo tenía, así que no afectaba a lectores de pantalla; se agregó en el SVG para que la regla valga pieza por pieza.
+
+**Capturas:** `docs/evidence/l4/galeria.jpg`, `docs/evidence/l4/mockups.jpg` y `docs/evidence/l4/comprobante.jpg`.
+
+**Límites:**
+
+- Solo Chromium; en headless la Fullscreen API funciona.
+- No se probó en iPhone ni en Safari reales.
+- No se promete ocultar las barras del navegador en todos los dispositivos.
+

@@ -1,7 +1,6 @@
 // Ilustraciones de encabezado para las páginas del portal (SVG propio, decorativas).
 import { useId } from 'react';
 import { ToothArt } from './teeth';
-import { ToothCharacter } from './characters';
 
 export type PageArtKind = 'reservar' | 'turnos' | 'chat' | 'llamada' | 'aprender' | 'sede';
 
@@ -12,12 +11,12 @@ export function PageArt({ kind }: { kind: PageArtKind }) {
   return (
     <svg viewBox="0 0 160 130" width="160" height="130" aria-hidden="true" focusable="false" className="page-art-svg">
       <defs>
-        <radialGradient id={id('halo')} cx=".5" cy=".5" r=".5"><stop offset="0" style={{ stopColor: 'var(--stage-a)' }} /><stop offset=".7" style={{ stopColor: 'var(--stage-b)' }} /><stop offset="1" style={{ stopColor: 'var(--stage-c)' }} /></radialGradient>
         <linearGradient id={id('teal')} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2f7d75" /><stop offset="1" stopColor="#1b4a46" /></linearGradient>
         <linearGradient id={id('gold')} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#b8862b" /><stop offset=".5" stopColor="#f3d98a" /><stop offset="1" stopColor="#a8781f" /></linearGradient>
         <linearGradient id={id('paper')} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset="1" stopColor="#f3efe6" /></linearGradient>
       </defs>
-      <circle cx="80" cy="66" r="58" fill={u('halo')} />
+      <circle cx="80" cy="66" r="58" fill="var(--surface)" stroke="var(--line)" strokeWidth="1" />
+      <path d="M33 32 A58 58 0 0 1 80 8" fill="none" stroke="var(--gold)" strokeWidth="1.5" strokeLinecap="round" />
       {kind === 'reservar' && (
         <g>
           <rect x="34" y="30" width="78" height="72" rx="12" fill={u('paper')} stroke="#c9bfae" strokeWidth="1.5" />
@@ -81,7 +80,6 @@ export function PageArt({ kind }: { kind: PageArtKind }) {
           <circle cx="86" cy="90" r="1.8" fill="#f3d98a" />
           <path d="M64 106 h32" stroke="#c9bfae" strokeWidth="3" strokeLinecap="round" />
           <circle cx="138" cy="92" r="10" fill="#9fd3cc" /><rect x="136.5" y="98" width="3" height="10" fill="#8a6f4e" />
-          <g transform="translate(6 70)"><ToothCharacter who="lia" mood="feliz" size={30} /></g>
         </g>
       )}
     </svg>

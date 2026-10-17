@@ -29,7 +29,7 @@ export function ProAvatar({ name, specialty, index = 0, size = 56 }: { name: str
   const ortho = specialty === 'Ortodoncia';
   return (
     <span className="pro-avatar" style={{ width: size, height: size }} aria-hidden="true">
-      <svg width={size} height={size} viewBox="0 0 64 64" focusable="false">
+      <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
         <defs>
           <linearGradient id={`av-${uid}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={a} /><stop offset="1" stopColor={b} /></linearGradient>
           <linearGradient id={`ring-${uid}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#c8952c" /><stop offset=".5" stopColor="#f3d98a" /><stop offset="1" stopColor="#b8862b" /></linearGradient>

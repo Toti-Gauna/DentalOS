@@ -42,6 +42,8 @@ const PATHS: Record<string, string> = {
   pause: 'M8 5v14M16 5v14',
   star: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
   smile: 'M12 21a9 9 0 110-18 9 9 0 010 18zM8.5 14a4.5 4.5 0 007 0M9 9.5h.01M15 9.5h.01',
+  expand: 'M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7',
+  shrink: 'M20 10h-6V4M4 14h6v6M14 10l7-7M10 14l-7 7',
 };
 export function Icon({ name, size = 18, title }: { name: keyof typeof PATHS | string; size?: number; title?: string }) {
   return (

@@ -644,7 +644,7 @@ dl.kv dd { margin: 0; }
 .card.service { position: relative; overflow: hidden; }
 .card.service::before { content: ''; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--primary), var(--gold)); opacity: 0; transition: opacity 180ms ease; }
 .card.service:hover::before { opacity: 1; }
-.service-art { display: block; filter: drop-shadow(0 6px 10px var(--sh-b)); }
+.service-art { display: block; }
 .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: var(--s4); }
 .team-card { display: flex; gap: var(--s4); align-items: flex-start; }
 .pro-avatar { position: relative; display: inline-block; flex: none; }
@@ -897,7 +897,7 @@ select { appearance: none; -webkit-appearance: none; padding-right: 38px; backgr
 .page-head.has-art { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--s5); }
 .page-head.has-art .page-actions { grid-column: 1; }
 .page-art { grid-column: 2; grid-row: 1 / span 2; }
-.page-art > svg { display: block; width: clamp(110px, 13vw, 176px); height: auto; filter: drop-shadow(0 14px 20px var(--sh-c)); }
+.page-art > svg { display: block; width: clamp(110px, 13vw, 176px); height: auto; }
 
 /* Preguntas frecuentes: acordeón exclusivo nativo (<details name>) con apertura animada donde hay soporte */
 .faq { display: grid; gap: var(--s2); interpolate-size: allow-keywords; }
@@ -1225,13 +1225,14 @@ h1 em, h2 em { font-style: italic; color: var(--primary); }
 .demo-dock-panel kbd, .demo-facts kbd { font: 600 12px var(--font-ui); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 5px; background: var(--surface-2); }
 
 .role-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.role-option { width: 100%; display: grid; grid-template-columns: 36px 1fr; gap: var(--s3); align-items: center; text-align: left; padding: 8px 10px; border-radius: var(--r-adm); border: 1px solid transparent; background: transparent; color: var(--ink); cursor: pointer; font: inherit; }
+.role-option { width: 100%; display: grid; grid-template-columns: 56px 1fr; gap: var(--s3); align-items: center; text-align: left; padding: 8px 10px; border-radius: var(--r-adm); border: 1px solid transparent; background: transparent; color: var(--ink); cursor: pointer; font: inherit; }
 .role-option span:last-child { display: grid; gap: 1px; }
 .role-option strong { font: 600 15px var(--font-ui); }
 .role-option small { color: var(--secondary); font-size: 13.5px; line-height: 1.35; }
 .role-option:hover { background: var(--surface-2); border-color: var(--line); }
 .role-option[aria-pressed='true'] { background: var(--primary-50); border-color: var(--primary-100); box-shadow: inset 2px 0 0 var(--gold); }
-.role-ico { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--primary); }
+.role-ico { width: 56px; height: 42px; display: grid; place-items: center; }
+.role-ico .spot-art { width: 56px; height: 42px; }
 .role-gate .dialog { width: min(560px, calc(100vw - 32px)); display: grid; gap: var(--s3); }
 .role-gate h2 { margin: 0; }
 .role-gate p { margin: 0; }
@@ -1327,3 +1328,139 @@ main { padding-bottom: 72px; }
   .demo-dock-btn { width: 44px; min-height: 44px; padding: 0; justify-content: center; }
   .demo-dock-btn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
+
+/* Galería de arte (lote 4) */
+.gal-section { display: grid; gap: var(--s3); border-top: 1px solid var(--line); padding-top: var(--s4); }
+.gal-section h2 { margin: 0; }
+.gal-section > p { margin: 0; max-width: 72ch; }
+.gal-note { margin: 0; padding: var(--s2) var(--s3); border-left: 2px solid var(--gold); background: var(--gold-50); color: var(--ink); font-size: 15px; max-width: 72ch; }
+.gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--s3); align-items: start; }
+.gallery.is-big .gal-grid { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+.gal-teeth { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.gal-piece { margin: 0; display: grid; gap: var(--s2); }
+.gal-stage { display: grid; place-items: center; min-height: 140px; padding: var(--s3); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pub); overflow: hidden; }
+.gal-stage svg { max-width: 100%; height: auto; }
+.gal-piece figcaption { display: grid; gap: 2px; font-size: 14px; }
+.gal-page-art { width: 140px; }
+.gallery.is-big .gal-page-art { width: 280px; }
+.gal-page-art .page-art { width: 100%; height: auto; }
+.gal-box { display: block; }
+.gal-wide { max-width: 760px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pub); padding: var(--s3); }
+
+/* ================= Mockups interactivos (lote 4): teléfono y superficie ampliable ================= */
+.xsurface { display: grid; gap: var(--s2); justify-items: start; min-width: 0; }
+.xsurface-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; width: min(100%, 400px); }
+.xsurface-title { margin: 0; font: 600 13px var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--secondary); }
+.xsurface-mode { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.xsurface-toggle { gap: 6px; }
+.xsurface-body { width: 100%; min-width: 0; }
+.xsurface.is-expanded, .xsurface.is-fullscreen { position: fixed; inset: 0; z-index: 60; margin: 0; display: flex; flex-direction: column; align-items: stretch; gap: var(--s2); background: var(--bg); color: var(--ink);
+  padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); overflow: hidden; }
+.xsurface:fullscreen { background: var(--bg); }
+.xsurface.is-expanded .xsurface-bar, .xsurface.is-fullscreen .xsurface-bar { width: min(100%, 980px); margin: 0 auto; }
+.xsurface.is-expanded .xsurface-body, .xsurface.is-fullscreen .xsurface-body { flex: 1; min-height: 0; display: flex; justify-content: center; }
+:root.has-open-surface, :root.has-open-surface body { overflow: hidden; }
+:root.has-open-surface .demo-dock { display: none; }
+
+.device { width: min(100%, 400px); padding: 10px; border-radius: 50px; background: #15191d; box-shadow: 0 30px 60px -36px rgb(0 0 0 / 0.55), inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 1px var(--line); }
+.device-screen { position: relative; display: flex; flex-direction: column; height: min(760px, 80vh); min-height: 520px; border-radius: 40px; overflow: hidden; background: var(--surface); }
+.device-status { position: relative; flex: none; height: 46px; display: flex; align-items: center; justify-content: space-between; padding: 4px 28px 0 30px; font: 600 15px var(--font-ui); color: var(--ink); background: var(--surface); }
+.device-island { position: absolute; left: 50%; top: 10px; translate: -50% 0; width: 108px; height: 30px; border-radius: 18px; background: #0a0c0f; }
+.device-glyphs { color: var(--ink); }
+.device-content { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.device-home { position: absolute; left: 50%; bottom: 8px; translate: -50% 0; width: 124px; height: 4.5px; border-radius: 3px; background: var(--ink); opacity: 0.4; pointer-events: none; }
+.device-content > .phone { flex: 1; height: auto; min-height: 0; max-width: none; border: 0; border-radius: 0; box-shadow: none; }
+.device:not(.is-open) .composer { padding-bottom: 20px; }
+.device:not(.is-open) .composer-hint:empty { display: none; }
+.device.is-open { width: min(100%, 860px); height: 100%; padding: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.device.is-open .device-screen { height: 100%; min-height: 0; border-radius: var(--r-pub-lg); border: 1px solid var(--line); }
+.device.is-open .device-status, .device.is-open .device-home { display: none; }
+.device.is-open .bubble { max-width: min(76%, 560px); font-size: 16.5px; }
+.device.is-open .phone-head { padding-block: var(--s3); }
+@media (max-width: 600px) {
+  .device.is-open .device-screen { border: 0; border-radius: 0; }
+  .xsurface.is-expanded, .xsurface.is-fullscreen { padding-left: max(0px, env(safe-area-inset-left)); padding-right: max(0px, env(safe-area-inset-right)); padding-bottom: max(0px, env(safe-area-inset-bottom)); }
+  .xsurface.is-expanded .xsurface-bar, .xsurface.is-fullscreen .xsurface-bar { padding: 0 12px; }
+}
+@media (max-width: 420px) { .device { padding: 7px; border-radius: 42px; } .device-screen { border-radius: 35px; min-height: 480px; } }
+
+/* Llamada simulada en el marco de teléfono (lote 4) */
+.call-layout { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s5); align-items: start; width: 100%; }
+.xsurface-call { justify-items: stretch; }
+.xsurface-call > .xsurface-bar { width: 100%; }
+.call-phone { flex: 1; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: var(--s3); padding: var(--s2) var(--s4) var(--s5); background: var(--surface); }
+.call-caller { display: grid; justify-items: center; gap: 2px; text-align: center; padding: var(--s2) 0 var(--s3); border-bottom: 1px solid var(--line); }
+.call-avatar { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: var(--primary-50); box-shadow: 0 0 0 1px var(--line), 0 0 0 6px var(--surface), 0 0 0 7px var(--gold); margin-bottom: var(--s2); }
+.call-name { margin: 0; font: 500 24px var(--font-display); }
+.call-state { margin: 0; display: inline-flex; align-items: center; gap: 8px; color: var(--secondary); font-size: 15px; }
+.call-who { margin: 0; color: var(--secondary); }
+.call-setup h2 { font-size: 22px; margin: 0; }
+.call-setup p { margin: 0; font-size: 15px; }
+.call-start { width: 100%; }
+.call-screen, .call-screen.call-screen { background: transparent; color: var(--ink); border-radius: 0; padding: 0; max-width: none; display: grid; gap: var(--s3); }
+.call-screen label { color: var(--ink); }
+.call-screen .btn { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
+.call-screen .btn:disabled { background: var(--surface-3); color: var(--secondary); border-color: var(--line); opacity: 1; }
+.call-screen .btn-primary { background: var(--primary-fill); color: var(--on-primary); border-color: var(--primary-fill); }
+.call-screen .btn-danger { background: var(--error-fill); color: var(--on-primary); border-color: var(--error-fill); }
+.call-chip { border-color: var(--line); color: var(--ink); background: var(--surface-2); }
+.call-chip.is-off { color: var(--secondary); }
+.call-line { padding: var(--s3) var(--s4); background: var(--bubble-in); border: 1px solid var(--line); border-radius: 10px; border-top-left-radius: 2px; font: 500 18px/1.45 var(--font-text); min-height: 0; }
+.call-options { display: grid; gap: var(--s2); }
+.call-options .btn { justify-content: flex-start; text-align: left; min-height: 46px; }
+.call-keys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3) var(--s2); padding-top: var(--s2); border-top: 1px solid var(--line); }
+.call-keys .call-key, .call-screen .call-keys .call-key { flex-direction: column; gap: 6px; min-height: 0; padding: 0; border: 0; box-shadow: none; background: transparent; font: 600 12.5px/1.2 var(--font-ui); color: var(--ink); text-align: center; white-space: normal; }
+.call-keys .call-key .icon { width: 52px; height: 52px; padding: 14px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--primary); box-sizing: border-box; }
+.call-keys .call-key[aria-pressed='true'] .icon { background: var(--primary-fill); color: var(--on-primary); border-color: var(--primary-fill); }
+.call-keys .call-key:disabled { background: transparent; color: var(--secondary); }
+.call-keys .call-key:disabled .icon { opacity: 0.55; }
+.call-keys .call-hang .icon { background: var(--error-fill); color: var(--on-primary); border-color: var(--error-fill); }
+.call-keys .call-key.call-hang, .call-keys .call-key.btn-danger { background: transparent; color: var(--ink); }
+.call-volume { max-width: none; }
+.call-transcript .transcript { max-height: 560px; }
+.device.is-open.device-call { width: min(100%, 560px); }
+.xsurface-call.is-expanded .call-layout, .xsurface-call.is-fullscreen .call-layout { height: 100%; grid-template-columns: minmax(0, 560px) minmax(0, 420px); justify-content: center; }
+.xsurface-call.is-expanded .call-transcript, .xsurface-call.is-fullscreen .call-transcript { height: 100%; overflow-y: auto; align-content: start; }
+.xsurface-call.is-expanded .call-transcript .transcript, .xsurface-call.is-fullscreen .call-transcript .transcript { max-height: none; }
+@media (max-width: 960px) {
+  .call-layout { grid-template-columns: 1fr; }
+  /* En pantallas angostas la superficie ampliada se desplaza: el teléfono ocupa la pantalla y la transcripción sigue abajo. */
+  .xsurface-call.is-expanded .xsurface-body, .xsurface-call.is-fullscreen .xsurface-body { display: block; overflow-y: auto; overscroll-behavior: contain; }
+  .xsurface-call.is-expanded .call-layout, .xsurface-call.is-fullscreen .call-layout { height: auto; grid-template-columns: 1fr; }
+  .xsurface-call.is-expanded .device-call, .xsurface-call.is-fullscreen .device-call { height: calc(100dvh - 72px); margin: 0 auto; }
+  .xsurface-call.is-expanded .call-transcript, .xsurface-call.is-fullscreen .call-transcript { height: auto; overflow: visible; }
+}
+@media (max-width: 960px) and (orientation: landscape) {
+  .xsurface-call.is-expanded .call-layout, .xsurface-call.is-fullscreen .call-layout { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: none; }
+  .xsurface-call.is-expanded .call-transcript, .xsurface-call.is-fullscreen .call-transcript { max-height: none; }
+}
+
+/* Comprobante de turno (lote 4): boleto con talón perforado */
+.receipt { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 168px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pub); overflow: hidden; }
+.receipt::before, .receipt::after { content: ''; position: absolute; right: 159px; width: 18px; height: 18px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); z-index: 1; }
+.receipt::before { top: -10px; }
+.receipt::after { bottom: -10px; }
+.receipt-main { display: grid; gap: var(--s3); padding: var(--s5); align-content: start; }
+.receipt-head { display: flex; justify-content: space-between; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.receipt-head .eyebrow { margin: 0; }
+.receipt-date { display: flex; align-items: flex-end; gap: var(--s4); padding-bottom: var(--s3); border-bottom: 1px solid var(--line); }
+.receipt-day { font: 500 92px/0.82 var(--font-display); color: var(--primary); }
+.receipt-when { margin: 0; display: grid; line-height: 1.3; color: var(--secondary); text-transform: capitalize; }
+.receipt-when strong { color: var(--ink); font-size: 18px; text-transform: none; }
+.receipt-service { margin: 0; font-size: clamp(24px, 3vw, 30px); }
+.receipt-data { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--s2) var(--s4); }
+.receipt-data div { display: grid; gap: 1px; }
+.receipt-data dt { font: 600 12px var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--secondary); }
+.receipt-data dd { margin: 0; }
+.receipt-fine { margin: 0; color: var(--secondary); border-top: 1px dashed var(--line); padding-top: var(--s2); }
+.receipt-stub { display: grid; justify-items: center; align-content: center; gap: var(--s2); padding: var(--s4) var(--s3); border-left: 2px dashed var(--line); background: var(--surface-2); text-align: center; }
+.receipt-id { margin: 0; display: grid; gap: 2px; }
+.receipt-id strong { font: 500 24px var(--font-display); }
+@media (max-width: 600px) {
+  .receipt { grid-template-columns: 1fr; }
+  .receipt::before, .receipt::after { display: none; }
+  .receipt-main { padding: var(--s4); }
+  .receipt-stub { border-left: 0; border-top: 2px dashed var(--line); grid-auto-flow: column; justify-content: space-between; }
+  .receipt-day { font-size: 72px; }
+}
+.xsurface-slot { min-width: 0; }

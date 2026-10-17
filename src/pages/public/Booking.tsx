@@ -8,7 +8,8 @@ import { byId, chairName, locName, personLabel, proName, serviceName } from '../
 import { addDays, at, fmtDateOnly, fmtLong, hhmmToMinutes, parts } from '../../domain/time';
 import { ConflictNotice } from '../../ui/components';
 import { MonthCalendar } from '../../ui/Calendar';
-import { Button, EmptyState, ErrorSummary, Field, Icon, Notice, PageHeader, StatusBadge, announce } from '../../ui/kit';
+import { AppointmentReceipt } from '../../ui/Receipt';
+import { Button, EmptyState, ErrorSummary, Field, Icon, Notice, PageHeader, announce } from '../../ui/kit';
 import { PersonPicker } from './PersonPicker';
 import { PageArt } from '../../ui/art/pages';
 
@@ -78,11 +79,8 @@ export function Booking() {
       <section className="page narrow">
         <PageHeader eyebrow="Reserva" title={a?.status === 'solicitada' ? 'Solicitud enviada' : 'Turno confirmado'} />
         {a ? (
-          <article className="card stack">
-            <StatusBadge status={a.status} />
-            <p className="big"><strong>{serviceName(s, a.serviceTypeId)}</strong> · {fmtLong(a.start)}</p>
-            <p>{proName(s, a.professionalId)} · {locName(s, a.locationId)} · {chairName(s, a.chairId)}</p>
-            <p className="muted">Turno <span className="code">{a.id}</span>{a.requestId && <> · solicitud <span className="code">{a.requestId}</span></>} · {personLabel(s, a.personId)}</p>
+          <div className="stack">
+            <AppointmentReceipt a={a} />
             {a.status === 'solicitada'
               ? <Notice tone="warn" title="Todavía no es un turno confirmado">El cupo queda reservado y recepción revisa la solicitud. No enviamos mensajes reales.</Notice>
               : <Notice tone="ok" title="Guardado en este dispositivo">Recepción ve este mismo turno en la agenda. No enviamos mensajes reales.</Notice>}
@@ -90,7 +88,7 @@ export function Booking() {
               <Button variant="primary" onClick={() => navigate('/mis-turnos')}>Ver en Mis turnos</Button>
               <Button onClick={() => { clearDraft(); setCommitError(null); }}>Hacer otra reserva</Button>
             </div>
-          </article>
+          </div>
         ) : <EmptyState title="El turno ya no existe (la demo pudo restablecerse)." action={<Button onClick={() => clearDraft()}>Empezar de nuevo</Button>} />}
       </section>
     );

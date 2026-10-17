@@ -8,6 +8,8 @@ import { addDays, at, fmtShort, parts, toMs } from '../../domain/time';
 import { Button, Icon, Notice, PageHeader, announce } from '../../ui/kit';
 import { ToneEngine } from '../../ui/tones';
 import { PageArt } from '../../ui/art/pages';
+import { BrandMark } from '../../ui/art/brand';
+import { ExpandableSurface, PhoneFrame } from '../../ui/Device';
 
 interface Option { id: string; label: string }
 interface Step { line: string; options: Option[] }
@@ -240,75 +242,81 @@ export function CallSim() {
       <PageHeader eyebrow="M07 · Canal simulado" title="Llamada simulada" art={<PageArt kind="llamada" />}>
         Voluntaria y local: sin micrófono, sin reconocimiento ni voz sintetizada, sin telefonía. Respuestas preparadas y transcripción completa. Los sonidos son dos tonos suaves opcionales.
       </PageHeader>
-      <div className="grid-2" style={{ alignItems: 'start' }}>
-        <div className="stack">
-          {!session ? (
-            <div className="card stack">
-              <h2>Antes de empezar</h2>
-              <p>Vas a ver frases del asistente y elegir respuestas con botones. Nada se confirma sin que toques <strong>Confirmar</strong>; detener, salir o el silencio nunca confirman.</p>
-              <div className="field">
-                <label htmlFor="call-person">Persona (por ID)</label>
-                <select id="call-person" value={personId} onChange={(e) => { setPersonId(e.target.value); setRequestId(''); }}>
-                  <option value="">Sin identificar</option>
-                  {s.persons.map((p) => <option key={p.id} value={p.id}>{p.id} · {p.firstName} {p.lastName} ({p.birthYear})</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="call-req">Continuar una gestión existente (opcional)</label>
-                <select id="call-req" value={requestId} onChange={(e) => setRequestId(e.target.value)}>
-                  <option value="">Nueva gestión</option>
-                  {requests.map((r) => <option key={r.id} value={r.id}>{r.id} · {r.summary.slice(0, 50)}</option>)}
-                </select>
-                <p className="hint">Si empezaste por WhatsApp, elegí la misma gestión: la llamada comparte el caso y no crea otra cita.</p>
-              </div>
-              <label className="choice"><input type="checkbox" checked={soundOptIn} onChange={(e) => setSoundOptIn(e.target.checked)} /> Activar tonos sintéticos suaves (opcional)</label>
-              <Button variant="primary" size="lg" icon="phone" onClick={start}>Probar llamada simulada</Button>
-            </div>
-          ) : (
-            <div className="call-screen" aria-label="Llamada simulada">
-              <div className="row between">
-                <span className="row" style={{ gap: 8 }}><Icon name="phone" /> {active ? (pending ? 'Asistente hablando (texto)…' : 'Llamada activa · simulada') : session.status === 'detenida' ? 'Llamada detenida' : 'Llamada terminada'}{active && <span className="wave" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></span>}</span>
-                <span className="muted small">{session.personId ? personLabel(s, session.personId) : 'Sin identificar'}{session.requestId ? ` · ${session.requestId}` : ''}</span>
-              </div>
-              <div className="call-status" aria-label="Estado de la llamada">
-                <span className={`call-chip ${soundState.on ? '' : 'is-off'}`}><Icon name={soundState.on ? 'volume' : 'mute'} size={14} /> {soundState.label}</span>
-                <span className="call-chip"><Icon name="info" size={14} /> Sin micrófono · sin voz</span>
-              </div>
-              <p className={`call-line ${pending ? '' : 'is-speaking'}`} aria-live="off" key={session.transcript.length}>{session.step.line}</p>
-              {active && !pending && session.step.options.length > 0 && (
-                <div className="call-controls" role="group" aria-label="Respuestas">
-                  {session.step.options.map((o) => <Button key={o.id} variant={o.id === 'confirm' || o.id === 'bconfirm' ? 'primary' : 'secondary'} onClick={() => choose(o)}>{o.label}</Button>)}
+      <ExpandableSurface title="Llamada simulada · Clínica Brisa" className="xsurface-call">
+        <div className="call-layout">
+          <PhoneFrame className="device-call">
+            <div className="call-phone">
+              <header className="call-caller">
+                <span className="call-avatar" aria-hidden="true"><BrandMark size={44} /></span>
+                <p className="call-name">Clínica Brisa</p>
+                <p className="call-state">{!session ? 'Llamada simulada · sin telefonía' : active ? (pending ? 'Asistente hablando (texto)…' : 'Llamada activa · simulada') : session.status === 'detenida' ? 'Llamada detenida' : 'Llamada terminada'}{session && active && <span className="wave" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></span>}</p>
+                {session && <p className="call-who small">{session.personId ? personLabel(s, session.personId) : 'Sin identificar'}{session.requestId ? ` · ${session.requestId}` : ''}</p>}
+              </header>
+              {!session ? (
+                <div className="call-setup stack">
+                  <h2>Antes de empezar</h2>
+                  <p>Vas a ver frases del asistente y elegir respuestas con botones. Nada se confirma sin que toques <strong>Confirmar</strong>; detener, salir o el silencio nunca confirman.</p>
+                  <div className="field">
+                    <label htmlFor="call-person">Persona (por ID)</label>
+                    <select id="call-person" value={personId} onChange={(e) => { setPersonId(e.target.value); setRequestId(''); }}>
+                      <option value="">Sin identificar</option>
+                      {s.persons.map((p) => <option key={p.id} value={p.id}>{p.id} · {p.firstName} {p.lastName} ({p.birthYear})</option>)}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="call-req">Continuar una gestión existente (opcional)</label>
+                    <select id="call-req" value={requestId} onChange={(e) => setRequestId(e.target.value)}>
+                      <option value="">Nueva gestión</option>
+                      {requests.map((r) => <option key={r.id} value={r.id}>{r.id} · {r.summary.slice(0, 50)}</option>)}
+                    </select>
+                    <p className="hint">Si empezaste por WhatsApp, elegí la misma gestión: la llamada comparte el caso y no crea otra cita.</p>
+                  </div>
+                  <label className="choice"><input type="checkbox" checked={soundOptIn} onChange={(e) => setSoundOptIn(e.target.checked)} /> Activar tonos sintéticos suaves (opcional)</label>
+                  <Button variant="primary" size="lg" icon="phone" className="call-start" onClick={start}>Probar llamada simulada</Button>
+                </div>
+              ) : (
+                <div className="call-screen" aria-label="Llamada simulada">
+                  <div className="call-status" aria-label="Estado de la llamada">
+                    <span className={`call-chip ${soundState.on ? '' : 'is-off'}`}><Icon name={soundState.on ? 'volume' : 'mute'} size={14} /> {soundState.label}</span>
+                    <span className="call-chip"><Icon name="info" size={14} /> Sin micrófono · sin voz</span>
+                  </div>
+                  <p className={`call-line ${pending ? '' : 'is-speaking'}`} aria-live="off" key={session.transcript.length}>{session.step.line}</p>
+                  {active && !pending && session.step.options.length > 0 && (
+                    <div className="call-options" role="group" aria-label="Respuestas">
+                      {session.step.options.map((o) => <Button key={o.id} variant={o.id === 'confirm' || o.id === 'bconfirm' ? 'primary' : 'secondary'} onClick={() => choose(o)}>{o.label}</Button>)}
+                    </div>
+                  )}
+                  <div className="call-keys" role="group" aria-label="Controles de la llamada">
+                    {active && <Button icon="pause" className="call-key" onClick={silence} disabled={pending}>Simular silencio</Button>}
+                    {active && <Button icon="refresh" className="call-key" onClick={() => choose({ id: 'repeat', label: 'Repetir' })} disabled={pending}>Repetir</Button>}
+                    <Button icon={muted ? 'volume' : 'mute'} className="call-key" onClick={() => { if (muted && soundOptIn && !reading) { const ok = tones.current.start(); setAudioNote(ok ? null : 'El audio no está disponible o fue bloqueado: la llamada sigue en texto completo.'); } setMuted(!muted); }} aria-pressed={muted}>{muted ? 'Activar sonido' : 'Silenciar'}</Button>
+                    <Button icon="book" className="call-key" onClick={() => setReading(!reading)} aria-pressed={reading}>{reading ? 'Salir de modo lectura' : 'Modo lectura'}</Button>
+                    <Button icon="refresh" className="call-key" onClick={restart}>Reiniciar</Button>
+                    {active && <Button variant="danger" icon="stop" className="call-key call-hang" onClick={stop}>Detener</Button>}
+                  </div>
+                  <div className="field call-volume">
+                    <label htmlFor="vol">Volumen de los tonos</label>
+                    <input id="vol" type="range" min={0} max={1} step={0.1} value={volume} onChange={(e) => setVolume(Number(e.target.value))} disabled={muted || reading} />
+                  </div>
                 </div>
               )}
-              <div className="call-controls" role="group" aria-label="Controles de la llamada">
-                {active && <Button icon="pause" onClick={silence} disabled={pending}>Simular silencio</Button>}
-                {active && <Button icon="refresh" onClick={() => choose({ id: 'repeat', label: 'Repetir' })} disabled={pending}>Repetir</Button>}
-                <Button icon={muted ? 'volume' : 'mute'} onClick={() => { if (muted && soundOptIn && !reading) { const ok = tones.current.start(); setAudioNote(ok ? null : 'El audio no está disponible o fue bloqueado: la llamada sigue en texto completo.'); } setMuted(!muted); }} aria-pressed={muted}>{muted ? 'Activar sonido' : 'Silenciar'}</Button>
-                <Button icon="book" onClick={() => setReading(!reading)} aria-pressed={reading}>{reading ? 'Salir de modo lectura' : 'Modo lectura'}</Button>
-                {active && <Button variant="danger" icon="stop" onClick={stop}>Detener</Button>}
-                <Button icon="refresh" onClick={restart}>Reiniciar</Button>
-              </div>
-              <div className="field" style={{ maxWidth: 260 }}>
-                <label htmlFor="vol">Volumen de los tonos</label>
-                <input id="vol" type="range" min={0} max={1} step={0.1} value={volume} onChange={(e) => setVolume(Number(e.target.value))} disabled={muted || reading} />
-              </div>
             </div>
-          )}
-          {audioNote && <Notice tone="warn" title={audioNote} />}
-          {session && !soundOptIn && <p className="small muted">Sin tonos: elegiste no activarlos. La llamada es igual de completa en texto.</p>}
+          </PhoneFrame>
+          <aside className="card stack call-transcript">
+            <h2>Transcripción</h2>
+            {!session ? <p className="muted">Aparece al iniciar. Se guarda como registro de la gestión al terminar o detener.</p> : (
+              <div className="transcript" role="log" aria-live="polite" tabIndex={0}>
+                {session.transcript.map((l, i) => <p key={i}><strong>{l.from === 'asistente' ? 'Asistente' : l.from === 'paciente' ? 'Vos' : 'Sistema'}:</strong> {l.text}</p>)}
+              </div>
+            )}
+            {reading && <Notice tone="info" title="Modo lectura">Sin sonidos. Todo el contenido está en texto.</Notice>}
+            {audioNote && <Notice tone="warn" title={audioNote} />}
+            {session && !soundOptIn && <p className="small muted">Sin tonos: elegiste no activarlos. La llamada es igual de completa en texto.</p>}
+            <h3>Llamadas anteriores</h3>
+            {s.callSessions.length === 0 ? <p className="muted small">Ninguna todavía.</p> : <ul className="plain small">{s.callSessions.slice(-5).reverse().map((c) => <li key={c.id}><span className="code">{c.id}</span> · {c.branch} · {c.status} · {c.transcript.length} líneas{c.appointmentId ? ` · ${c.appointmentId}` : ''}</li>)}</ul>}
+          </aside>
         </div>
-        <aside className="card stack">
-          <h2>Transcripción</h2>
-          {!session ? <p className="muted">Aparece al iniciar. Se guarda como registro de la gestión al terminar o detener.</p> : (
-            <div className="transcript" role="log" aria-live="polite" tabIndex={0}>
-              {session.transcript.map((l, i) => <p key={i}><strong>{l.from === 'asistente' ? 'Asistente' : l.from === 'paciente' ? 'Vos' : 'Sistema'}:</strong> {l.text}</p>)}
-            </div>
-          )}
-          {reading && <Notice tone="info" title="Modo lectura">Sin sonidos. Todo el contenido está en texto.</Notice>}
-          <h3>Llamadas anteriores</h3>
-          {s.callSessions.length === 0 ? <p className="muted small">Ninguna todavía.</p> : <ul className="plain small">{s.callSessions.slice(-5).reverse().map((c) => <li key={c.id}><span className="code">{c.id}</span> · {c.branch} · {c.status} · {c.transcript.length} líneas{c.appointmentId ? ` · ${c.appointmentId}` : ''}</li>)}</ul>}
-        </aside>
-      </div>
+      </ExpandableSurface>
     </section>
   );
 }
