@@ -110,7 +110,7 @@ export function PersonDetail({ id }: { id: string }) {
   };
   return (
     <section className="page">
-      <PageHeader eyebrow={`Ficha administrativa · ${p.id} · versión ${p.version}`} title={`${p.firstName} ${p.lastName}`} actions={<>
+      <PageHeader eyebrow={`Ficha administrativa · ${p.id} · versión ${p.version}`} title={`${p.firstName} ${p.lastName}`} art={<PersonAvatar id={p.id} name={`${p.firstName} ${p.lastName}`} size={72} />} actions={<>
         <Button icon="tooth" onClick={() => navigate(`/admin/personas/${p.id}/odontograma`)}>Odontograma</Button>
         <Button icon="back" onClick={() => navigate('/admin/personas')}>Personas</Button>
       </>}>

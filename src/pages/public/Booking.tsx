@@ -53,6 +53,11 @@ export function Booking() {
   };
   const chosen = draft.chosen;
   const chosenListed = !!chosen && slots.some((x) => slotKey(x) === slotKey(chosen));
+  // Indicador de avance: se completa solo a medida que la persona elige (no bloquea ni oculta pasos).
+  const whoDone = draft.who === 'existing' ? !!person : !!(draft.newPerson.firstName.trim() && draft.newPerson.lastName.trim() && draft.newPerson.preferredChannel);
+  const stepStates: ('done' | 'current' | 'todo')[] = [whoDone ? 'done' : 'current', whoDone && st ? 'done' : whoDone ? 'current' : 'todo', chosen ? 'done' : whoDone ? 'current' : 'todo', chosen ? 'current' : 'todo'];
+  const firstCurrent = stepStates.indexOf('current');
+  const steps = ['Para quién', 'Motivo', 'Horario', 'Confirmar'].map((label, i) => ({ label, state: stepStates[i] === 'current' && i !== firstCurrent ? 'todo' as const : stepStates[i] }));
 
   if (draft.doneAppointmentId) {
     const a = byId(s.appointments, draft.doneAppointmentId);
@@ -118,10 +123,19 @@ export function Booking() {
       </PageHeader>
       <ErrorSummary errors={errors} labels={{ ...LABELS, acting: 'Persona' }} />
 
-      <div className="grid-2" style={{ alignItems: 'start' }}>
+      <ol className="stepper" aria-label="Pasos de la reserva">
+        {steps.map((x, i) => (
+          <li key={x.label} className={`step is-${x.state}`} aria-current={x.state === 'current' ? 'step' : undefined}>
+            <span className="step-n" aria-hidden="true">{x.state === 'done' ? <Icon name="check" size={14} /> : i + 1}</span>
+            <span className="step-label">{x.label}<span className="sr-only">{x.state === 'done' ? ' (listo)' : x.state === 'current' ? ' (paso actual)' : ' (pendiente)'}</span></span>
+          </li>
+        ))}
+      </ol>
+
+      <div className="grid-2 booking-grid" style={{ alignItems: 'start' }}>
         <div className="stack-lg">
-          <fieldset className="stack">
-            <legend>1. Para quién</legend>
+          <fieldset className="stack step-card">
+            <legend><span className="step-n" aria-hidden="true">1</span> Para quién</legend>
             <div className="row wrap">
               <label className="choice"><input type="radio" name="who" checked={draft.who === 'existing'} onChange={() => up({ who: 'existing', chosen: null })} /> Ya soy paciente (persona de muestra)</label>
               <label className="choice"><input type="radio" name="who" checked={draft.who === 'new'} onChange={() => up({ who: 'new', chosen: null, serviceTypeId: 'ST-PRIMERA' })} /> Es mi primera vez</label>
@@ -139,8 +153,8 @@ export function Booking() {
             )}
           </fieldset>
 
-          <fieldset className="stack">
-            <legend>2. Motivo y preferencias</legend>
+          <fieldset className="stack step-card">
+            <legend><span className="step-n" aria-hidden="true">2</span> Motivo y preferencias</legend>
             <div className="form-grid">
               <Field label="Motivo" id="serviceTypeId">{(p) => (
                 <select {...p} value={draft.serviceTypeId} onChange={(e) => up({ serviceTypeId: e.target.value, professionalId: '', chosen: null })}>
@@ -165,8 +179,8 @@ export function Booking() {
           </fieldset>
         </div>
 
-        <div className="stack">
-          <h2>3. Horarios disponibles</h2>
+        <div className="stack step-card">
+          <h2 className="step-title"><span className="step-n" aria-hidden="true">3</span> Horarios disponibles</h2>
           <DateStrip label="Buscar desde" value={draft.fromDate} start={today} days={14} min={today} max={addDays(today, s.settings.horizonDays - 1)}
             onChange={(d) => up({ fromDate: d, chosen: null })} note={dayNote} />
           {slots.length === 0 ? (
@@ -204,7 +218,7 @@ export function Booking() {
           )}
           {chosen && st && (
             <div className="card stack review-card">
-              <h3>Revisá antes de confirmar</h3>
+              <h3 className="step-title"><span className="step-n" aria-hidden="true">4</span> Revisá antes de confirmar</h3>
               {!chosenListed && <Notice tone="warn" title="Este horario ya no figura como libre">Si confirmás, lo revalidamos y te mostramos alternativas sin perder tus datos.</Notice>}
               <dl className="kv">
                 <dt>Persona</dt><dd>{draft.who === 'new' ? `${draft.newPerson.firstName || '—'} ${draft.newPerson.lastName} (nueva)` : personLabel(s, personId)}</dd>

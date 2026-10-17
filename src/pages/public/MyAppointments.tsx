@@ -3,14 +3,23 @@ import { dispatch, useDemo, useLastChange } from '../../app/store';
 import { navigate } from '../../app/router';
 import { useUi } from '../../app/ui-state';
 import type { Appointment } from '../../domain';
-import { byId, pastFor, personLabel, serviceName, upcomingFor } from '../../domain/selectors';
+import { byId, pastFor, serviceName, upcomingFor } from '../../domain/selectors';
 import { fmtLong, toMs } from '../../domain/time';
-import { Button, ConfirmDialog, EmptyState, Icon, Notice, PageHeader, StatusBadge, announce, useResult } from '../../ui/kit';
+import { Button, ConfirmDialog, EmptyState, Icon, Notice, PageHeader, SectionHeader, StatusBadge, announce, useResult } from '../../ui/kit';
 import { RescheduleDrawer } from '../../ui/RescheduleDrawer';
 import { TurnoCard, agendaLink } from '../../ui/components';
 import { PersonPicker } from './PersonPicker';
 import { PageArt } from '../../ui/art/pages';
 import { ToothCharacter } from '../../ui/art/characters';
+import { PersonAvatar } from '../../ui/art/brand';
+
+/** “En 3 días”, “Hoy, en 5 h”: lectura rápida del tiempo que falta (reloj de muestra). */
+function countdown(hours: number): string {
+  if (hours < 1) return 'en menos de una hora';
+  if (hours < 24) return `en ${Math.round(hours)} h`;
+  const d = Math.round(hours / 24);
+  return d === 1 ? 'mañana' : `en ${d} días`;
+}
 
 export function MyAppointments() {
   const s = useDemo();
@@ -43,15 +52,16 @@ export function MyAppointments() {
         <div className="ops">
           <div className="stack-lg">
             <section className="stack" aria-labelledby="up-title">
-              <div className="section-title"><h2 id="up-title">Próximos</h2><span className="muted small tabular">{upcoming.length} activo(s)</span></div>
+              <SectionHeader id="up-title" title="Próximos" actions={<span className="muted small tabular">{upcoming.length} activo(s)</span>} />
               {upcoming.length === 0 ? <EmptyState title={`${person.firstName} no tiene turnos próximos`} icon="calendar" action={<Button variant="primary" onClick={() => navigate('/reservar')}>Pedir turno</Button>} /> : (
                 <ul className="turno-list">
-                  {upcoming.map((a) => {
+                  {upcoming.map((a, i) => {
                     const hours = (toMs(a.start) - toMs(s.clock)) / 3_600_000;
                     const reminder = s.outbox.filter((o) => o.appointmentId === a.id && o.kind === 'recordatorio_24h').at(-1);
                     const actionable = a.status === 'confirmada' || a.status === 'solicitada';
                     return (
-                      <li key={a.id}>
+                      <li key={a.id} className={i === 0 ? 'is-featured' : undefined}>
+                        {i === 0 && <p className="featured-label"><span className="pill-dot" aria-hidden="true" /> Tu próximo turno · <span className="tabular">{countdown(hours)}</span></p>}
                         <TurnoCard a={a} headingLevel="h3"
                           extra={<>
                             {a.status === 'solicitada' && <p className="small" style={{ margin: '4px 0 0' }}><Icon name="clock" size={14} /> Solicitud pendiente: el cupo está reservado y recepción la confirma.</p>}
@@ -76,7 +86,7 @@ export function MyAppointments() {
           </div>
           <aside className="stack">
             <div className="card stack">
-              <h2 style={{ fontSize: 20 }}>{personLabel(s, person.id)}</h2>
+              <div className="with-avatar"><PersonAvatar id={person.id} name={`${person.firstName} ${person.lastName}`} size={48} /><div><h2 style={{ fontSize: 20, margin: 0 }}>{person.firstName} {person.lastName}</h2><span className="small muted"><span className="code">{person.id}</span> · {upcoming.length} próximo(s) · {past.length} en historial</span></div></div>
               <label className="choice">
                 <input type="checkbox" checked={person.reminderOptIn} onChange={(e) => show(dispatch({ type: 'setReminderOptIn', personId: person.id, optIn: e.target.checked }))} />
                 Quiero recordatorios simulados 24 h antes
