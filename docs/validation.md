@@ -208,3 +208,61 @@ Misma rama (`feat/fase2-ux-motion`), mismo entorno y sin dependencias nuevas. El
 
 - Audio audible y lector de pantalla real: no disponibles en el contenedor. Se verificaron con un AudioContext instrumentado, nombres accesibles y foco.
 - Los personajes y avatares son ilustraciones propias; no hay fotos ni personas reales.
+
+---
+
+# Fase 2c (análisis premium total, componentes nativos, fondo animado, dientes premium)
+
+Rama `feat/fase2c-premium` desde `main` @ `5f10a70` (PR #4 mergeado). Mismo entorno y sin dependencias nuevas. El análisis está en [`premium-v3.md`](premium-v3.md).
+
+## Comandos ejecutados
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` | 0 | sin errores |
+| `npm run typecheck` | 0 | sin errores |
+| `npm run test -- --run` | 0 | **78/78**. Hay 9 pares de contraste nuevos: tinta, secundario y primario sobre el **peor caso del fondo animado** (dos manchas superpuestas en su alfa máximo; incluye la mezcla de Brisa Chicos). |
+| `npm run build` | 0 | Entrada ~503 kB JS (151 kB gzip). En `dist/` siguen sin aparecer URLs de red, salvo namespaces XML y `react.dev/errors`. Los SVG `data:` de `app.css` los permite la CSP (`img-src 'self' data:`). |
+| `npm run test:e2e` × 3 corridas | 0 | **49 pasadas** + 1 omitida a propósito (capturas) en cada corrida |
+| `EVIDENCE_DIR=docs/evidence/after EVIDENCE_VIEWPORTS=320,390,768,1440 npm run evidence` | 0 | 48 capturas. Ahora se toman con movimiento reducido, para que sean deterministas (sin transiciones ni fondo en movimiento). |
+
+## Pruebas nuevas (`tests/e2e/native.spec.ts`)
+
+| Prueba | Resultado |
+| --- | --- |
+| Paleta ⌘K/Ctrl+K:<ul><li>`<dialog>` nativo en modo modal (`:modal`), con foco en el combobox;</li><li>buscar “P-008” + Enter abre la ficha con foco en el título;</li><li>el botón “Buscar (Ctrl K)” la abre;</li><li>Escape la cierra sin navegar y devuelve el foco al botón.</li></ul> | Pass |
+| Paleta: las flechas cambian la opción activa (`aria-activedescendant`, `aria-selected`) y Enter navega al odontograma de la persona | Pass |
+| Drawer y confirmación sobre `<dialog>` nativo: modal, fondo inerte, Escape cierra y el foco vuelve a quien abrió | Pass |
+| Popover nativo “¿Qué es esta demo?”: abre (`:popover-open`), Escape lo descarta y el banner sigue visible | Pass |
+| Preguntas frecuentes: acordeón exclusivo nativo; abrir una cierra la otra | Pass |
+| Fondo animado: es decorativo (`aria-hidden`) y se anima; con movimiento reducido queda quieto y las burbujas de Brisa Chicos se ocultan | Pass |
+| View Transitions: se usan al navegar y no se usan con movimiento reducido | Pass |
+| Reserva: grilla de horarios con hora destacada; cada radio conserva el nombre accesible completo (“lunes 19 de octubre, 11:00 h”) | Pass |
+| Panel:<ul><li>avatares de personas (decorativos);</li><li>11 barras de datos en informes;</li><li>importes negativos marcados en la caja.</li></ul> | Pass |
+| Encabezados ilustrados en 6 rutas del portal y estado vacío con personaje | Pass |
+
+## Fallos encontrados y corregidos
+
+1. **Ilustración de “Pedir un turno” recortada.** La regla `.page-art svg` también agrandaba el diente SVG anidado. Se limitó a `.page-art > svg`.
+2. **Transiciones entre rutas lentas.** Nombrar `#main` para la View Transition obligaba a capturar la página entera. En el Chromium headless del contenedor (render por software), el cambio de ruta tardaba ~490 ms en empezar.
+   - Ahora se funde solo la vista (raíz), que captura el viewport.
+   - Medido en el mismo entorno: **34 ms sin transición, ~256 ms con transición**. En un navegador con GPU la captura debería tomar del orden de un cuadro, pero eso no se pudo medir aquí.
+   - Con movimiento reducido no hay transición.
+3. **KPI de importes grandes desbordaban la tarjeta** al no partirse. Ahora el valor usa unidades de contenedor (`cqi`) dentro de cada KPI.
+4. **Botón “Buscar” en móvil sin nombre accesible** al ocultar el texto. Ahora tiene `aria-label="Buscar (Ctrl K)"`.
+5. **Prueba de robo de foco con ventana fija de 700 ms.** Con la transición de vista y el panel diferido, el día aún no estaba montado y la prueba fallaba en las 3 corridas.
+   - Ahora espera a que el día exista y recién ahí mide la ventana de reintentos.
+   - Sigue fallando sin la corrección de foco de la fase 2b.
+6. **Cabecera fija de tablas descartada.** Dentro de `.table-wrap` (con `overflow-x`) no tenía efecto, así que se quitó en lugar de dejar una regla que no hace nada.
+
+## Límites declarados
+
+- El contenedor solo tiene Chromium. Por eso no se probaron en otros navegadores estas mejoras progresivas, que tienen alternativa sin ellas:
+  - select personalizable (`appearance: base-select`);
+  - anclaje CSS (`anchor-name`);
+  - apertura animada de `<details>` (`::details-content` + `interpolate-size`);
+  - animación por scroll (`animation-timeline: scroll()`);
+  - View Transitions.
+
+  Sin ellas quedan, respectivamente, el select clásico estilizado, el popover centrado, la apertura sin animación, la sombra fija y el cambio instantáneo.
+- Rendimiento con GPU real, lector de pantalla real y audio audible: no disponibles en el contenedor.

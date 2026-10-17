@@ -10,6 +10,7 @@ import { ServiceArt } from '../../ui/art/services';
 import { ProAvatar } from '../../ui/art/brand';
 import { ToothCharacter } from '../../ui/art/characters';
 import { Button, EmptyState, Icon, StatusBadge } from '../../ui/kit';
+import { PageArt } from '../../ui/art/pages';
 
 const DOW = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 const MON = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -51,6 +52,14 @@ function NextAppointmentCard() {
     </aside>
   );
 }
+
+const FAQ: [string, string][] = [
+  ['¿Puedo cambiar o cancelar mi turno?', 'Sí, desde Mis turnos, por WhatsApp o por llamada. Si faltan menos de 12 horas, el cambio lo gestiona recepción para no perder el horario.'],
+  ['¿Cómo sé si mi turno está confirmado?', 'Cada turno muestra su estado con texto: “Confirmado” o “Pendiente de confirmación”. Una solicitud la confirma una persona de recepción; nada se confirma solo.'],
+  ['¿El asistente me dice qué tratamiento necesito?', 'No. El asistente es administrativo: no evalúa síntomas ni indica tratamientos. Las decisiones clínicas las toma tu profesional en la consulta.'],
+  ['¿Aceptar un presupuesto es pagarlo?', 'No. Aceptar un presupuesto no es un cobro ni un tratamiento realizado. En esta demo no hay pagos reales.'],
+  ['¿Dónde quedan mis datos en esta demo?', 'Solo en este dispositivo. No hay servidor, no se envían mensajes ni se hacen llamadas reales.'],
+];
 
 export function Home() {
   const s = useDemo();
@@ -158,6 +167,18 @@ export function Home() {
         </div>
       </section>
 
+      <section aria-labelledby="faq-title" className="stack">
+        <div><p className="eyebrow">Preguntas frecuentes</p><h2 id="faq-title">Lo que más nos preguntan</h2></div>
+        <div className="faq">
+          {FAQ.map(([q, a], i) => (
+            <details key={q} name="faq" open={i === 0}>
+              <summary>{q}</summary>
+              <p className="faq-body">{a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       <section aria-labelledby="sedes-title" className="grid-2">
         <div className="stack">
           <h2 id="sedes-title">Sedes</h2>
@@ -198,16 +219,16 @@ export function LocationPage({ id }: { id: string }) {
   const pros = s.professionals.filter((p) => s.availabilityRules.some((r) => r.professionalId === p.id && r.locationId === l.id));
   return (
     <section className="page">
-      <header className="page-head"><div><p className="eyebrow">Sede ficticia</p><h1 tabIndex={-1} data-page-title>{l.name}</h1><p className="lede">{l.address} · {l.hoursText}</p></div></header>
+      <header className="page-head has-art"><div><p className="eyebrow">Sede ficticia</p><h1 tabIndex={-1} data-page-title>{l.name}</h1><p className="lede">{l.address} · {l.hoursText}</p></div><div className="page-art" aria-hidden="true"><PageArt kind="sede" /></div></header>
       <div className="grid-2">
         <article className="card"><h2>Cómo llegar</h2><p>{l.access}</p><p className="muted small">Sin mapas ni servicios externos: la dirección es de muestra.</p></article>
-        <article className="card"><h2>Sillones</h2><ul className="plain">{s.chairs.filter((c) => c.locationId === l.id).map((c) => <li key={c.id}>{c.name}</li>)}</ul></article>
+        <article className="card"><h2>Sillones</h2><ul className="chips" aria-label="Sillones de la sede" style={{ listStyle: 'none', padding: 0, margin: 0 }}>{s.chairs.filter((c) => c.locationId === l.id).map((c) => <li key={c.id} className="chair-chip"><Icon name="check" size={14} /> {c.name}</li>)}</ul></article>
       </div>
       <h2>Equipo en esta sede</h2>
       <div className="service-grid">
         {pros.map((p) => (
-          <article key={p.id} className="card">
-            <h3>{p.name}</h3><p className="muted">{p.specialty}</p><p>{p.bio}</p>
+          <article key={p.id} className="card lift stack">
+            <div className="with-avatar"><ProAvatar name={p.name} specialty={p.specialty} index={s.professionals.indexOf(p)} size={56} /><div><h3 style={{ margin: 0 }}>{p.name}</h3><p className="muted" style={{ margin: 0 }}>{p.specialty}</p></div></div><p style={{ margin: 0 }}>{p.bio}</p>
             <Button variant="primary" size="sm" onClick={() => navigate(`/reservar?profesional=${p.id}&sede=${l.id}`)}>Pedir turno con {p.name.split(' ')[0]} {p.name.split(' ')[1]}</Button>
           </article>
         ))}

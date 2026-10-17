@@ -9,6 +9,7 @@ import { addDays, at, fmtDateOnly, fmtLong, parts } from '../../domain/time';
 import { ConflictNotice, DateStrip } from '../../ui/components';
 import { Button, EmptyState, ErrorSummary, Field, Icon, Notice, PageHeader, StatusBadge, announce } from '../../ui/kit';
 import { PersonPicker } from './PersonPicker';
+import { PageArt } from '../../ui/art/pages';
 
 interface BookingDraft {
   draftId: string; who: 'existing' | 'new';
@@ -112,7 +113,7 @@ export function Booking() {
 
   return (
     <section className="page">
-      <PageHeader eyebrow="M02 · Reserva" title="Pedir un turno">
+      <PageHeader eyebrow="M02 · Reserva" title="Pedir un turno" art={<PageArt kind="reservar" />}>
         Elegí motivo y horario. Revalidamos profesional, sillón y jornada al confirmar. Mínimo {s.settings.minLeadHours} h de anticipación y hasta {s.settings.horizonDays} días.
       </PageHeader>
       <ErrorSummary errors={errors} labels={{ ...LABELS, acting: 'Persona' }} />
@@ -182,12 +183,12 @@ export function Booking() {
               {[...new Set(slots.map((x) => parts(x.start).date))].map((d) => (
                 <div key={d}>
                   <h3 className="slot-day">{fmtDateOnly(d)}</h3>
-                  <ul className="list">
+                  <ul className="list slot-grid">
                     {slots.filter((x) => parts(x.start).date === d).map((x) => (
                       <li key={slotKey(x)}>
                         <label className="list-item slot-option">
                           <input type="radio" name="slot" checked={!!chosen && slotKey(chosen) === slotKey(x)} onChange={() => { up({ chosen: x }); setCommitError(null); }} />
-                          <span><strong className="tabular">{fmtLong(x.start)}</strong><br /><span className="muted small">{proName(s, x.professionalId)} · {locName(s, x.locationId)} · {chairName(s, x.chairId)}</span></span>
+                          <span className="slot-body"><span className="sr-only">{fmtLong(x.start)}</span><strong className="slot-time tabular" aria-hidden="true">{x.start.slice(11, 16)}</strong><span className="slot-pro">{proName(s, x.professionalId)}</span><span className="muted small">{locName(s, x.locationId)} · {chairName(s, x.chairId)}</span></span>
                         </label>
                       </li>
                     ))}

@@ -9,6 +9,8 @@ import { Button, ConfirmDialog, EmptyState, Icon, Notice, PageHeader, StatusBadg
 import { RescheduleDrawer } from '../../ui/RescheduleDrawer';
 import { TurnoCard, agendaLink } from '../../ui/components';
 import { PersonPicker } from './PersonPicker';
+import { PageArt } from '../../ui/art/pages';
+import { ToothCharacter } from '../../ui/art/characters';
 
 export function MyAppointments() {
   const s = useDemo();
@@ -27,7 +29,7 @@ export function MyAppointments() {
 
   return (
     <section className="page">
-      <PageHeader eyebrow="M03 · Mis turnos" title="Mis turnos" actions={<Button variant="primary" icon="calendar" onClick={() => navigate('/reservar')}>Pedir turno</Button>}>
+      <PageHeader eyebrow="M03 · Mis turnos" title="Mis turnos" art={<PageArt kind="turnos" />} actions={<Button variant="primary" icon="calendar" onClick={() => navigate('/reservar')}>Pedir turno</Button>}>
         Tus próximos pasos, con el mismo número de turno que ve recepción. Si sos responsable, elegí de quién: cada persona ve solo sus turnos.
       </PageHeader>
       <PersonPicker />
@@ -69,7 +71,7 @@ export function MyAppointments() {
             </section>
             <section className="stack" aria-labelledby="past-title">
               <h2 id="past-title">Pasados y cancelados</h2>
-              {past.length === 0 ? <p className="muted">Sin historial.</p> : <ul className="turno-list">{past.map((a) => <li key={a.id}><TurnoCard a={a} /></li>)}</ul>}
+              {past.length === 0 ? <div className="empty"><ToothCharacter who="coco" mood="dormido" size={72} /><strong>Sin historial</strong><p style={{ margin: 0 }}>Cuando tengas turnos pasados o cancelados, aparecen acá.</p></div> : <ul className="turno-list">{past.map((a) => <li key={a.id}><TurnoCard a={a} /></li>)}</ul>}
             </section>
           </div>
           <aside className="stack">

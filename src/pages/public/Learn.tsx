@@ -3,6 +3,7 @@ import { dispatch, useDemo } from '../../app/store';
 import { LEARNING_CARDS, type LearningState } from '../../domain';
 import { ratioText } from '../../domain/selectors';
 import { Button, ConfirmDialog, Icon, Notice, PageHeader, StatusBadge, announce } from '../../ui/kit';
+import { PageArt } from '../../ui/art/pages';
 
 const STATE_LABEL: Record<LearningState, string> = { nuevo: 'Nueva', en_curso: 'En curso', comprendido: 'Comprendida', completo: 'Sello guardado' };
 const STATE_TONE: Record<LearningState, string> = { nuevo: 'borrador', en_curso: 'en_curso', comprendido: 'aceptado', completo: 'realizado' };
@@ -38,7 +39,7 @@ export function Learn() {
 
   return (
     <section className="page">
-      <PageHeader eyebrow="M15 · Exploración voluntaria" title="Tu primera visita, con claridad" actions={<Button variant="ghost" icon="refresh" onClick={() => setConfirmReset(true)}>Reiniciar colección</Button>}>
+      <PageHeader eyebrow="M15 · Exploración voluntaria" title="Tu primera visita, con claridad" art={<PageArt kind="aprender" />} actions={<Button variant="ghost" icon="refresh" onClick={() => setConfirmReset(true)}>Reiniciar colección</Button>}>
         Tres situaciones administrativas para entender cómo funciona la clínica. Es opcional: no hay ranking, rachas, premios ni descuentos, y no cambia tus turnos. La guía de cada tarjeta se puede leer sin jugar.
       </PageHeader>
 

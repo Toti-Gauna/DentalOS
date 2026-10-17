@@ -39,6 +39,15 @@ function StickerArt({ id, earned }: { id: string; earned: boolean }) {
   return <span className={`sticker ${earned ? 'is-earned' : ''}`} aria-hidden="true">{inner}</span>;
 }
 
+/** Salto dentro de la página sin tocar el hash (el router usa #/ruta): desplaza y deja el foco en el título. */
+function goTo(headingId: string) {
+  const h = document.getElementById(headingId);
+  if (!h) return;
+  h.setAttribute('tabindex', '-1');
+  h.scrollIntoView({ behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  h.focus({ preventScroll: true });
+}
+
 export function Kids() {
   const [p, setP, clearP] = useDraft<KidsProgress>('kids', EMPTY);
   const [waving, setWaving] = useState<Character | null>(null);
@@ -72,8 +81,8 @@ export function Kids() {
           <h1 tabIndex={-1} data-page-title>Sonrisas valientes</h1>
           <p className="lede">Conocé a los Brisitos, leé cómo es la primera visita y cepillate dos minutos con nosotros. Todo es para jugar y aprender: no reemplaza lo que te diga tu odontóloga.</p>
           <div className="row wrap">
-            <a className="btn btn-primary btn-lg" href="#cepillado"><Icon name="clock" /> Cepillarme con el reloj</a>
-            <a className="btn btn-lg" href="#cuento"><Icon name="book" /> Leer el cuento</a>
+            <Button variant="primary" size="lg" icon="clock" onClick={() => goTo('brush-title')}>Cepillarme con el reloj</Button>
+            <Button size="lg" icon="book" onClick={() => goTo('story-title')}>Leer el cuento</Button>
           </div>
         </div>
         <div className="kids-hero-art" aria-hidden="true">
@@ -87,7 +96,7 @@ export function Kids() {
         <div className="section-title"><h2 id="meet">Conocé a los Brisitos</h2><span className="muted small tabular">{p.greeted.length} de 4 saludados</span></div>
         <div className="kids-grid">
           {CHARACTERS.map((c) => (
-            <article key={c.id} className="kid-card">
+            <article key={c.id} className={`kid-card ${waving === c.id ? 'is-waving' : ''}`}>
               <ToothCharacter who={c.id} mood={waving === c.id ? 'guino' : p.greeted.includes(c.id) ? 'feliz' : 'sorpresa'} size={120} title={`${c.name}, ${waving === c.id ? 'te guiña un ojo' : 'te mira'}`} />
               <h3>{c.name}</h3>
               <p className="kid-tooth">{c.tooth}</p>

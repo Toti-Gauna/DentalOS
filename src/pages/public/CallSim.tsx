@@ -7,6 +7,7 @@ import { byId, personLabel, proName, serviceName, upcomingFor } from '../../doma
 import { addDays, at, fmtShort, parts, toMs } from '../../domain/time';
 import { Button, Icon, Notice, PageHeader, announce } from '../../ui/kit';
 import { ToneEngine } from '../../ui/tones';
+import { PageArt } from '../../ui/art/pages';
 
 interface Option { id: string; label: string }
 interface Step { line: string; options: Option[] }
@@ -236,7 +237,7 @@ export function CallSim() {
     : { on: true, label: 'Tonos suaves activos' };
   return (
     <section className="page">
-      <PageHeader eyebrow="M07 · Canal simulado" title="Llamada simulada">
+      <PageHeader eyebrow="M07 · Canal simulado" title="Llamada simulada" art={<PageArt kind="llamada" />}>
         Voluntaria y local: sin micrófono, sin reconocimiento ni voz sintetizada, sin telefonía. Respuestas preparadas y transcripción completa. Los sonidos son dos tonos suaves opcionales.
       </PageHeader>
       <div className="grid-2" style={{ alignItems: 'start' }}>
@@ -266,7 +267,7 @@ export function CallSim() {
           ) : (
             <div className="call-screen" aria-label="Llamada simulada">
               <div className="row between">
-                <span><Icon name="phone" /> {active ? (pending ? 'Asistente hablando (texto)…' : 'Llamada activa · simulada') : session.status === 'detenida' ? 'Llamada detenida' : 'Llamada terminada'}</span>
+                <span className="row" style={{ gap: 8 }}><Icon name="phone" /> {active ? (pending ? 'Asistente hablando (texto)…' : 'Llamada activa · simulada') : session.status === 'detenida' ? 'Llamada detenida' : 'Llamada terminada'}{active && <span className="wave" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></span>}</span>
                 <span className="muted small">{session.personId ? personLabel(s, session.personId) : 'Sin identificar'}{session.requestId ? ` · ${session.requestId}` : ''}</span>
               </div>
               <div className="call-status" aria-label="Estado de la llamada">

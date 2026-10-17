@@ -32,16 +32,34 @@ export function OrthoArt({ kind, width = 240, title }: { kind: Appliance; width?
     <svg className="ortho-art" width={width} height={(width * 130) / 240} viewBox="0 0 240 130" role={title ? 'img' : undefined} aria-hidden={title ? undefined : true} focusable="false">
       {title && <title>{title}</title>}
       <defs>
-        <linearGradient id={id('gum')} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#efb3ad" /><stop offset="1" stopColor="#dc8f89" /></linearGradient>
-        <linearGradient id={id('en')} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#f6f1e6" /><stop offset="1" stopColor="#ffffff" /></linearGradient>
+        <linearGradient id={id('gum')} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#f3c1bb" /><stop offset=".6" stopColor="#e7a29c" /><stop offset="1" stopColor="#d88a84" /></linearGradient>
+        <radialGradient id={id('en')} cx=".38" cy=".35" r=".9"><stop offset="0" stopColor="#ffffff" /><stop offset=".5" stopColor="#fbf8f1" /><stop offset=".85" stopColor="#efe6d4" /><stop offset="1" stopColor="#e2d5bc" /></radialGradient>
+        <linearGradient id={id('incisal')} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#96bedb" stopOpacity="0" /><stop offset="1" stopColor="#96bedb" stopOpacity=".5" /></linearGradient>
+        <linearGradient id={id('cerv')} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d6b480" stopOpacity=".45" /><stop offset="1" stopColor="#d6b480" stopOpacity="0" /></linearGradient>
+        <filter id={id('soft')} x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6" /></filter>
         <linearGradient id={id('steel')} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f0f3f4" /><stop offset=".5" stopColor="#aab2b7" /><stop offset="1" stopColor="#7d868c" /></linearGradient>
         <linearGradient id={id('aligner')} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d9eef7" stopOpacity=".55" /><stop offset="1" stopColor="#bfe0ee" stopOpacity=".35" /></linearGradient>
         <linearGradient id={id('acrylic')} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#9fd3cc" stopOpacity=".85" /><stop offset="1" stopColor="#6fb9b0" stopOpacity=".7" /></linearGradient>
       </defs>
       {kind === 'retenedor_removible' && <path d="M8 6 C70 -4 170 -4 232 6 L232 40 C170 30 70 30 8 40 Z" fill={`url(#${id('acrylic')})`} />}
       <path d="M0 8 C60 18 180 18 240 8 L240 52 C200 44 170 40 120 40 C70 40 40 44 0 52 Z" fill={`url(#${id('gum')})`} />
-      {TEETH.map((t, i) => <path key={i} d={crown(t, i)} fill={`url(#${id('en')})`} stroke="#a59c8b" strokeWidth="1.5" />)}
-      {TEETH.map((t, i) => <ellipse key={`s${i}`} cx={t.x + t.w * 0.3} cy={t.y + t.h * 0.35} rx={t.w * 0.12} ry={t.h * 0.18} fill="#fff" opacity=".7" />)}
+      {TEETH.map((t, i) => (
+        <g key={i}>
+          <clipPath id={id(`c${i}`)}><path d={crown(t, i)} /></clipPath>
+          <path d={crown(t, i)} fill={`url(#${id('en')})`} />
+          <g clipPath={`url(#${id(`c${i}`)})`}>
+            <rect x={t.x - 2} y={t.y + t.h * 0.72} width={t.w + 4} height={t.h * 0.3} fill={`url(#${id('incisal')})`} />
+            <rect x={t.x - 2} y={t.y - 2} width={t.w + 4} height={t.h * 0.35} fill={`url(#${id('cerv')})`} />
+            <ellipse cx={t.x + t.w * 0.32} cy={t.y + t.h * 0.42} rx={t.w * 0.13} ry={t.h * 0.24} fill="#fff" opacity=".85" filter={`url(#${id('soft')})`} />
+            <ellipse cx={t.x + t.w * 0.28} cy={t.y + t.h * 0.3} rx={t.w * 0.05} ry={t.h * 0.08} fill="#fff" />
+            <path d={crown(t, i)} fill="none" stroke="#fff" strokeWidth="2.4" opacity=".55" />
+          </g>
+          <path d={crown(t, i)} fill="none" stroke="#a99d86" strokeWidth="1.2" />
+        </g>
+      ))}
+      <path d="M0 52 C40 44 70 40 120 40 C170 40 200 44 240 52" stroke="#7d3b37" strokeOpacity=".22" strokeWidth="6" fill="none" filter={`url(#${id('soft')})`} />
+      <path d="M0 52 C40 44 70 40 120 40 C170 40 200 44 240 52" stroke="#c2706a" strokeWidth="1.4" fill="none" />
+      <path d="M14 22 C70 26 170 26 226 22" stroke="#fff" strokeOpacity=".35" strokeWidth="3" fill="none" strokeLinecap="round" filter={`url(#${id('soft')})`} />
 
       {(kind === 'brackets_metalicos' || kind === 'brackets_esteticos') && (
         <g>
@@ -49,6 +67,8 @@ export function OrthoArt({ kind, width = 240, title }: { kind: Appliance; width?
           {mids.map((m, i) => (
             <g key={i}>
               <rect x={m.cx - 7} y={m.cy - 6} width="14" height="12" rx="3" fill={kind === 'brackets_metalicos' ? `url(#${id('steel')})` : '#fbfbf9'} stroke={kind === 'brackets_metalicos' ? '#5f686d' : '#c9d2d6'} strokeWidth="1.2" />
+              <rect x={m.cx - 7} y={m.cy - 1.2} width="14" height="2.4" fill={kind === 'brackets_metalicos' ? '#5f686d' : '#dfe4e6'} opacity=".8" />
+              <ellipse cx={m.cx - 3} cy={m.cy - 3.2} rx="2" ry="1" fill="#fff" opacity=".9" />
               {kind === 'brackets_metalicos'
                 ? <circle cx={m.cx} cy={m.cy} r="4.6" fill="none" stroke="#2f8f86" strokeWidth="2.2" />
                 : <rect x={m.cx - 4} y={m.cy - 1} width="8" height="2" fill="#d8dee1" />}

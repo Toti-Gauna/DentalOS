@@ -1,5 +1,7 @@
 # Dirección visual y sistema de componentes (fase 2)
 
+> Actualizaciones posteriores: fase 2b en [`premium.md`](premium.md) y fase 2c (componentes nativos, fondo animado, dientes premium) en [`premium-v3.md`](premium-v3.md).
+
 Capturas reproducibles con la seed `dentalos-v1` y el reloj del 19/10/2026 a las 09:00:
 - **Antes:** `docs/evidence/before/` (390, 768 y 1440 px).
 - **Después:** `docs/evidence/after/` (320, 390, 768 y 1440 px).

@@ -17,6 +17,8 @@ const ROUTES: [string, string][] = [
 test('capturas por viewport', async ({ page }) => {
   test.setTimeout(120_000);
   mkdirSync(DIR, { recursive: true });
+  // Capturas deterministas: sin transiciones ni fondo en movimiento.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   for (const w of VIEWPORTS) {

@@ -58,7 +58,10 @@ export function ToothCharacter({ who, mood = 'feliz', size = 120, title, classNa
     <svg className={`character ${className}`} width={size} height={(size * 150) / 120} viewBox="0 0 120 150" role={title ? 'img' : undefined} aria-hidden={title ? undefined : true} focusable="false">
       {title && <title>{title}</title>}
       <defs>
-        <linearGradient id={g('body')} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset="1" stopColor="#efe7d8" /></linearGradient>
+        <radialGradient id={g('body')} cx=".36" cy=".28" r=".9"><stop offset="0" stopColor="#ffffff" /><stop offset=".45" stopColor="#fcf9f3" /><stop offset=".8" stopColor="#f0e8d8" /><stop offset="1" stopColor="#e4d8c0" /></radialGradient>
+        <linearGradient id={g('warm')} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d6b480" stopOpacity="0" /><stop offset="1" stopColor="#d6b480" stopOpacity=".35" /></linearGradient>
+        <clipPath id={g('clip')}><path d={b.body} /></clipPath>
+        <filter id={g('soft')} x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.4" /></filter>
         <linearGradient id={g('cape')} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2f8f86" /><stop offset="1" stopColor="#1b4a46" /></linearGradient>
         <linearGradient id={g('gold')} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#c8952c" /><stop offset=".5" stopColor="#f6dc8c" /><stop offset="1" stopColor="#b8862b" /></linearGradient>
       </defs>
@@ -70,8 +73,14 @@ export function ToothCharacter({ who, mood = 'feliz', size = 120, title, classNa
       <path d={`M${b.cx - 40} 78 C${b.cx - 52} 80 ${b.cx - 56} 92 ${b.cx - 50} 98`} stroke="#fbf8f2" strokeWidth="5" strokeLinecap="round" fill="none" />
       <path d={`M${b.cx + 40} 78 C${b.cx + 52} 76 ${b.cx + 56} 64 ${b.cx + 52} 56`} stroke={outline} strokeWidth="9" strokeLinecap="round" fill="none" />
       <path d={`M${b.cx + 40} 78 C${b.cx + 52} 76 ${b.cx + 56} 64 ${b.cx + 52} 56`} stroke="#fbf8f2" strokeWidth="5" strokeLinecap="round" fill="none" />
-      <path d={b.body} fill={`url(#${g('body')})`} stroke={outline} strokeWidth="2.8" strokeLinejoin="round" />
-      <ellipse cx={b.cx - 22} cy={b.eyeY - 22} rx="7" ry="11" fill="#fff" opacity=".85" transform={`rotate(-20 ${b.cx - 22} ${b.eyeY - 22})`} />
+      <path d={b.body} fill={`url(#${g('body')})`} />
+      <g clipPath={`url(#${g('clip')})`}>
+        <rect x="0" y={b.eyeY + 18} width="120" height="60" fill={`url(#${g('warm')})`} />
+        <ellipse cx={b.cx - 22} cy={b.eyeY - 20} rx="8" ry="14" fill="#fff" opacity=".95" transform={`rotate(-20 ${b.cx - 22} ${b.eyeY - 20})`} filter={`url(#${g('soft')})`} />
+        <ellipse cx={b.cx - 25} cy={b.eyeY - 27} rx="2.6" ry="4.6" fill="#fff" transform={`rotate(-20 ${b.cx - 25} ${b.eyeY - 27})`} />
+        <path d={b.body} fill="none" stroke="#fff" strokeWidth="4" opacity=".6" />
+      </g>
+      <path d={b.body} fill="none" stroke={outline} strokeWidth="2.8" strokeLinejoin="round" />
       {/* mejillas */}
       <ellipse cx={b.cx - 24} cy={b.eyeY + 12} rx="7" ry="4.5" fill="#f4a7a3" opacity=".75" />
       <ellipse cx={b.cx + 24} cy={b.eyeY + 12} rx="7" ry="4.5" fill="#f4a7a3" opacity=".75" />

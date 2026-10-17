@@ -7,6 +7,7 @@ import { byId, dependentsOf, estimateTotals, homonymsOf, ledgerNet, money, pastF
 import { fmtShort } from '../../domain/time';
 import { IdChip, TurnoCard, agendaLink } from '../../ui/components';
 import { Button, Drawer, EmptyState, ErrorSummary, Field, Notice, PageHeader, StatusBadge, announce, useResult } from '../../ui/kit';
+import { PersonAvatar } from '../../ui/art/brand';
 
 export function People() {
   const s = useDemo();
@@ -33,7 +34,7 @@ export function People() {
                 return (
                   <tr key={p.id}>
                     <td className="code">{p.id}</td>
-                    <td>{p.firstName} {p.lastName}{homonymsOf(s, p.id).length > 0 && <> <span className="tag">homónimo</span></>}</td>
+                    <td><span className="with-avatar"><PersonAvatar id={p.id} name={`${p.firstName} ${p.lastName}`} size={30} /><span>{p.firstName} {p.lastName}{homonymsOf(s, p.id).length > 0 && <> <span className="tag">homónimo</span></>}</span></span></td>
                     <td className="tabular">{p.birthYear || '—'}</td>
                     <td className="small">{deps.length ? `Responsable de ${deps.map((d) => d.person.id).join(', ')}` : resp.length ? `Dependiente de ${resp.map((r) => r!.id).join(', ')}` : '—'}</td>
                     <td className="small tabular">{next ? `${fmtShort(next.start)} · ${next.id}` : '—'}</td>
@@ -143,7 +144,7 @@ export function PersonDetail({ id }: { id: string }) {
                 return (
                   <a key={m.id} className="family-member" href={`#/admin/personas/${m.id}`} aria-current={m.id === p.id ? 'page' : undefined}>
                     <span className="role">{role}</span>
-                    <strong>{m.firstName} {m.lastName}</strong>
+                    <strong className="with-avatar"><PersonAvatar id={m.id} name={`${m.firstName} ${m.lastName}`} size={28} />{m.firstName} {m.lastName}</strong>
                     <span><IdChip id={m.id} /> <span className="small muted">({m.birthYear})</span></span>
                     <span className="small muted">{next ? `Próximo: ${serviceName(s, next.serviceTypeId)} · ${fmtShort(next.start)}` : 'Sin turnos próximos'}</span>
                   </a>

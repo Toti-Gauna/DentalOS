@@ -59,6 +59,17 @@ test('Brisa Chicos: saludos, cuento y álbum persisten en el dispositivo y se pu
   await expect(page.getByText('0 de 4 saludados')).toBeVisible();
 });
 
+test('Brisa Chicos: los accesos del encabezado llevan al reloj y al cuento sin salir de la página', async ({ page }) => {
+  await fresh(page, '#/chicos');
+  await page.getByRole('button', { name: 'Cepillarme con el reloj' }).click();
+  await expect(page).toHaveURL(/#\/chicos$/);
+  await expect(page.getByRole('heading', { name: 'Dos minutos con Coco' })).toBeFocused();
+  await page.getByRole('button', { name: 'Leer el cuento' }).click();
+  await expect(page).toHaveURL(/#\/chicos$/);
+  await expect(page.locator('#story-title')).toBeFocused();
+  await expect(page.locator('h1')).toHaveText('Sonrisas valientes');
+});
+
 test('reloj de cepillado: avanza por zonas, termina y da sticker (reloj controlado)', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-10-19T12:00:00Z') });
   await fresh(page, '#/chicos');

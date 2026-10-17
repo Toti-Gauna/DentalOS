@@ -15,6 +15,7 @@ import { Learn } from '../pages/public/Learn';
 import { Kids } from '../pages/public/Kids';
 import { BrandMark } from '../ui/art/brand';
 import { sound, type Sfx } from '../ui/sound';
+import { CommandPalette } from '../ui/CommandPalette';
 
 // El panel de la clínica se carga aparte: el portal de pacientes no descarga su código.
 const Today = lazy(() => import('../pages/admin/Today').then((m) => ({ default: m.Today })));
@@ -61,6 +62,7 @@ const ADMIN_NAV = [
   { to: '/admin/informes', label: 'Informes', icon: 'chart', m: 'M13' },
   { to: '/admin/config', label: 'Configuración y simulador', icon: 'settings', m: 'M14' },
 ];
+const PALETTE_ROUTES = [{ group: 'Panel de la clínica', items: ADMIN_NAV }, { group: 'Portal de pacientes', items: PUBLIC_NAV }];
 
 function route(segments: string[]): ReactNode {
   const [a, b, c, d] = segments;
@@ -136,6 +138,36 @@ function SoundToggle() {
   );
 }
 
+/** Capa ambiental animada (aurora + grano). Decorativa: queda quieta con movimiento reducido. */
+function Ambient({ kids }: { kids: boolean }) {
+  return (
+    <div className="ambient" aria-hidden="true">
+      <span className="blob b1" /><span className="blob b2" /><span className="blob b3" />
+      {kids && <span className="fizz-layer">{Array.from({ length: 12 }, (_, i) => <span key={i} className={`fizz k${i}`} />)}</span>}
+      <span className="grain" />
+    </div>
+  );
+}
+
+/** Popover nativo con el alcance de la demo (el banner sigue siempre visible). */
+function DemoInfo() {
+  return (
+    <>
+      <button type="button" className="demo-info-btn" popoverTarget="demo-info"><Icon name="info" size={14} /> ¿Qué es esta demo?</button>
+      <div id="demo-info" popover="auto" className="demo-info" role="dialog" aria-label="Qué es esta demo">
+        <strong>DentalOS · demo pre-venta</strong>
+        <ul>
+          <li>Clínica Brisa, sus personas y sus turnos son ficticios.</li>
+          <li>Todo se guarda solo en este dispositivo; no hay servidor, IA ni envíos reales.</li>
+          <li>Los roles son vistas de muestra, no inicios de sesión.</li>
+          <li>No diagnostica ni recomienda tratamientos.</li>
+        </ul>
+        <button type="button" className="btn btn-sm btn-secondary" popoverTarget="demo-info" popoverTargetAction="hide">Entendido</button>
+      </div>
+    </>
+  );
+}
+
 function RoleSwitch() {
   const ui = useUi();
   return (
@@ -192,7 +224,9 @@ function SystemNotices() {
 export function App() {
   const { segments, path } = useRoute();
   const admin = segments[0] === 'admin';
+  const kids = segments[0] === 'chicos';
   const [menuOpen, setMenuOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const prevTitle = useRef<HTMLElement | null>(null);
   const prevText = useRef<string | null>(null);
 
@@ -238,6 +272,15 @@ export function App() {
     return () => clearTimeout(timer);
   }, [path]);
 
+  // ⌘K / Ctrl+K abre la paleta de comandos en cualquier área.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaletteOpen(true); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const nav = admin ? ADMIN_NAV : PUBLIC_NAV;
   const isActive = (to: string) => {
     if (to === '/' || to === '/admin') return path === to;
@@ -247,11 +290,14 @@ export function App() {
   };
 
   return (
-    <div className={admin ? 'app admin' : 'app public'}>
+    <div className={`app ${admin ? 'admin' : 'public'}${kids ? ' kids-mode' : ''}`}>
+      <Ambient kids={kids} />
       <a href="#main" className="skip" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }}>Saltar al contenido</a>
+      <div className="masthead">
       <div className="demo-banner" role="note">
         <strong>{BANNER}</strong>
         <StorageStatus />
+        <DemoInfo />
       </div>
       <header className="topbar">
         <div className="topbar-inner">
@@ -262,9 +308,11 @@ export function App() {
           </nav>
           <SoundToggle />
           <RoleSwitch />
+          {admin && <button type="button" className="search-btn btn btn-ghost btn-sm" onClick={() => setPaletteOpen(true)} aria-label="Buscar (Ctrl K)" aria-keyshortcuts="Control+K Meta+K"><Icon name="search" size={16} /><span>Buscar</span><kbd>Ctrl K</kbd></button>}
           {admin && <button className="menu-toggle btn btn-ghost" aria-expanded={menuOpen} aria-controls="main-nav" onClick={() => setMenuOpen((v) => !v)}><Icon name="list" /> <span>Menú</span></button>}
         </div>
       </header>
+      </div>
       <div className="layout">
         <nav id="main-nav" className={`nav ${menuOpen ? 'open' : ''}`} aria-label={admin ? 'Panel de la clínica' : 'Portal de pacientes'}>
           <ul>
@@ -287,6 +335,7 @@ export function App() {
           <p className="footer-note">DentalOS · demostración pre-venta con datos sintéticos. No es un producto clínico ni historia clínica productiva. Sin backend, sin IA, sin mensajes, llamadas ni cobros reales.</p>
         </div>
       </footer>
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} routes={PALETTE_ROUTES} />
       <LiveRegion />
     </div>
   );
