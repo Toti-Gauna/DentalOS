@@ -1,5 +1,5 @@
 import { mkdirSync } from 'node:fs';
-import { test } from '@playwright/test';
+import { test } from './fixtures';
 
 // Capturas reproducibles sobre la seed inicial: solo con EVIDENCE=1 (npm run evidence).
 // EVIDENCE_DIR elige carpeta (p. ej. docs/evidence/before o docs/evidence/after).

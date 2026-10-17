@@ -5,8 +5,9 @@ import { setActingPerson, useDraft, useUi } from '../../app/ui-state';
 import { findSlots, validateNewPerson, type SlotRef } from '../../domain';
 import { slotKey } from '../../domain/scheduling';
 import { byId, chairName, locName, personLabel, proName, serviceName } from '../../domain/selectors';
-import { addDays, at, fmtDateOnly, fmtLong, parts } from '../../domain/time';
-import { ConflictNotice, DateStrip } from '../../ui/components';
+import { addDays, at, fmtDateOnly, fmtLong, hhmmToMinutes, parts } from '../../domain/time';
+import { ConflictNotice } from '../../ui/components';
+import { MonthCalendar } from '../../ui/Calendar';
 import { Button, EmptyState, ErrorSummary, Field, Icon, Notice, PageHeader, StatusBadge, announce } from '../../ui/kit';
 import { PersonPicker } from './PersonPicker';
 import { PageArt } from '../../ui/art/pages';
@@ -42,15 +43,27 @@ export function Booking() {
   const st = byId(s.serviceTypes, draft.serviceTypeId);
   const pros = s.professionals.filter((p) => st && p.serviceTypeIds.includes(st.id));
 
-  const slots = useMemo(() => (st && services.some((x) => x.id === st.id)
-    ? findSlots(s, { serviceTypeId: st.id, professionalId: draft.professionalId || null, locationId: draft.locationId || null, from: at(draft.fromDate || today, '00:00'), limit: 8, period: draft.period, personId })
-    : []), [s, st, services, draft.professionalId, draft.locationId, draft.fromDate, draft.period, personId, today]);
-  const dayNote = (d: string) => {
-    if (!st) return null;
+  // Todos los horarios libres del plazo de reserva con los filtros elegidos: alimentan el calendario y la lista del día.
+  const allSlots = useMemo(() => (st && services.some((x) => x.id === st.id)
+    ? findSlots(s, { serviceTypeId: st.id, professionalId: draft.professionalId || null, locationId: draft.locationId || null, from: at(today, '00:00'), limit: 5000, period: draft.period, personId })
+    : []), [s, st, services, draft.professionalId, draft.locationId, draft.period, personId, today]);
+  const freeByDay = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const x of allSlots) { const p = parts(x.start); if (!m.has(p.date)) m.set(p.date, new Set()); m.get(p.date)!.add(p.hhmm); }
+    return m;
+  }, [allSlots]);
+  const attends = (d: string) => {
     const wd = parts(at(d, '12:00')).weekday;
-    if (!s.availabilityRules.some((r) => r.weekday === wd && st && pros.some((p) => p.id === r.professionalId))) return 'Sin atención';
-    return null;
+    return s.availabilityRules.some((r) => r.weekday === wd && pros.some((p) => p.id === r.professionalId) && (!draft.professionalId || r.professionalId === draft.professionalId) && (!draft.locationId || r.locationId === draft.locationId));
   };
+  const dayCount = (d: string) => (freeByDay.get(d)?.size ?? (attends(d) ? 0 : null));
+  // Día mostrado: el elegido si tiene horarios; si no (filtros nuevos, día ya sin cupos), el primero con horarios.
+  const firstFree = [...freeByDay.keys()].sort()[0];
+  const day = draft.fromDate && freeByDay.has(draft.fromDate) ? draft.fromDate : firstFree ?? draft.fromDate ?? today;
+  const movedDay = !!draft.fromDate && draft.fromDate !== day && !!firstFree;
+  const slots = allSlots.filter((x) => parts(x.start).date === day);
+  const morning = slots.filter((x) => hhmmToMinutes(parts(x.start).hhmm) < 13 * 60);
+  const afternoon = slots.filter((x) => hhmmToMinutes(parts(x.start).hhmm) >= 13 * 60);
   const chosen = draft.chosen;
   const chosenListed = !!chosen && slots.some((x) => slotKey(x) === slotKey(chosen));
   // Indicador de avance: se completa solo a medida que la persona elige (no bloquea ni oculta pasos).
@@ -181,9 +194,9 @@ export function Booking() {
 
         <div className="stack step-card">
           <h2 className="step-title"><span className="step-n" aria-hidden="true">3</span> Horarios disponibles</h2>
-          <DateStrip label="Buscar desde" value={draft.fromDate} start={today} days={14} min={today} max={addDays(today, s.settings.horizonDays - 1)}
-            onChange={(d) => up({ fromDate: d, chosen: null })} note={dayNote} />
-          {slots.length === 0 ? (
+          <MonthCalendar label="Elegí el día" value={day} today={today} min={today} max={addDays(today, s.settings.horizonDays - 1)}
+            count={dayCount} onChange={(d) => up({ fromDate: d, chosen: null })} />
+          {allSlots.length === 0 ? (
             <EmptyState title="No hay cupos con estos filtros" icon="calendar" action={
               <div className="row wrap">
                 <Button onClick={() => up({ professionalId: '', locationId: '', period: 'cualquiera', fromDate: today })}>Quitar filtros</Button>
@@ -192,13 +205,14 @@ export function Booking() {
               Cero resultados en {s.settings.horizonDays} días. No forzamos un turno ficticio. La lista de espera no es una reserva.
             </EmptyState>
           ) : (
-            <fieldset>
-              <legend className="sr-only">Elegí un horario</legend>
-              {[...new Set(slots.map((x) => parts(x.start).date))].map((d) => (
-                <div key={d}>
-                  <h3 className="slot-day">{fmtDateOnly(d)}</h3>
+            <fieldset className="day-slots">
+              <legend><span className="slot-day">{fmtDateOnly(day)}</span> <span className="muted small">· {freeByDay.get(day)?.size ?? 0} horarios libres</span></legend>
+              {movedDay && <p className="hint">El día elegido ya no tiene horarios con estos filtros: te mostramos el primero disponible.</p>}
+              {([['Mañana', morning], ['Tarde', afternoon]] as const).filter(([, list]) => list.length > 0).map(([name, list]) => (
+                <div key={name}>
+                  <h3 className="slot-period">{name}</h3>
                   <ul className="list slot-grid">
-                    {slots.filter((x) => parts(x.start).date === d).map((x) => (
+                    {list.map((x) => (
                       <li key={slotKey(x)}>
                         <label className="list-item slot-option">
                           <input type="radio" name="slot" checked={!!chosen && slotKey(chosen) === slotKey(x)} onChange={() => { up({ chosen: x }); setCommitError(null); }} />

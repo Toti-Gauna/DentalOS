@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { dispatch, useDemo } from '../../app/store';
 import { useDraft } from '../../app/ui-state';
 import { activeReplies } from '../../domain';
 import { byId, personLabel, upcomingFor } from '../../domain/selectors';
-import { fmtShort } from '../../domain/time';
+import { fmtDateOnly, fmtShort, parts } from '../../domain/time';
 import { Button, Icon, Notice, PageHeader, StatusBadge, announce } from '../../ui/kit';
 import { TurnoCard, agendaLink } from '../../ui/components';
 import { PageArt } from '../../ui/art/pages';
@@ -56,14 +56,27 @@ export function WhatsApp() {
             </div>
           </div>
           <div className="chat-log" ref={logRef} role="log" aria-live="polite" aria-relevant="additions" tabIndex={0} aria-label="Mensajes">
-            {msgs.map((m, i) => (
-              <div key={m.id} className={`bubble ${m.from}`}>
-                {m.from === 'sistema' && <Icon name="info" size={14} />}
-                {m.from === 'recepcion' && <span className="who">Recepción (persona)</span>}
-                <span>{m.text}</span>
-                <span className="stamp tabular">{fmtShort(m.at)} · {m.simulated === 'entregado_simulado' ? 'entregado (simulado)' : 'leído (simulado)'}{i < msgs.length - 1 && m.replies ? ' · opciones vencidas' : ''}</span>
-              </div>
-            ))}
+            {msgs.map((m, i) => {
+              const day = parts(m.at).date;
+              const newDay = i === 0 || parts(msgs[i - 1].at).date !== day;
+              const grouped = !newDay && msgs[i - 1].from === m.from;
+              const status = m.simulated === 'entregado_simulado' ? 'entregado (simulado)' : 'leído (simulado)';
+              return (
+                <Fragment key={m.id}>
+                  {newDay && <p className="chat-day"><span>{fmtDateOnly(day)}</span></p>}
+                  <div className={`bubble ${m.from}${grouped ? ' is-grouped' : ''}`}>
+                    {m.from === 'sistema' && <Icon name="info" size={14} />}
+                    {m.from === 'recepcion' && <span className="who">Recepción · persona</span>}
+                    <span className="bubble-text">{m.text}</span>
+                    <span className="stamp tabular" title={`${fmtShort(m.at)} · ${status}`}>
+                      <span className="sr-only">{fmtShort(m.at)} · {status}</span>
+                      <span aria-hidden="true">{parts(m.at).hhmm}{m.from === 'paciente' && <span className={`ticks${m.simulated === 'entregado_simulado' ? '' : ' is-read'}`}>✓✓</span>}</span>
+                      {i < msgs.length - 1 && m.replies ? <span className="stale"> · opciones vencidas</span> : null}
+                    </span>
+                  </div>
+                </Fragment>
+              );
+            })}
             {replies.length > 0 && (
               <div className="replies" role="group" aria-label="Respuestas rápidas">
                 {replies.map((r) => <button key={r.id} className="reply" onClick={() => choose(r.id)}>{r.label}</button>)}

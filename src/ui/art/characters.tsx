@@ -97,7 +97,7 @@ export function ToothCharacter({ who, mood = 'feliz', size = 120, title, classNa
       {who === 'mora' && mood !== 'valiente' && <path d="M88 20 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" fill={`url(#${g('gold')})`} />}
       {/* cepillo en la mano derecha (valiente) */}
       {mood === 'valiente' && <g transform={`rotate(-30 ${b.cx + 52} 54)`}><rect x={b.cx + 48} y="22" width="8" height="40" rx="4" fill="#2f8f86" stroke="#1b4a46" strokeWidth="1.5" /><rect x={b.cx + 46} y="12" width="12" height="13" rx="3" fill="#fff" stroke="#8f979c" strokeWidth="1.5" /><path d={`M${b.cx + 48} 15 v8 M${b.cx + 51} 15 v8 M${b.cx + 54} 15 v8 M${b.cx + 57} 15 v8`} stroke="#9fd3cc" strokeWidth="1.4" /></g>}
-      {mood === 'dormido' && <g fill={ink} fontFamily="Manrope, sans-serif" fontWeight="800"><text x="92" y="30" fontSize="14">z</text><text x="102" y="18" fontSize="10">z</text></g>}
+      {mood === 'dormido' && <g fill={ink} fontFamily="'Source Sans 3', sans-serif" fontWeight="700"><text x="92" y="30" fontSize="14">z</text><text x="102" y="18" fontSize="10">z</text></g>}
     </svg>
   );
 }

@@ -378,7 +378,7 @@ function BrushTimer({ onDone, brushed }: { onDone: () => void; brushed: number }
         <svg viewBox="0 0 180 180" width="180" height="180" className="brush-ring" role="img" aria-label={finished ? 'Terminado' : `Quedan ${left} segundos`}>
           <circle cx="90" cy="90" r={r} fill="none" style={{ stroke: 'var(--line)' }} strokeWidth="12" />
           <circle cx="90" cy="90" r={r} fill="none" style={{ stroke: 'var(--primary-fill)' }} strokeWidth="12" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ * (1 - elapsed / total)} transform="rotate(-90 90 90)" />
-          <text x="90" y="98" textAnchor="middle" fontFamily="Manrope, sans-serif" fontWeight="800" fontSize="30" style={{ fill: 'var(--ink)' }}>{`${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`}</text>
+          <text x="90" y="98" textAnchor="middle" fontFamily="'Source Sans 3', sans-serif" fontWeight="700" fontSize="30" style={{ fill: 'var(--ink)' }}>{`${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`}</text>
         </svg>
         <div className={`brush-char ${running ? 'is-brushing' : ''}`}><ToothCharacter who="coco" mood={finished ? 'feliz' : 'valiente'} size={110} /></div>
         <ol className="zones" aria-label="Zonas de la boca">

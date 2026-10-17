@@ -1,6 +1,8 @@
 # Dirección visual (lote 2 · R-VIS-02 y R-VIS-03)
 
-**Estado: pendiente de la elección de Ignacio.** No hay una aprobación previa documentada (se revisaron `docs/checkpoint.md`, `docs/design.md`, los documentos de fases anteriores y la auditoría). Ninguna propuesta está aprobada por defecto, y el silencio no cuenta como aprobación.
+**Estado: elegida la propuesta A · Editorial clínico cálido (17/10/2026), con dos correcciones.** Se aplica desde el lote 3; ver “Registro de la elección”.
+
+> Lo que sigue describe las tres propuestas tal como se presentaron en el lote 2. La ruta `#/propuestas` se retiró en el lote 3 junto con las fuentes de B y C; las láminas quedan en `docs/evidence/l2/`.
 
 ## Dónde verlas
 
@@ -62,14 +64,14 @@ Hay tres formas:
 
 | Campo | Valor |
 | --- | --- |
-| Fecha | — |
-| Elección | — |
-| Combinaciones | — |
-| Correcciones pedidas | — |
-| Tokens congelados en | — (L3: `src/styles/app.css`) |
-| Fuentes que se quitan | — (las de las propuestas descartadas) |
+| Fecha | 17/10/2026 |
+| Elección | **A · Editorial clínico cálido** (“La visual que más me gusta es la A”; “Laburá con este estilo a partir de ahora”). |
+| Combinaciones | Ninguna. |
+| Correcciones pedidas | 1) La fecha de la reserva tiene que ser “un calendario de verdad para elegir fecha”. 2) “No me gusta cómo se ven los mensajes en la card de mensajes” del chat. |
+| Tokens congelados en | `src/styles/app.css` (`:root`, tokens `light-dark()`), medidos en `src/styles/contrast.test.ts`. |
+| Fuentes que se quitan | Plus Jakarta Sans, IBM Plex Sans, IBM Plex Mono y Manrope. Quedan Newsreader (títulos) y Source Sans 3 (texto e interfaz). |
 
-Con la elección registrada:
+Cómo se resolvieron las correcciones en el lote 3:
 
-- R-VIS-03 pasa a `probado` (evidencia: este documento).
-- L3 aplica la dirección a todo el portal y el panel.
+- **Calendario:** `src/ui/Calendar.tsx`. Es un mes completo de lunes a domingo, con la cantidad de horarios libres de cada día. Los días sin atención o fuera de plazo quedan apagados (`aria-disabled`, con el motivo en el nombre accesible). Se navega por mes y por teclado (flechas, Inicio y Fin, RePág y AvPág). Al elegir un día, la reserva muestra todos sus horarios agrupados en Mañana y Tarde.
+- **Mensajes del chat:** burbujas con cola, con hora y estado dentro de la burbuja (✓✓; el estado “(simulado)” queda en el nombre accesible), un separador por día y los mensajes seguidos agrupados. El fondo es de papel liso, sin patrón.

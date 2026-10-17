@@ -9,9 +9,21 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <title>Clínica Brisa · DentalOS demo</title>
     <script src="./theme-init.js"></script>
+    <style>
+      /* Carga inicial: dura lo que tarda de verdad en llegar el código; React la reemplaza al montar. */
+      :root { color-scheme: light dark; }
+      :root[data-theme='light'] { color-scheme: light; }
+      :root[data-theme='dark'] { color-scheme: dark; }
+      body { margin: 0; background: light-dark(#f6f1e8, #0e1615); color: light-dark(#1b2a28, #f2ece1); }
+      .boot { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 12px; font: 17px/1.4 Georgia, serif; }
+      .boot-line { width: 120px; height: 1.5px; background: light-dark(#d8cdbb, #33433f); overflow: hidden; }
+      .boot-line::after { content: ''; display: block; width: 40%; height: 100%; background: light-dark(#b08a3e, #d9b66c); animation: boot 1.2s ease-in-out infinite alternate; }
+      @keyframes boot { to { transform: translateX(150%); } }
+      @media (prefers-reduced-motion: reduce) { .boot-line::after { animation: none; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="boot" role="status"><span>Cargando la demo de Clínica Brisa…</span><span class="boot-line" aria-hidden="true"></span></div></div>
     <noscript>Esta demo local necesita JavaScript. No envía datos a ningún servidor.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>

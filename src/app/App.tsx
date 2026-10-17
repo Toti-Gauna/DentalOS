@@ -1,9 +1,9 @@
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
-import { fmtShort } from '../domain/time';
-import type { ViewRole } from '../domain';
+import { createElement, lazy, Suspense, useEffect, useRef, useState, type ComponentProps, type ComponentType, type ReactNode } from 'react';
+import { DemoBadge, DemoDock, RoleGate } from './DemoShell';
+import { roleById } from './roles';
 import { navigate, useRoute } from './router';
 import { store, useStore } from './store';
-import { resetUi, setRole, setSoundPref, useUi } from './ui-state';
+import { resetUi, setRole, useUi } from './ui-state';
 import { Button, ConfirmDialog, CrumbsContext, Icon, LiveRegion, Notice, type Crumbs } from '../ui/kit';
 import { LoadingState } from '../ui/components';
 import { Home, LocationPage, ServicePage } from '../pages/public/Home';
@@ -19,30 +19,67 @@ import { CommandPalette } from '../ui/CommandPalette';
 import { ThemeSwitcher, useApplyTheme } from '../ui/ThemeSwitcher';
 
 // El panel de la clínica se carga aparte: el portal de pacientes no descarga su código.
-const Today = lazy(() => import('../pages/admin/Today').then((m) => ({ default: m.Today })));
-const Inbox = lazy(() => import('../pages/admin/Inbox').then((m) => ({ default: m.Inbox })));
-const People = lazy(() => import('../pages/admin/People').then((m) => ({ default: m.People })));
-const PersonDetail = lazy(() => import('../pages/admin/People').then((m) => ({ default: m.PersonDetail })));
-const Odontogram = lazy(() => import('../pages/admin/Odontogram').then((m) => ({ default: m.Odontogram })));
-const OdontogramPicker = lazy(() => import('../pages/admin/Odontogram').then((m) => ({ default: m.OdontogramPicker })));
-const Ortho = lazy(() => import('../pages/admin/Ortho').then((m) => ({ default: m.Ortho })));
-const Estimates = lazy(() => import('../pages/admin/Estimates').then((m) => ({ default: m.Estimates })));
-const Waitlist = lazy(() => import('../pages/admin/Waitlist').then((m) => ({ default: m.Waitlist })));
-const Tasks = lazy(() => import('../pages/admin/Tasks').then((m) => ({ default: m.Tasks })));
-const Reports = lazy(() => import('../pages/admin/Reports').then((m) => ({ default: m.Reports })));
-const Settings = lazy(() => import('../pages/admin/Settings').then((m) => ({ default: m.Settings })));
-// Lote 2: propuestas visuales para elegir dirección. Ruta aislada, sin el marco de la app.
-const Proposals = lazy(() => import('../pages/proposals/Proposals').then((m) => ({ default: m.Proposals })));
+// Si una sección no llega (red caída, versión nueva publicada), se muestra el error con un reintento real.
+// Mismo tipo que acepta React.lazy: cada sección declara sus propias props.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Section = ComponentType<any>;
+let retries = 0;
+/** Carga diferida con reintento. El navegador recuerda un import() fallido, así que el reintento pide la misma URL con
+ *  un parámetro nuevo (la URL viene en el mensaje de error en Chromium y Firefox); si no la informa, queda recargar. */
+function lazyRetry<M, C extends Section>(load: () => Promise<M>, pick: (m: M) => C) {
+  return lazy(async () => {
+    try { return { default: pick(await load()) }; } catch (first) {
+      let error: unknown = first;
+      const retry = async () => {
+        const url = /https?:\/\/\S+?\.js/.exec(String((error as Error)?.message ?? ''))?.[0];
+        try {
+          if (!url) return pick(await load());
+          const mod = await import(/* @vite-ignore */ `${url}?reintento=${++retries}`) as Record<string, unknown>;
+          // En el build, la sección expone su espacio de nombres dentro del chunk: se busca ahí si no está en la raíz.
+          const found = [mod, ...Object.values(mod).filter((v) => typeof v === 'object' && v !== null && (v as Record<symbol, unknown>)[Symbol.toStringTag] === 'Module')]
+            .map((m) => pick(m as M)).find(Boolean);
+          if (!found) throw new Error('La sección cargada no tiene el componente esperado.');
+          return found;
+        } catch (e) { error = e; throw e; }
+      };
+      const Fallback = (props: ComponentProps<C>) => <ChunkError retry={retry} props={props} />;
+      return { default: Fallback as unknown as C };
+    }
+  });
+}
+
+function ChunkError<C extends Section>({ retry, props }: { retry: () => Promise<C>; props: ComponentProps<C> }) {
+  const [loaded, setLoaded] = useState<C | null>(null);
+  const [state, setState] = useState<'error' | 'loading' | 'again'>('error');
+  if (loaded) return createElement(loaded as ComponentType<ComponentProps<C>>, props);
+  const onRetry = () => {
+    setState('loading');
+    retry().then((c) => setLoaded(() => c)).catch(() => setState('again'));
+  };
+  return (
+    <section className="page narrow chunk-error">
+      <Notice tone="error" title="No se pudo cargar esta sección"
+        action={<div className="row wrap"><Button variant="primary" icon="refresh" onClick={onRetry} disabled={state === 'loading'}>{state === 'loading' ? 'Reintentando…' : 'Reintentar'}</Button>{state === 'again' && <Button onClick={() => window.location.reload()}>Recargar la página</Button>}</div>}>
+        {state === 'again' ? 'Volvió a fallar. Recargar la página trae la versión publicada más reciente; tus datos de la demo quedan guardados en este dispositivo.' : 'La parte del panel que pediste no llegó. Tus datos de la demo no se tocaron.'}
+      </Notice>
+    </section>
+  );
+}
+const Today = lazyRetry(() => import('../pages/admin/Today'), (m) => m.Today);
+const Inbox = lazyRetry(() => import('../pages/admin/Inbox'), (m) => m.Inbox);
+const People = lazyRetry(() => import('../pages/admin/People'), (m) => m.People);
+const PersonDetail = lazyRetry(() => import('../pages/admin/People'), (m) => m.PersonDetail);
+const Odontogram = lazyRetry(() => import('../pages/admin/Odontogram'), (m) => m.Odontogram);
+const OdontogramPicker = lazyRetry(() => import('../pages/admin/Odontogram'), (m) => m.OdontogramPicker);
+const Ortho = lazyRetry(() => import('../pages/admin/Ortho'), (m) => m.Ortho);
+const Estimates = lazyRetry(() => import('../pages/admin/Estimates'), (m) => m.Estimates);
+const Waitlist = lazyRetry(() => import('../pages/admin/Waitlist'), (m) => m.Waitlist);
+const Tasks = lazyRetry(() => import('../pages/admin/Tasks'), (m) => m.Tasks);
+const Reports = lazyRetry(() => import('../pages/admin/Reports'), (m) => m.Reports);
+const Settings = lazyRetry(() => import('../pages/admin/Settings'), (m) => m.Settings);
 
 export const BANNER = 'Demo · Clínica Brisa ficticia · Datos de muestra · Sin envíos reales';
 
-const ROLES: { id: ViewRole; label: string; home: string }[] = [
-  { id: 'visitante', label: 'Visitante', home: '/' },
-  { id: 'paciente', label: 'Paciente / responsable', home: '/mis-turnos' },
-  { id: 'recepcion', label: 'Recepción', home: '/admin' },
-  { id: 'profesional', label: 'Profesional', home: '/admin/ortodoncia' },
-  { id: 'direccion', label: 'Dirección', home: '/admin/informes' },
-];
 
 const PUBLIC_NAV = [
   { to: '/', label: 'Inicio', icon: 'home', m: 'M01' },
@@ -134,21 +171,6 @@ function soundFor(type: string, ok: boolean, info?: Record<string, unknown>): Sf
   return 'success';
 }
 
-function SoundToggle() {
-  const ui = useUi();
-  return (
-    <button type="button" className="sound-toggle btn btn-sm" aria-pressed={ui.sound}
-      onClick={() => {
-        const on = !ui.sound;
-        sound.setEnabled(on);
-        setSoundPref(on);
-        if (on && sound.ensure()) sound.play('toggle');
-      }}>
-      <Icon name={ui.sound ? 'volume' : 'mute'} size={16} />
-      <span>Sonidos: {ui.sound ? 'sí' : 'no'}</span>
-    </button>
-  );
-}
 
 /** Capa ambiental animada (aurora + grano). Decorativa: queda quieta con movimiento reducido. */
 function Ambient({ kids }: { kids: boolean }) {
@@ -161,47 +183,7 @@ function Ambient({ kids }: { kids: boolean }) {
   );
 }
 
-/** Controles de la demo (vista de muestra, sonidos, alcance) en un popover nativo: la cabecera queda para el producto. */
-function DemoControls() {
-  const ui = useUi();
-  return (
-    <>
-      <button type="button" className="demo-btn" popoverTarget="demo-info" aria-label="Controles de la demo"><Icon name="settings" size={14} /> <span>Demo</span></button>
-      <div id="demo-info" popover="auto" className="demo-info" role="dialog" aria-label="Controles de la demo">
-        <div className="demo-info-head"><strong>DentalOS · demo pre-venta</strong><span className="small muted">Herramientas de la demostración, no del producto.</span></div>
-        <div className="field">
-          <label htmlFor="role">Vista de muestra · no es inicio de sesión</label>
-          <select id="role" value={ui.role} onChange={(e) => { const r = ROLES.find((x) => x.id === e.target.value)!; setRole(r.id); navigate(r.home); }}>
-            {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
-          </select>
-        </div>
-        <SoundToggle />
-        <ul>
-          <li>Clínica Brisa, sus personas y sus turnos son ficticios.</li>
-          <li>Todo se guarda solo en este dispositivo; no hay servidor, IA ni envíos reales.</li>
-          <li>Los roles son vistas de muestra, no inicios de sesión.</li>
-          <li>No diagnostica ni recomienda tratamientos.</li>
-        </ul>
-        <div className="row wrap">
-          <a className="btn btn-sm" href="#/admin/config"><Icon name="refresh" size={14} /> Presets y restablecer</a>
-          <button type="button" className="btn btn-sm btn-secondary" popoverTarget="demo-info" popoverTargetAction="hide">Entendido</button>
-        </div>
-      </div>
-    </>
-  );
-}
 
-function StorageStatus() {
-  const snap = useStore();
-  return (
-    <span className="storage-status">
-      <Icon name={snap.mode === 'local' ? 'check' : 'alert'} size={14} />
-      {snap.mode === 'local' ? 'Guardado en este dispositivo' : 'Solo en memoria: no se guarda'}
-      <span className="sep" aria-hidden="true">·</span>
-      <Icon name="clock" size={14} /> <span className="tabular"><span className="clock-label">Reloj de muestra: </span>{fmtShort(snap.state.clock)}</span>
-    </span>
-  );
-}
 
 function SystemNotices() {
   const snap = useStore();
@@ -303,35 +285,15 @@ export function App() {
   const current = nav.find((n) => isActive(n.to)) ?? null;
   const crumbs: Crumbs = { area: admin ? 'Panel de la clínica' : 'Portal de pacientes', areaHref: admin ? '#/admin' : '#/', module: current && current.to !== (admin ? '/admin' : '/') ? { label: current.label, href: `#${current.to}` } : null };
 
-  if (segments[0] === 'propuestas') {
-    return (
-      <div className="app proposals-host">
-        <div className="demo-strip"><div className="demo-strip-inner"><p className="demo-banner" role="note"><strong>{BANNER}</strong> <span>Prototipos de dirección visual</span></p></div></div>
-        <main id="main" tabIndex={-1}><Suspense fallback={<LoadingState label="Cargando propuestas visuales…" />}><Proposals /></Suspense></main>
-      </div>
-    );
-  }
-
   return (
     <div className={`app ${admin ? 'admin' : 'public'}${kids ? ' kids-mode' : ''}`}>
       <Ambient kids={kids} />
       <a href="#main" className="skip" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }}>Saltar al contenido</a>
       <div className="masthead">
-        <div className="demo-strip">
-          <div className="demo-strip-inner">
-            <p className="demo-banner" role="note"><strong>{BANNER}</strong> <StorageStatus /></p>
-            <div className="demo-strip-actions">
-              <nav className="area-switch" aria-label="Área de la demo">
-                <a href="#/" aria-current={!admin ? 'true' : undefined} aria-label="Portal de pacientes"><Icon name="user" size={14} /> <span>Portal</span></a>
-                <a href="#/admin" aria-current={admin ? 'true' : undefined} aria-label="Panel de la clínica"><Icon name="calendar" size={14} /> <span>Panel</span></a>
-              </nav>
-              <DemoControls />
-            </div>
-          </div>
-        </div>
         <header className="site-header">
           <div className="site-header-inner">
             <Logo />
+            <DemoBadge />
             {admin ? (
               <>
                 <span className="header-area">Panel de la clínica</span>
@@ -349,7 +311,7 @@ export function App() {
             <div className="header-actions">
               <ThemeSwitcher />
               {admin
-                ? <span className="view-chip" title="Vista de muestra (no es inicio de sesión)"><Icon name="user" size={14} /> {ROLES.find((r) => r.id === ui.role)?.label ?? 'Recepción'}</span>
+                ? <button type="button" className="view-chip" popoverTarget="demo-dock-panel" title="Vista de muestra (no es inicio de sesión). Cambiar desde la botonera Demo"><Icon name="user" size={14} /> {roleById(ui.role).label}</button>
                 : <a className="btn btn-primary btn-sm header-cta" href="#/reservar"><Icon name="calendar" size={16} /> <span>Pedir turno</span></a>}
             </div>
           </div>
@@ -378,6 +340,8 @@ export function App() {
       </div>
       <SiteFooter admin={admin} />
       <BottomBar admin={admin} isActive={isActive} onSearch={() => setPaletteOpen(true)} />
+      <DemoDock />
+      <RoleGate />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} routes={PALETTE_ROUTES} />
       <LiveRegion />
     </div>

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 // Fase 2c: componentes nativos de la plataforma, fondo animado y pulido premium.
 async function fresh(page: Page, hash = '#/') {
@@ -71,19 +71,28 @@ test('drawer y confirmación sobre <dialog> nativo: modal, fondo inerte, foco y 
   await expect(confirm).toHaveCount(0);
 });
 
-test('popover nativo “Controles de la demo”: alcance, vista y sonidos; Escape lo cierra y el banner sigue visible', async ({ page }) => {
+test('popovers nativos de la demo: indicador con alcance y guardado; botonera con vista, caso y sonido; Escape cierra', async ({ page }) => {
   await fresh(page);
-  const btn = page.getByRole('button', { name: 'Controles de la demo' });
-  await btn.click();
-  const info = page.locator('#demo-info');
-  await expect(info).toBeVisible();
+  const badge = page.locator('.demo-badge');
+  await expect(badge).toBeVisible();
+  await badge.click();
+  const info = page.locator('#demo-badge-info');
   expect(await info.evaluate((el) => el.matches(':popover-open'))).toBe(true);
   await expect(info).toContainText('No diagnostica ni recomienda tratamientos.');
-  await expect(info.getByLabel('Vista de muestra · no es inicio de sesión')).toBeVisible();
+  await expect(info).toContainText('Guardado en este dispositivo.');
+  await expect(info).toContainText('Sin envíos reales');
   await page.keyboard.press('Escape');
   await expect(info).toBeHidden();
-  await expect(page.getByText('Demo · Clínica Brisa ficticia · Datos de muestra · Sin envíos reales')).toBeVisible();
-  await expect(page.getByText('Guardado en este dispositivo')).toBeVisible();
+
+  await page.getByRole('button', { name: /Controles de la demo/ }).click();
+  const panel = page.locator('#demo-dock-panel');
+  expect(await panel.evaluate((el) => el.matches(':popover-open'))).toBe(true);
+  await expect(panel.getByRole('heading', { name: /Vista/ })).toBeVisible();
+  await expect(panel.getByLabel('Escenario')).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Sonidos: no' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
+  await expect(badge).toBeVisible();
 });
 
 test('preguntas frecuentes: acordeón exclusivo nativo (<details name>)', async ({ page }) => {

@@ -36,7 +36,7 @@ export function ProAvatar({ name, specialty, index = 0, size = 56 }: { name: str
         </defs>
         <circle cx="32" cy="32" r="31" fill={`url(#ring-${uid})`} />
         <circle cx="32" cy="32" r="28" fill={`url(#av-${uid})`} />
-        <text x="32" y="38" textAnchor="middle" fontFamily="Manrope, sans-serif" fontWeight="800" fontSize="18" fill="#fff">{initials}</text>
+        <text x="32" y="38" textAnchor="middle" fontFamily="'Source Sans 3', sans-serif" fontWeight="700" fontSize="18" fill="#fff">{initials}</text>
       </svg>
       <span className="pro-avatar-badge">{ortho ? <OrthoArt kind="brackets_metalicos" width={26} /> : <ToothArt kind="molar" width={14} />}</span>
     </span>

@@ -5,8 +5,9 @@ import type { ViewRole } from '../domain';
 
 const UI_KEY = `${NAMESPACE}:ui`;
 export type ThemePref = 'system' | 'light' | 'dark';
-interface UiState { role: ViewRole; actingPersonId: string; sound: boolean; theme: ThemePref; drafts: Record<string, unknown> }
-const DEFAULT: UiState = { role: 'paciente', actingPersonId: 'P-001', sound: false, theme: 'system', drafts: {} };
+// `roleChosen`: la persona ya respondió el selector inicial de vista (eligió una o siguió sin elegir).
+interface UiState { role: ViewRole; roleChosen: boolean; actingPersonId: string; sound: boolean; theme: ThemePref; drafts: Record<string, unknown> }
+const DEFAULT: UiState = { role: 'paciente', roleChosen: false, actingPersonId: 'P-001', sound: false, theme: 'system', drafts: {} };
 
 function read(): UiState {
   try {
@@ -29,8 +30,12 @@ export function useUi() {
   return useSyncExternalStore(subscribe, () => ui);
 }
 export const setRole = (role: ViewRole) => write({ ...ui, role });
+export const chooseRole = (role: ViewRole | null) => write({ ...ui, role: role ?? ui.role, roleChosen: true });
 export const setActingPerson = (actingPersonId: string) => write({ ...ui, actingPersonId });
-export const resetUi = () => write(DEFAULT);
+/** Reinicio de la demo: vuelve todo a valores iniciales, sin repetir la pregunta de vista ya respondida. */
+export const resetUi = () => write({ ...DEFAULT, roleChosen: ui.roleChosen });
+/** Al cargar un caso se descartan borradores y filtros, pero se conservan vista, tema y sonido. */
+export const clearDrafts = () => write({ ...ui, drafts: {} });
 export const setSoundPref = (sound: boolean) => write({ ...ui, sound });
 export const setThemePref = (theme: ThemePref) => write({ ...ui, theme });
 

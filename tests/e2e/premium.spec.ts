@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 // Fase 2b: arte propio (dientes, ortodoncia, personajes), Brisa Chicos y sonidos opt-in.
 async function fresh(page: Page, hash = '#/') {
@@ -171,6 +171,7 @@ test('sonidos: apagados por defecto; el AudioContext nace solo con el gesto y se
   await toggle.click();
   await expect(page.getByRole('button', { name: 'Sonidos: sí' })).toHaveAttribute('aria-pressed', 'true');
   expect(await contexts(page)).toBe(1);
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '¡Hola, Brisitos!' }).click();
   expect(await played(page)).toEqual(expect.arrayContaining(['toggle', 'pop', 'stamp']));
 

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 async function fresh(page: Page, hash = '#/') {
   await page.goto('/');
@@ -55,6 +55,7 @@ test('S02: cupo tomado justo antes de confirmar → error, formulario conservado
 
 test('S24: reserva completa a 390 px táctil sin overflow', async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  await ctx.addInitScript(() => localStorage.getItem('dentalos.demo.v1:ui') || localStorage.setItem('dentalos.demo.v1:ui', JSON.stringify({ roleChosen: true })));
   const page = await ctx.newPage();
   await fresh(page, '#/reservar');
   await page.locator('#serviceTypeId').selectOption('ST-LIMPIEZA');
@@ -112,6 +113,8 @@ test('S03: almacenamiento bloqueado → modo memoria con aviso y la demo sigue f
   await page.goto('/#/mis-turnos');
   await expect(page.locator('.storage-status')).toContainText('Solo en memoria: no se guarda');
   await expect(main(page).getByText(/almacenamiento local no está disponible/)).toBeVisible();
+  // Sin almacenamiento no se puede recordar la respuesta al selector de vista: aparece y se puede seguir sin elegir.
+  await page.getByRole('button', { name: 'Explorar sin elegir' }).click();
   await page.locator('.turno[data-appointment="A-0012"]').getByRole('button', { name: 'Confirmar asistencia' }).click();
   await expect(main(page).getByText('Asistencia confirmada en esta demo.', { exact: false }).first()).toBeVisible();
 });

@@ -2,9 +2,8 @@
 
 | Asset | Origen | Licencia | Uso |
 | --- | --- | --- | --- |
-| Manrope 500/600/700/800 (subset latin) | `@fontsource/manrope` 5.x, empaquetada en `dist/assets` | SIL Open Font License 1.1 | Títulos y UI |
-| Source Sans 3 400/600 (subset latin) | `@fontsource/source-sans-3` 5.x, empaquetada en `dist/assets` | SIL Open Font License 1.1 | Texto y tablas |
-| Newsreader 500/600/500 itálica, Plus Jakarta Sans 400–800, IBM Plex Sans 400/500/600, IBM Plex Mono 400/500 (subset latin) | `@fontsource/*` 5.3.0, empaquetadas en `dist/assets`; **solo las descarga la ruta aislada `#/propuestas`** (chunk diferido) | SIL Open Font License 1.1 | Propuestas visuales del lote 2. Las de las propuestas descartadas se quitan tras la elección |
+| Newsreader 500/600 y 500 itálica (subset latin) | `@fontsource/newsreader` 5.3.0, empaquetada en `dist/assets` | SIL Open Font License 1.1 | Títulos (dirección A, lote 3) |
+| Source Sans 3 400/600/700 (subset latin) | `@fontsource/source-sans-3` 5.x, empaquetada en `dist/assets` | SIL Open Font License 1.1 | Texto, interfaz y tablas |
 | Íconos (`src/ui/kit.tsx`) | Trazos SVG propios de este repo | Propios del proyecto | Estados texto+ícono, navegación |
 | Logo / favicon (`public/favicon.svg`, `src/ui/art/brand.tsx`) | SVG propio (diente estilizado con brisa en oro) | Propio del proyecto | Marca ficticia Clínica Brisa |
 | Tonos de llamada | Generados en runtime con Web Audio (`src/ui/tones.ts`): “habla” 523 Hz/140 ms y “guardado” 659 Hz/170 ms | No es un asset | Opcional, tras gesto |
@@ -21,8 +20,7 @@ Sin imágenes de prospectos, fotos, radiografías, mapas, embeds, CDN ni trackin
 | Paquete | Licencia |
 | --- | --- |
 | react, react-dom 19 | MIT |
-| @fontsource/manrope, @fontsource/source-sans-3 | OFL-1.1 (fuentes), MIT (CSS) |
-| @fontsource/newsreader, @fontsource/plus-jakarta-sans, @fontsource/ibm-plex-sans, @fontsource/ibm-plex-mono (lote 2, provisorias) | OFL-1.1 (fuentes), MIT (CSS) |
+| @fontsource/newsreader, @fontsource/source-sans-3 | OFL-1.1 (fuentes), MIT (CSS) |
 
 ## Dependencias de desarrollo
 
