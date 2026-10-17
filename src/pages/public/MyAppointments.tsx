@@ -3,12 +3,13 @@ import { dispatch, useDemo, useLastChange } from '../../app/store';
 import { navigate } from '../../app/router';
 import { useUi } from '../../app/ui-state';
 import type { Appointment } from '../../domain';
-import { byId, pastFor, serviceName, upcomingFor } from '../../domain/selectors';
+import { byId, pastFor, responsibleOf, serviceName, upcomingFor } from '../../domain/selectors';
 import { fmtLong, toMs } from '../../domain/time';
 import { Button, ConfirmDialog, EmptyState, Icon, Notice, PageHeader, SectionHeader, StatusBadge, announce, useResult } from '../../ui/kit';
 import { RescheduleDrawer } from '../../ui/RescheduleDrawer';
 import { TurnoCard, agendaLink } from '../../ui/components';
 import { PersonPicker } from './PersonPicker';
+import { PatientEstimates } from './PatientEstimates';
 import { PageArt } from '../../ui/art/pages';
 import { ToothCharacter } from '../../ui/art/characters';
 import { PersonAvatar } from '../../ui/art/brand';
@@ -79,6 +80,7 @@ export function MyAppointments() {
                 </ul>
               )}
             </section>
+            <PatientEstimates personId={person.id} viewerId={responsibleOf(s, person.id)[0]?.id ?? person.id} />
             <section className="stack" aria-labelledby="past-title">
               <h2 id="past-title">Pasados y cancelados</h2>
               {past.length === 0 ? <div className="empty"><ToothCharacter who="coco" mood="dormido" size={72} /><strong>Sin historial</strong><p style={{ margin: 0 }}>Cuando tengas turnos pasados o cancelados, aparecen acá.</p></div> : <ul className="turno-list">{past.map((a) => <li key={a.id}><TurnoCard a={a} /></li>)}</ul>}

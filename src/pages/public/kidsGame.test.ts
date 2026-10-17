@@ -75,4 +75,19 @@ describe('¡A limpiar la sonrisa!', () => {
     expect([0, 1, 7, 8, 14, 15].map((n) => starsFor('reloj', n))).toEqual([0, 1, 1, 2, 2, 3]);
     expect(gameReducer(start(), { type: 'stop' }).phase).toBe('done');
   });
+
+  it('S73: en pausa el reloj no corre, no se cepilla ni se escapan bichitos; al seguir queda igual', () => {
+    let s = ticks(start(), 4);
+    const before = { tick: s.tick, germs: { ...s.germs }, escaped: s.escaped };
+    s = gameReducer(s, { type: 'pause' });
+    expect(s.phase).toBe('paused');
+    s = ticks(s, 40);
+    const t = germsOf(s)[0];
+    s = gameReducer(s, { type: 'brush', tooth: t });
+    expect({ tick: s.tick, germs: s.germs, escaped: s.escaped }).toEqual(before);
+    s = gameReducer(s, { type: 'resume' });
+    expect(s.phase).toBe('playing');
+    expect(gameReducer(gameReducer(s, { type: 'pause' }), { type: 'stop' }).phase).toBe('done');
+  });
 });
+

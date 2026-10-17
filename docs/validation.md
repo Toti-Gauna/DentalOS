@@ -443,3 +443,32 @@ Rama `feat/dentalos-l4-arte` desde `main` @ `03a91a7`.
 - No se probó en iPhone ni en Safari reales.
 - No se promete ocultar las barras del navegador en todos los dispositivos.
 
+# Lote 5 (recorridos, presupuestos y segunda actividad infantil)
+
+**Comandos:**
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` · `npm run typecheck` · `npm run build` | 0 | sin errores |
+| `npx vitest run` | 0 | 167/167 (2 nuevas de dominio S71/S72, 1 de pausa S73, 6 de memoria S74–S76) |
+| `npx playwright test` | 0 | 86 pasadas + 1 omitida (6 nuevas en `tests/e2e/journeys.spec.ts`) |
+
+**Pruebas nuevas:**
+
+- **S67–S69 · presupuesto de un menor:** el recorrido de la botonera pasa por recepción, el portal de Carla y otra vez recepción. Recepción solo ofrece a Carla como decisora; desde el chip de Tomás decide igual la persona adulta; la confirmación dice que no es un pago; después se ven el saldo aparte y “Decidió: Carla Benítez”, y la caja ficticia neta no cambia.
+- **S70 · recorridos:** hay 4; se abren y se recorren con teclado, y cada paso deja la vista y la ruta correctas.
+- **S71/S72 (unit):** un menor no decide; su responsable sí y queda en `decidedBy` sin movimiento de caja; un adulto decide lo suyo; un adulto ajeno recibe `NO_RESPONSABLE`.
+- **S73 · pausa del juego:** el reloj no corre, el tablero no responde y “Seguir” retoma.
+- **S74–S76 · memoria:** mazo reproducible por ronda y sin `Math.random`; un par distinto se tapa; teclado en grilla; pausa; éxito con sticker; reintento; salida; con reloj termina a los 90 s sin quitar lo ganado.
+- **S77 · textos:** sin compras, ranking de salud, culpa ni diagnósticos; ningún sticker se liga a turnos, presupuestos, tratamientos ni pagos.
+
+**Errores encontrados y corregidos:**
+
+- **Quién decide en el portal:** al elegir el chip de un dependiente, la persona activa pasa a ser el menor. Ahora decide la persona adulta que usa el portal, no la elegida.
+- **Etiquetas duplicadas:** “Ritmo” en dos juegos rompía una prueba existente. La memoria usa “Con reloj o sin apuro” y `premium.spec` queda sin cambios.
+- **Envolturas a 390 px:** el total del presupuesto y su ID se partían en dos líneas, y el “sin reloj” del marcador también. Se corrigieron.
+
+**Capturas:** `docs/evidence/l5/presupuestos.jpg`, `docs/evidence/l5/brisa-chicos.jpg` y `docs/evidence/l5/recorridos.jpg`.
+
+**Límites:** solo Chromium; no se probó con lector de pantalla real.
+

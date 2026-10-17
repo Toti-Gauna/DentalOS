@@ -735,6 +735,32 @@ dl.kv dd { margin: 0; }
 .game-coach { position: absolute; right: -6px; bottom: -18px; width: clamp(56px, 16%, 96px); pointer-events: none; }
 .game-coach .character { width: 100%; height: auto; }
 .game-coach.is-happy .character { animation: bounce 700ms var(--ease-out) 2; }
+
+/* Memoria de los Brisitos (lote 5): mismas superficies que el juego; solo tokens, así sigue claro/oscuro y futuras temporadas. */
+.memory { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); gap: var(--s5); align-items: center; border-radius: 28px; background-color: var(--kid-3); border-color: var(--kid-3-line); }
+.memory-side h2 { margin: 0; }
+.memory-stage { position: relative; min-width: 0; }
+.memory-grid { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(6px, 1.6vw, 12px); max-width: 520px; margin: 0 auto; }
+.mem-card { position: relative; aspect-ratio: 4 / 5; padding: 0; border: 2px solid var(--kid-3-line); border-radius: 16px; background: var(--surface); cursor: pointer; display: grid; place-items: center; overflow: hidden; color: var(--ink); }
+.mem-card:disabled { cursor: default; }
+.mem-card > span { grid-area: 1 / 1; width: 100%; height: 100%; display: grid; place-items: center; }
+.mem-back { background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--primary-fill) 16%, var(--surface)) 0 8px, var(--surface) 8px 16px); }
+.mem-dot { width: 34%; aspect-ratio: 1; border-radius: 50%; background: var(--surface); border: 3px solid var(--primary-fill); }
+.mem-face { opacity: 0; background: var(--surface); }
+.mem-face > svg { width: 78%; height: auto; max-height: 86%; }
+.mem-card.is-up .mem-back { opacity: 0; }
+.mem-card.is-up .mem-face { opacity: 1; }
+.mem-card.is-found { border-color: var(--gold); background: var(--kid-sun-bg); }
+.mem-card.is-found .mem-face { background: var(--kid-sun-bg); }
+.mem-card:not(:disabled):hover { border-color: var(--primary-fill); }
+.mem-card:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.memory-overlay { inset: 0; pointer-events: none; }
+.memory-overlay > * { pointer-events: auto; }
+@media (prefers-reduced-motion: no-preference) {
+  .mem-card > span { transition: opacity 180ms var(--ease-out); }
+  .mem-card.is-up:not(.is-found) .mem-face > svg { animation: mem-in 220ms var(--ease-out) both; }
+  .mem-card.is-found .mem-face > svg { animation: bounce 600ms var(--ease-out) 1; }
+}
 .sticker .germ { width: 48px; animation: none; }
 .sticker .star-art { width: 44px; height: 44px; }
 @keyframes germ-in { from { scale: 0.2; opacity: 0; } }
@@ -1045,6 +1071,7 @@ fieldset.step-card { padding-top: var(--s2); }
 @keyframes pop { from { opacity: 0; transform: translateY(-6px) scale(0.98); } }
 @keyframes ring { to { --ring: 360deg; } }
 @keyframes wave { 50% { height: 100%; } }
+@keyframes mem-in { from { transform: scale(0.6); opacity: 0; } }
 @keyframes bounce { 30% { transform: translateY(-14px) rotate(-6deg); } 60% { transform: translateY(0) rotate(3deg); } }
 @keyframes burst { from { opacity: 1; scale: 0.6; } to { opacity: 0; scale: 1.3; } }
 @keyframes elevate { to { background-color: var(--glass-strong); box-shadow: 0 1px 0 var(--sh-a), 0 14px 32px -18px var(--sh-d); } }
@@ -1102,7 +1129,7 @@ fieldset.step-card { padding-top: var(--s2); }
   .layout { grid-template-columns: 1fr; }
   .hero { grid-template-columns: 1fr; gap: var(--s4); }
   .how-steps { grid-template-columns: 1fr; }
-  .kids-hero, .kids-band, .brush, .game { grid-template-columns: 1fr; }
+  .kids-hero, .kids-band, .brush, .game, .memory { grid-template-columns: 1fr; }
   .kids-hero { padding: var(--s5); }
   .kids-band { padding: var(--s5); }
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
@@ -1225,6 +1252,16 @@ h1 em, h2 em { font-style: italic; color: var(--primary); }
 .demo-dock-panel kbd, .demo-facts kbd { font: 600 12px var(--font-ui); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 5px; background: var(--surface-2); }
 
 .role-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.journeys { display: grid; gap: 4px; }
+.journey { border: 1px solid var(--line); border-radius: var(--r-adm); padding: 6px 10px; }
+.journey > summary { cursor: pointer; padding: 4px 0; }
+.journey[open] > summary { margin-bottom: 2px; }
+.journey > p { margin: 0 0 6px; }
+.journey-steps { margin: 0 0 6px; padding-left: 1.4em; display: grid; gap: 2px; }
+.journey-step { width: 100%; display: flex; flex-wrap: wrap; gap: 0 8px; align-items: baseline; text-align: left; padding: 6px 8px; min-height: 40px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--ink); font: inherit; cursor: pointer; }
+.journey-step:hover { background: var(--surface-2); border-color: var(--line); }
+.journey-step:focus-visible { outline: 3px solid var(--gold); outline-offset: 1px; }
+.journey-role { font: 700 12px var(--font-ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--secondary); }
 .role-option { width: 100%; display: grid; grid-template-columns: 56px 1fr; gap: var(--s3); align-items: center; text-align: left; padding: 8px 10px; border-radius: var(--r-adm); border: 1px solid transparent; background: transparent; color: var(--ink); cursor: pointer; font: inherit; }
 .role-option span:last-child { display: grid; gap: 1px; }
 .role-option strong { font: 600 15px var(--font-ui); }
@@ -1464,3 +1501,16 @@ main { padding-bottom: 72px; }
   .receipt-day { font-size: 72px; }
 }
 .xsurface-slot { min-width: 0; }
+
+/* Presupuestos en el portal (lote 5) */
+.estimate-card { display: grid; gap: var(--s3); padding: var(--s4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pub); }
+.estimate-head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s2); }
+.estimate-head h3 { margin: 0; font-size: 18px; }
+.estimate-head p { margin: 2px 0 0; }
+.estimate-lines { width: 100%; border-collapse: collapse; }
+.estimate-lines .tabular, .estimate-head h3 .tabular { white-space: nowrap; }
+.estimate-lines th, .estimate-lines td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); background: transparent; font-size: 15px; }
+.estimate-lines td.tabular, .estimate-lines th:nth-child(n+2) { text-align: right; }
+.estimate-lines tfoot th { text-align: left; }
+.estimate-lines tfoot td { text-align: right; border-bottom: 0; }
+.estimate-sub { margin: 0; font-size: 15px; }
