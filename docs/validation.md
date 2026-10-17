@@ -100,3 +100,66 @@ Distinción de evidencia:
 - Audio audible: el contenedor no tiene salida de sonido. La limpieza se midió con un AudioContext instrumentado, no con el de un navegador real.
 - El zoom real del navegador se aproximó con su equivalente en píxeles CSS (720 px).
 - Concurrencia entre pestañas: solo hay aviso y elección; no se prometen merges.
+
+
+---
+
+# Fase 2 (PROMPT 2 — UX/UI, gamificación y motion)
+
+Rama `feat/fase2-ux-motion` sobre `main` @ `668dec4`. Mismo entorno y mismas versiones que en la fase 1 (Node 22.22.0, npm 10.9.4, TypeScript 5.9.3, Vite 7.3.7, Vitest 3.2.7, ESLint 9.39.5, Playwright 1.56.1 con Chromium local). No se agregaron dependencias.
+
+## Comandos ejecutados
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` | 0 | sin errores |
+| `npm run typecheck` | 0 | sin errores |
+| `npm run test -- --run` | 0 | 63/63 (dominio y contraste de tokens; sin cambios de dominio salvo el contenido de `learning.ts`) |
+| `npm run build` | 0 | entrada ~429 kB JS (131 kB gzip), panel en diferido; sin URLs de red en `dist/` salvo los namespaces XML y el texto de errores de React |
+| `npm run test:e2e` | 0 | **32 pasadas** + 1 omitida a propósito (capturas), en 3 corridas consecutivas. Archivos: `smoke`, `flows`, `coverage` y `a11y` (nuevo) |
+| `EVIDENCE_DIR=docs/evidence/before npm run evidence` (sobre `main`, antes de cambiar) | 0 | 30 capturas: 390, 768 y 1440 px × 10 rutas |
+| `EVIDENCE_DIR=docs/evidence/after EVIDENCE_VIEWPORTS=320,390,768,1440 npm run evidence` | 0 | 40 capturas: 320, 390, 768 y 1440 px × 10 rutas |
+
+## Pruebas nuevas de L2.5 (`tests/e2e/a11y.spec.ts`)
+
+| Prueba | Resultado |
+| --- | --- |
+| Contraste renderizado AA en 19 rutas a 1440 px (cada texto visible contra su fondo efectivo) | Pass |
+| Contraste renderizado AA en 19 rutas a 390 px | Pass |
+| 320 px: 19 rutas sin scroll horizontal de página | Pass, después de corregir el overflow de 10 px de `/aprender` |
+| Teclado virtual simulado (alto de 420 px): el campo del chat y “Enviar” quedan visibles y operables | Pass |
+| Teclado virtual en reserva: el CTA se alcanza con foco y no queda tapado (`elementFromPoint`) | Pass |
+| Menú de vista por teclado: cambia de área y el foco llega al título | Pass, después de corregir el foco (ver abajo) |
+| DateStrip con flechas; el drawer de la agenda conserva día y filtro, y Escape devuelve el foco a la celda | Pass |
+| Movimiento reducido: sin animación; resalte con borde sólido y texto “Actualizado recién” | Pass |
+| Audio: no hay AudioContext antes del gesto; suenan exactamente los dos tonos (523/659 Hz) | Pass |
+
+## Regresión del protagonista y casos afectados
+
+| Caso | Estado | Evidencia |
+| --- | --- | --- |
+| S13 / S29 / A03 | Pass | E: WhatsApp → ocupado → mar 11:00 → v2. TurnoCard “Actualizado recién”. El enlace abre la agenda del 20/10 con la celda resaltada. Tras recargar sigue en v2. |
+| S14 | Pass | U (preset de fallo de commit) |
+| S32 | Pass | U (reapertura con estado actual) |
+| S33 / S35 / A04 / A10 | Pass | E: misma gestión R-006 por llamada → mié 15:00 v2. Bandeja resuelta. |
+| S24 | Pass | E: reserva táctil completa a 390 px; 320 px sin overflow |
+| S46 | Pass | E: respuesta incorrecta → explicación con foco → correcta → sello. La relectura no suma y persiste al recargar. |
+| S47 | Pass | E: teclado, Escape, foco, movimiento reducido, 720 px (equivalente a zoom 200 %), contraste renderizado |
+| S48 | Pass | E: 16 rutas sin requests fuera de 127.0.0.1; auditoría de `dist/` |
+| S01–S26, S39–S45, A01–A10 | Pass | Las suites de dominio y e2e de la fase 1 siguen en verde con los componentes nuevos. Se actualizaron selectores (`[data-appointment]`, vista “Lista del día”) sin cambiar ninguna aserción de dominio. |
+
+## Fallos encontrados y corregidos en esta fase
+
+1. **Navegación del portal:** el ítem activo quedaba blanco sobre blanco por especificidad CSS. Se corrigió y lo cubre el contraste renderizado.
+2. **Vista de muestra desde el portal:** al elegir “Recepción”, un efecto devolvía la vista a “paciente” antes del cambio de ruta y el foco caía en `body`.
+   - Ahora el efecto solo reacciona al cambio de área.
+   - El enfoque del título espera al título nuevo cuando el panel carga en diferido.
+3. **`/aprender` a 320 px:** 10 px de overflow por los sellos. Corregido con un flex que envuelve, sin achicar la letra.
+4. **Odontograma:** la leyenda usaba cuadrados que parecían casillas de verificación. Pasó a usar el mismo glifo de las piezas.
+5. **Ficha:** la etiqueta de familia estaba invertida (“Dependiente · Madre”). Ahora dice “Responsable · madre”.
+
+## Deuda o límites declarados
+
+- Lector de pantalla real (NVDA/VoiceOver) y audio audible: no disponibles en el contenedor. Se verificaron por semántica, foco y AudioContext instrumentado.
+- El zoom del navegador se aproximó con 720 px CSS (zoom 200 % sobre 1440). No se probó el zoom de texto solo.
+- Los textos sobre gradientes (bloqueos, esqueletos de carga) quedan fuera de la medición automática de contraste; su texto usa tokens que superan 4.5:1 sobre blanco.

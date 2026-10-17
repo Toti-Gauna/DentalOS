@@ -91,7 +91,7 @@ test('S36/S38: silenciar y lectura no cortan la tarea; detener cierra el audio y
   expect(st.closed).toBe(st.contexts);
   expect(st.stopped).toBe(st.started);
   await page.goto('/#/mis-turnos');
-  await expect(page.locator('.list-item', { hasText: 'A-0012' })).toContainText('versión 1');
+  await expect(page.locator('.turno[data-appointment="A-0012"]')).toContainText('versión 1');
 });
 
 test('S34: audio no disponible → aviso y llamada completa en texto', async ({ page }) => {
@@ -112,7 +112,7 @@ test('S03: almacenamiento bloqueado → modo memoria con aviso y la demo sigue f
   await page.goto('/#/mis-turnos');
   await expect(page.locator('.storage-status')).toContainText('Solo en memoria: no se guarda');
   await expect(main(page).getByText(/almacenamiento local no está disponible/)).toBeVisible();
-  await page.locator('.list-item', { hasText: 'A-0012' }).getByRole('button', { name: 'Confirmar asistencia' }).click();
+  await page.locator('.turno[data-appointment="A-0012"]').getByRole('button', { name: 'Confirmar asistencia' }).click();
   await expect(main(page).getByText('Asistencia confirmada en esta demo.', { exact: false }).first()).toBeVisible();
 });
 

@@ -20,10 +20,10 @@ Aplicación **solo frontend y local** que muestra un circuito administrativo odo
 | Tests de dominio (Vitest) | `npm run test -- --run` |
 | Build estático | `npm run build` → `dist/` |
 | Preview del build | `npm run preview -- --host 127.0.0.1` |
-| Capturas de evidencia | `npm run evidence` → `docs/evidence/*.png` |
+| Capturas de evidencia | `EVIDENCE_DIR=docs/evidence/after EVIDENCE_VIEWPORTS=320,390,768,1440 npm run evidence` (requiere build) |
 | Smoke/flujos en navegador (Playwright) | `npm run test:e2e` (levanta el preview; usa `/opt/pw-browsers/chromium` si existe, o el Chromium instalado por Playwright) |
 
-Resultados reales en [`docs/validation.md`](docs/validation.md). Estado de la fase en [`docs/checkpoint.md`](docs/checkpoint.md).
+Resultados reales en [`docs/validation.md`](docs/validation.md). Estado de la fase en [`docs/checkpoint.md`](docs/checkpoint.md). Dirección visual, tokens, componentes y reglas de motion, audio y colección en [`docs/design.md`](docs/design.md).
 
 ## Deploy
 

@@ -3,8 +3,9 @@ import { dispatch, useDemo } from '../../app/store';
 import { navigate } from '../../app/router';
 import { useDraft } from '../../app/ui-state';
 import { validateNewPerson } from '../../domain';
-import { byId, dependentsOf, estimateTotals, homonymsOf, ledgerNet, money, pastFor, proName, responsibleOf, serviceName, upcomingFor } from '../../domain/selectors';
+import { byId, dependentsOf, estimateTotals, homonymsOf, ledgerNet, money, pastFor, responsibleOf, serviceName, upcomingFor } from '../../domain/selectors';
 import { fmtShort } from '../../domain/time';
+import { IdChip, TurnoCard, agendaLink } from '../../ui/components';
 import { Button, Drawer, EmptyState, ErrorSummary, Field, Notice, PageHeader, StatusBadge, announce, useResult } from '../../ui/kit';
 
 export function People() {
@@ -28,7 +29,7 @@ export function People() {
               {list.map((p) => {
                 const next = upcomingFor(s, p.id)[0];
                 const deps = dependentsOf(s, p.id);
-                const resp = responsibleOf(s, p.id);
+                              const resp = responsibleOf(s, p.id);
                 return (
                   <tr key={p.id}>
                     <td className="code">{p.id}</td>
@@ -87,9 +88,13 @@ export function PersonDetail({ id }: { id: string }) {
       </section>
     );
   }
-  const deps = dependentsOf(s, p.id);
   const resp = responsibleOf(s, p.id);
   const homs = homonymsOf(s, p.id);
+  const root = (resp[0] as typeof p | undefined) ?? p;
+  const links = dependentsOf(s, root.id);
+  const relation = links[0]?.link.relation.replace(' (muestra)', '').toLowerCase();
+  const family = [{ person: root, role: relation ? `Responsable · ${relation}` : 'Responsable' }, ...links.map((d) => ({ person: d.person, role: 'Dependiente' }))];
+  if (family.length === 1) family[0].role = 'Titular';
   const up = upcomingFor(s, p.id);
   const past = pastFor(s, p.id);
   const episodes = s.careEpisodes.filter((e) => e.personId === p.id);
@@ -130,19 +135,30 @@ export function PersonDetail({ id }: { id: string }) {
           <label className="choice"><input type="checkbox" checked={p.reminderOptIn} onChange={(e) => show(dispatch({ type: 'setReminderOptIn', personId: p.id, optIn: e.target.checked }))} /> Recordatorios simulados (opt-in ficticio)</label>
         </div>
         <div className="card stack">
-          <h2 style={{ fontSize: 20 }}>Familia y vínculos</h2>
-          {resp.length > 0 && <p>Responsable: {resp.map((r) => <a key={r!.id} href={`#/admin/personas/${r!.id}`}>{r!.firstName} {r!.lastName} ({r!.id})</a>)}</p>}
-          {deps.length > 0 ? (
-            <ul className="list">{deps.map((d) => <li key={d.person.id} className="list-item"><a href={`#/admin/personas/${d.person.id}`}><strong>{d.person.firstName} {d.person.lastName}</strong> · {d.person.id}</a><span className="small muted">{d.link.relation} · próximos: {upcomingFor(s, d.person.id).map((a) => a.id).join(', ') || 'ninguno'}</span></li>)}</ul>
-          ) : resp.length === 0 && <p className="muted">Sin vínculos.</p>}
-          <p className="small muted">Cada dependiente conserva sus propios turnos; cambiar de dependiente no mezcla citas.</p>
+          <h2 style={{ fontSize: 20 }}>Grupo familiar</h2>
+          {family.length <= 1 ? <p className="muted" style={{ margin: 0 }}>Sin vínculos de responsable o dependientes.</p> : (
+            <nav className="family" aria-label="Grupo familiar por ID">
+              {family.map(({ person: m, role }) => {
+                const next = upcomingFor(s, m.id)[0];
+                return (
+                  <a key={m.id} className="family-member" href={`#/admin/personas/${m.id}`} aria-current={m.id === p.id ? 'page' : undefined}>
+                    <span className="role">{role}</span>
+                    <strong>{m.firstName} {m.lastName}</strong>
+                    <span><IdChip id={m.id} /> <span className="small muted">({m.birthYear})</span></span>
+                    <span className="small muted">{next ? `Próximo: ${serviceName(s, next.serviceTypeId)} · ${fmtShort(next.start)}` : 'Sin turnos próximos'}</span>
+                  </a>
+                );
+              })}
+            </nav>
+          )}
+          <p className="small muted" style={{ margin: 0 }}>Cada persona conserva sus propios turnos y su historia; cambiar de dependiente no mezcla citas.</p>
         </div>
       </div>
       <div className="grid-2" style={{ alignItems: 'start' }}>
         <div className="card stack">
-          <h2 style={{ fontSize: 20 }}>Turnos</h2>
+          <h2 style={{ fontSize: 20 }}>Turnos de {p.firstName}</h2>
           {[...up, ...past].length === 0 ? <p className="muted">Sin turnos.</p> : (
-            <ul className="plain">{[...up, ...past].map((a) => <li key={a.id}><span className="code">{a.id}</span> v{a.version} · {serviceName(s, a.serviceTypeId)} · <span className="tabular">{fmtShort(a.start)}</span> · {proName(s, a.professionalId)} <StatusBadge status={a.status} /></li>)}</ul>
+            <ul className="turno-list">{[...up, ...past].map((a) => <li key={a.id}><TurnoCard a={a} extra={<a className="small" href={agendaLink(a)}>Ver en la agenda</a>} /></li>)}</ul>
           )}
         </div>
         <div className="card stack">
@@ -152,6 +168,7 @@ export function PersonDetail({ id }: { id: string }) {
           {estimates.map((e) => { const t = estimateTotals(s, e); return <p key={e.id}><span className="code">{e.id}</span> <StatusBadge status={e.status} /> total {money(t.total)}{t.balance !== null ? ` · saldo ${money(t.balance)}` : ''}</p>; })}
           <p><strong>Caja ficticia (neto de la persona):</strong> <span className="tabular">{money(ledgerNet(s, p.id))}</span></p>
           <h3>Eventos recientes</h3>
+          {events.length === 0 && <p className="small muted" style={{ margin: 0 }}>Sin eventos registrados en la auditoría local.</p>}
           <ul className="plain small">{events.map((e) => <li key={e.id}><span className="tabular">{fmtShort(e.at)}</span> · {e.type.replace(/_/g, ' ')} · {e.detail}</li>)}</ul>
         </div>
       </div>

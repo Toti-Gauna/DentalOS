@@ -23,26 +23,29 @@ export class ToneEngine {
 
   get available() { return !!this.ctx && this.ctx.state !== 'closed'; }
 
-  chime() {
+  /** Dos tonos suaves y distintos, sin melodía: "habla" (turno del asistente) y "guardado" (commit confirmado). */
+  cue(kind: 'habla' | 'guardado' = 'habla') {
     const ctx = this.ctx;
     if (!ctx || this.muted || this.volume <= 0 || ctx.state === 'closed') return;
-    const t0 = ctx.currentTime + 0.01;
-    [[523.25, 0], [659.25, 0.17]].forEach(([freq, offset]) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      const start = t0 + offset; const dur = 0.15;
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.06 * this.volume, start + 0.02);
-      gain.gain.linearRampToValueAtTime(0, start + dur);
-      osc.connect(gain).connect(ctx.destination);
-      osc.onended = () => { osc.disconnect(); gain.disconnect(); this.nodes.delete(osc); };
-      this.nodes.add(osc);
-      osc.start(start);
-      osc.stop(start + dur + 0.01);
-    });
+    const freq = kind === 'habla' ? 523.25 : 659.25;
+    const dur = kind === 'habla' ? 0.14 : 0.17;
+    const start = ctx.currentTime + 0.01;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(0.06 * this.volume, start + 0.02);
+    gain.gain.linearRampToValueAtTime(0, start + dur);
+    osc.connect(gain).connect(ctx.destination);
+    osc.onended = () => { osc.disconnect(); gain.disconnect(); this.nodes.delete(osc); };
+    this.nodes.add(osc);
+    osc.start(start);
+    osc.stop(start + dur + 0.01);
   }
+
+  /** Compatibilidad: tono de turno de habla. */
+  chime() { this.cue('habla'); }
 
   /** Desmonta osciladores y cierra el contexto: nada suena después de detener. */
   stop() {

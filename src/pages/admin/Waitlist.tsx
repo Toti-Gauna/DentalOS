@@ -6,6 +6,7 @@ import { isActive, slotKey, validateSlot } from '../../domain/scheduling';
 import { byId, personLabel, proName, serviceName, STATUS_LABEL } from '../../domain/selectors';
 import { addMinutes, diffMinutes, fmtShort, toMs } from '../../domain/time';
 import { Button, EmptyState, Field, Notice, PageHeader, StatusBadge, announce, useResult } from '../../ui/kit';
+import { OutboxPipeline } from '../../ui/components';
 
 function nextReminderJump(s: DemoState): number | null {
   const due = s.outbox.filter((o) => o.kind === 'recordatorio_24h' && o.status === 'programado' && toMs(o.dueAt) > toMs(s.clock)).sort((a, b) => toMs(a.dueAt) - toMs(b.dueAt))[0];
@@ -88,6 +89,7 @@ export function Waitlist() {
                   <li key={o.id} className="list-item">
                     <div className="row between"><strong>{o.id} · {personLabel(s, o.personId)}</strong><StatusBadge status={o.status} /></div>
                     <span className="small tabular">{fmtShort(o.slot.start)} · {serviceName(s, o.slot.serviceTypeId)} · {proName(s, o.slot.professionalId)}{o.status === 'activa' ? ` · vence en ${Math.max(0, left)} min de muestra` : ''}{o.appointmentId ? ` · turno ${o.appointmentId}` : ''}</span>
+                    {o.status === 'activa' && <div className="hold" role="img" aria-label={`Retención: quedan ${Math.max(0, left)} de ${s.settings.holdMinutes} minutos de muestra`}><span style={{ width: `${Math.max(0, Math.min(100, (left / s.settings.holdMinutes) * 100))}%` }} /></div>}
                     {o.status === 'activa' && <div className="row wrap"><Button size="sm" variant="primary" onClick={() => show(dispatch({ type: 'offerAccept', offerId: o.id }))}>Aceptar (como paciente)</Button><Button size="sm" onClick={() => show(dispatch({ type: 'offerReject', offerId: o.id }))}>Rechazar sin penalización</Button></div>}
                     {o.status === 'tomada_por_otro' && <span className="small muted">Sigue en lista de espera; recepción puede ofrecer otra opción.</span>}
                   </li>
@@ -143,6 +145,7 @@ export function Waitlist() {
                   <li key={o.id} className="list-item">
                     <div className="row between"><span className="small"><span className="code">{o.id}</span> {o.kind.replace('_', ' ')}</span><StatusBadge status={o.status} /></div>
                     <span className="small muted tabular">{o.appointmentId} v{o.appointmentVersion}{a && isActive(a) && a.version !== o.appointmentVersion ? ' (versión vieja)' : ''} · {o.kind === 'recordatorio_24h' ? `vence ${fmtShort(o.dueAt)}` : fmtShort(o.createdAt)} · {o.ruleId}</span>
+                    <OutboxPipeline o={o} />
                   </li>
                 );
               })}

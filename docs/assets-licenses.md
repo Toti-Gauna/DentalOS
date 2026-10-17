@@ -6,7 +6,9 @@
 | Source Sans 3 400/600 (subset latin) | `@fontsource/source-sans-3` 5.x, empaquetada en `dist/assets` | SIL Open Font License 1.1 | Texto y tablas |
 | Íconos (`src/ui/kit.tsx`) | Trazos SVG propios de este repo | Propios del proyecto | Estados texto+ícono, navegación |
 | Logo / favicon (`public/favicon.svg`, `App.tsx`) | SVG propio (diente estilizado genérico) | Propio del proyecto | Marca ficticia Clínica Brisa |
-| Tonos de llamada | Generados en runtime con Web Audio (`src/ui/tones.ts`), dos senoidales 150 ms | No es un asset | Opcional, tras gesto |
+| Tonos de llamada | Generados en runtime con Web Audio (`src/ui/tones.ts`): “habla” 523 Hz/140 ms y “guardado” 659 Hz/170 ms | No es un asset | Opcional, tras gesto |
+| Glifos (odontograma, sellos, bloque de fecha) | SVG inline propios (`src/ui/components.tsx`, `src/pages/public/Learn.tsx`) | Propios del proyecto | UI |
+| Capturas `docs/evidence/` | Generadas por `tests/e2e/evidence.spec.ts` sobre la seed sintética | Propias | Documentación |
 
 Sin imágenes de prospectos, fotos, radiografías, mapas, embeds, CDN ni tracking.
 

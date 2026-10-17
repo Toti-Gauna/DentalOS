@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { dispatch, useDemo } from '../../app/store';
 import { useDraft } from '../../app/ui-state';
 import { activeReplies } from '../../domain';
-import { byId, personLabel, serviceName, upcomingFor } from '../../domain/selectors';
+import { byId, personLabel, upcomingFor } from '../../domain/selectors';
 import { fmtShort } from '../../domain/time';
 import { Button, Icon, Notice, PageHeader, StatusBadge, announce } from '../../ui/kit';
+import { TurnoCard, agendaLink } from '../../ui/components';
 
 export function WhatsApp() {
   const s = useDemo();
@@ -52,7 +53,9 @@ export function WhatsApp() {
           <div className="chat-log" ref={logRef} role="log" aria-live="polite" aria-relevant="additions" tabIndex={0} aria-label="Mensajes">
             {msgs.map((m, i) => (
               <div key={m.id} className={`bubble ${m.from}`}>
-                {m.from === 'sistema' && <Icon name="info" size={14} />} {m.text}
+                {m.from === 'sistema' && <Icon name="info" size={14} />}
+                {m.from === 'recepcion' && <span className="who">Recepción (persona)</span>}
+                <span>{m.text}</span>
                 <span className="stamp tabular">{fmtShort(m.at)} · {m.simulated === 'entregado_simulado' ? 'entregado (simulado)' : 'leído (simulado)'}{i < msgs.length - 1 && m.replies ? ' · opciones vencidas' : ''}</span>
               </div>
             ))}
@@ -67,7 +70,7 @@ export function WhatsApp() {
             <input id="wa-text" value={text} maxLength={500} placeholder="Escribí, por ejemplo: quiero cambiar mi turno" onChange={(e) => { setText(e.target.value); setHint(null); }} aria-describedby={hint ? 'wa-hint' : undefined} autoComplete="off" />
             <Button type="submit" variant="primary" icon="arrow" aria-label="Enviar">Enviar</Button>
           </form>
-          {hint && <p id="wa-hint" className="small muted" role="status" style={{ padding: '0 12px 8px', margin: 0 }}>{hint}</p>}
+          <p id="wa-hint" className="composer-hint" role="status">{hint ?? ''}</p>
         </div>
 
         <aside className="stack">
@@ -93,8 +96,8 @@ export function WhatsApp() {
           <div className="card stack">
             <h3>Estado actual (en vivo)</h3>
             {!conv.personId ? <p className="muted">Contacto sin identificar: el asistente no busca por nombre. Recepción identifica por ID.</p> : upcoming.length === 0 ? <p className="muted">Sin turnos activos.</p> : (
-              <ul className="plain">
-                {upcoming.map((a) => <li key={a.id}><span className="code">{a.id}</span> v{a.version} · {serviceName(s, a.serviceTypeId)} · <span className="tabular">{fmtShort(a.start)}</span> <StatusBadge status={a.status} /></li>)}
+              <ul className="turno-list">
+                {upcoming.map((a) => <li key={a.id}><TurnoCard a={a} extra={<a className="small" href={agendaLink(a)}>Ver en la agenda de recepción</a>} /></li>)}
               </ul>
             )}
             <p className="small muted">Los mensajes viejos son historial: no confirman nada vigente.</p>

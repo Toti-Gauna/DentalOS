@@ -29,7 +29,8 @@ test('S17/S18: recepción confirma solicitud y registra check-in → atención �
   const pending = page.locator('.card', { hasText: 'Por confirmar' });
   await pending.getByRole('button', { name: 'Confirmar' }).click();
   await expect(pending.getByText('Nada pendiente.')).toBeVisible();
-  const row = page.locator('.list-item', { hasText: 'A-0003' });
+  await page.getByRole('button', { name: 'Lista del día' }).click();
+  const row = page.locator('.turno[data-appointment="A-0003"]');
   await row.getByRole('button', { name: 'Check-in' }).click();
   await row.getByRole('button', { name: 'En atención' }).click();
   await row.getByRole('button', { name: 'Finalizar' }).click();
@@ -80,13 +81,21 @@ test('S45: dos ofertas compitiendo, un solo ganador', async ({ page }) => {
 test('S46: tarjeta educativa con reintento y sello que no suma dos veces', async ({ page }) => {
   await fresh(page, '#/aprender');
   const card = page.locator('.learn-card', { hasText: 'Cambiar un turno' });
-  await card.getByRole('button', { name: 'Empezar' }).click();
-  await card.getByRole('button', { name: /Se pierde/ }).click();
-  await expect(card.getByText('Probá otra opción')).toBeVisible();
-  await card.getByRole('button', { name: /Sigue reservado/ }).click();
+  await card.getByRole('button', { name: /Empezar/ }).click();
+  await card.getByRole('button', { name: /Cancelar primero/ }).click();
+  await expect(card.getByText('Todavía no: probá otra opción')).toBeVisible();
+  await expect(card.locator('.feedback')).toBeFocused();
+  await card.getByRole('button', { name: /Revisar la alternativa/ }).click();
   await card.getByRole('button', { name: 'Guardar sello' }).click();
   await expect(card.getByText('Sello guardado')).toBeVisible();
-  await expect(page.locator('#main').getByText(/Tu colección: 1 de 3 sellos/)).toBeVisible();
+  await expect(page.locator('#main').getByRole('heading', { name: /Tu colección: 1 de 3 sellos/ })).toBeVisible();
+  await card.getByRole('button', { name: 'Cerrar tarjeta' }).click();
+  await card.getByRole('button', { name: /Releer/ }).click();
+  await card.getByRole('button', { name: /Revisar la alternativa/ }).click();
+  await expect(card.getByRole('button', { name: 'Guardar sello' })).toHaveCount(0);
+  await expect(page.locator('#main').getByRole('heading', { name: /Tu colección: 1 de 3 sellos/ })).toBeVisible();
+  await page.reload();
+  await expect(page.locator('#main').getByRole('heading', { name: /Tu colección: 1 de 3 sellos/ })).toBeVisible();
 });
 
 test('S47: drawer con teclado — Escape cierra y devuelve el foco', async ({ page }) => {
@@ -129,11 +138,11 @@ test('S33/S35/A04: llamada continúa la gestión y confirma el mismo turno sin d
   await expect(page.locator('.call-line')).toContainText('Cambio guardado en esta demo');
   await page.getByRole('button', { name: 'Terminar llamada' }).click();
   await page.goto('/#/mis-turnos');
-  await expect(page.locator('.list-item', { hasText: 'A-0012' })).toContainText('miércoles 21 de octubre, 15:00 h');
-  await expect(page.locator('.list-item', { hasText: 'A-0012' })).toContainText('versión 2');
+  await expect(page.locator('.turno[data-appointment="A-0012"]')).toContainText('21 de oct');
+  await expect(page.locator('.turno[data-appointment="A-0012"]')).toContainText('versión 2');
   await page.goto('/#/admin/bandeja');
   await page.getByRole('tab', { name: /Resueltas/ }).click();
-  await expect(page.locator('#main').getByText('R-006 · reprogramacion')).toBeVisible();
+  await expect(page.locator('#main').getByText(/R-006 · Reprogramación/)).toBeVisible();
 });
 
 test('S23: el borrador de reserva se conserva al navegar y volver', async ({ page }) => {

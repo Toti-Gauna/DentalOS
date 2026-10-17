@@ -1,32 +1,46 @@
+import { useState } from 'react';
 import { useDemo } from '../../app/store';
 import { navigate } from '../../app/router';
 import { useUi } from '../../app/ui-state';
 import { byId, locName, proName, serviceName, upcomingFor } from '../../domain/selectors';
-import { fmtLong } from '../../domain/time';
+import { fmtLong, parts } from '../../domain/time';
+import { agendaLink } from '../../ui/components';
 import { Button, EmptyState, Icon, StatusBadge } from '../../ui/kit';
+
+const DOW = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+const MON = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 function NextAppointmentCard() {
   const s = useDemo();
   const ui = useUi();
   const person = byId(s.persons, ui.actingPersonId);
   const next = person ? upcomingFor(s, person.id)[0] : undefined;
+  const p = next ? parts(next.start) : null;
   return (
     <aside className="next-card" aria-labelledby="next-title">
-      <p className="eyebrow" id="next-title">Tu próximo paso{person ? ` · ${person.firstName} (${person.id})` : ''}</p>
-      {next ? (
+      <p className="eyebrow" id="next-title" style={{ margin: 0 }}>Tu próximo paso{person ? ` · ${person.firstName} (${person.id})` : ''}</p>
+      {next && p ? (
         <>
-          <p className="big">{serviceName(s, next.serviceTypeId)}</p>
-          <p className="tabular">{fmtLong(next.start)}<br />{proName(s, next.professionalId)} · {locName(s, next.locationId)}</p>
+          <div className="next-when">
+            <div className="turno-when" aria-hidden="true"><span className="turno-dow">{DOW[p.weekday]}</span><span className="turno-day tabular">{p.day}</span><span className="turno-month">{MON[p.month - 1]}</span></div>
+            <div>
+              <p className="big">{serviceName(s, next.serviceTypeId)}</p>
+              <p className="tabular" style={{ margin: 0 }}>{fmtLong(next.start)}</p>
+            </div>
+          </div>
+          <p style={{ margin: 0 }}>{proName(s, next.professionalId)} · {locName(s, next.locationId)}</p>
           <StatusBadge status={next.status} />
+          {next.status === 'solicitada' && <p className="on-dark-muted small" style={{ margin: 0 }}>Es una solicitud: recepción la confirma. Todavía no es un turno confirmado.</p>}
           <div className="row wrap">
             <Button variant="secondary" icon="list" onClick={() => navigate('/mis-turnos')}>Ver o cambiar</Button>
-            <Button variant="ghost" icon="chat" onClick={() => navigate('/whatsapp')} style={{ color: '#fff' }}>Escribir por WhatsApp</Button>
+            <Button variant="ghost" icon="chat" onClick={() => navigate('/whatsapp')}>Escribir por WhatsApp</Button>
           </div>
+          <a className="on-dark-muted small" href={agendaLink(next)} style={{ color: 'var(--on-dark-muted)' }}>Ver este mismo turno en la agenda de recepción</a>
         </>
       ) : (
         <>
           <p className="big">Sin turnos próximos</p>
-          <p className="muted">Pedí tu primera consulta o un control. Revalidamos la disponibilidad al confirmar.</p>
+          <p className="on-dark-muted">Pedí tu primera consulta o un control. Revalidamos la disponibilidad al confirmar.</p>
           <Button variant="secondary" icon="calendar" onClick={() => navigate('/reservar')}>Pedir turno</Button>
         </>
       )}
@@ -36,6 +50,8 @@ function NextAppointmentCard() {
 
 export function Home() {
   const s = useDemo();
+  const [filter, setFilter] = useState<'todos' | 'general' | 'ortodoncia'>('todos');
+  const services = s.serviceTypes.filter((st) => filter === 'todos' || st.specialty === filter);
   return (
     <section className="page">
       <div className="hero">
@@ -54,8 +70,13 @@ export function Home() {
       <section aria-labelledby="services-title" className="stack">
         <h2 id="services-title">Motivos de consulta</h2>
         <p className="muted">Elegí un motivo administrativo. Si no sabés cuál, recepción te orienta: no hace falta adivinar.</p>
-        <div className="service-grid">
-          {s.serviceTypes.map((st) => (
+        <div className="chips" role="group" aria-label="Filtrar motivos">
+          {([['todos', 'Todos'], ['general', 'Odontología general'], ['ortodoncia', 'Ortodoncia']] as const).map(([k, l]) => (
+            <button key={k} className="chip" aria-pressed={filter === k} onClick={() => setFilter(k)}>{l} <span className="tabular">({s.serviceTypes.filter((st) => k === 'todos' || st.specialty === k).length})</span></button>
+          ))}
+        </div>
+        <div className="service-grid" aria-live="polite">
+          {services.map((st) => (
             <article key={st.id} className="card service">
               <h3>{st.name}</h3>
               <span className="duration tabular"><Icon name="clock" size={14} /> {st.durationMin} min · {st.specialty === 'ortodoncia' ? 'Ortodoncia' : 'Odontología general'}</span>

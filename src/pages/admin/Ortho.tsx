@@ -4,7 +4,7 @@ import { useDraft } from '../../app/ui-state';
 import { findSlots } from '../../domain';
 import { byId, personLabel, proName, STATUS_LABEL } from '../../domain/selectors';
 import { fmtShort } from '../../domain/time';
-import { Button, EmptyState, Field, Notice, PageHeader, StatusBadge, useResult } from '../../ui/kit';
+import { Button, EmptyState, Field, Icon, Notice, PageHeader, StatusBadge, useResult } from '../../ui/kit';
 import { RescheduleDrawer } from '../../ui/RescheduleDrawer';
 
 export function Ortho() {
@@ -30,13 +30,16 @@ export function Ortho() {
             <div className="card stack">
               <div className="row between"><h2 style={{ fontSize: 20, margin: 0 }}>{ep.title}</h2><StatusBadge status={ep.status === 'activo' ? 'activa' : 'cerrada'} label={ep.status === 'activo' ? 'Activo' : 'Cerrado'} /></div>
               <p className="muted">{personLabel(s, ep.personId)} · {proName(s, ep.professionalId)} · desde {fmtShort(ep.startedAt)}</p>
-              <h3>Controles</h3>
-              <ul className="list">
+              <h3>Controles indicados</h3>
+              <p className="small muted" style={{ margin: 0 }}>Cada control lo indica la profesional. La demo no calcula frecuencia, avance ni fecha de finalización.</p>
+              <ol className="ctl-steps">
                 {ep.controls.map((c) => {
                   const a = byId(s.appointments, c.appointmentId);
                   const slots = c.status === 'indicado' ? findSlots(s, { serviceTypeId: 'ST-ORTO-CTRL', professionalId: ep.professionalId, limit: 3, personId: ep.personId }) : [];
                   return (
-                    <li key={c.id} className="list-item">
+                    <li key={c.id} className={`ctl-step is-${c.status}`}>
+                      <span className="ctl-dot" aria-hidden="true"><Icon name={c.status === 'realizado' ? 'check' : c.status === 'reservado' ? 'calendar' : 'info'} size={16} /></span>
+                      <div className="list-item">
                       <div className="row between"><strong>{c.id} · {c.note}</strong><StatusBadge status={c.status} /></div>
                       <span className="small muted">Indicado por {proName(s, c.indicatedBy)} el {fmtShort(c.indicatedAt)}</span>
                       {a && <span className="small">Turno <span className="code">{a.id}</span> v{a.version} · {fmtShort(a.start)} · {STATUS_LABEL[a.status]}</span>}
@@ -49,10 +52,11 @@ export function Ortho() {
                           )}
                         </div>
                       )}
+                      </div>
                     </li>
                   );
                 })}
-              </ul>
+              </ol>
             </div>
             <div className="card stack">
               <h3>Timeline administrativo</h3>

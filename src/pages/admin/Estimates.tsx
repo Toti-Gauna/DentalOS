@@ -4,6 +4,7 @@ import { useDraft } from '../../app/ui-state';
 import { byId, estimateTotals, ledgerNet, money, personLabel, proName } from '../../domain/selectors';
 import { fmtShort } from '../../domain/time';
 import { Button, ConfirmDialog, EmptyState, Field, Kpi, Notice, PageHeader, StatusBadge, announce, useResult } from '../../ui/kit';
+import { MoneySummary } from '../../ui/components';
 
 const toMinor = (v: string) => { const t = v.trim().replace(/\./g, '').replace(',', '.'); if (!t) return NaN; const n = Number(t); return Number.isFinite(n) ? Math.round(n * 100) : NaN; };
 
@@ -76,6 +77,7 @@ function EstimateDetail({ id, show }: { id: string; show: Show }) {
     <div className="card stack">
       <div className="row between"><h2 style={{ fontSize: 20, margin: 0 }}>{e.id} · {personLabel(s, e.personId)}</h2><StatusBadge status={e.status} /></div>
       <p className="small muted">{proName(s, e.professionalId)} · creado {fmtShort(e.createdAt)}{e.issuedAt ? ` · emitido ${fmtShort(e.issuedAt)}` : ''}{e.validUntil ? ` · vigente hasta ${fmtShort(e.validUntil)}` : ''} · {e.coverageNote}</p>
+      <MoneySummary total={t.total} accepted={e.status === 'aceptado'} paid={t.paid} balance={t.balance} />
       <div className="table-wrap">
         <table>
           <caption className="sr-only">Líneas</caption>
@@ -84,8 +86,6 @@ function EstimateDetail({ id, show }: { id: string; show: Show }) {
             {lines.length === 0 && <tr><td colSpan={6} className="muted">Sin líneas.</td></tr>}
             {lines.map((l) => <tr key={l.id}><td>{l.description}</td><td className="tabular">{l.tooth ?? '—'}</td><td className="tabular">{l.qty}</td><td className="tabular">{money(l.unitMinor)}</td><td className="tabular">{money(l.qty * l.unitMinor)}</td><td>{e.status === 'borrador' && <Button size="sm" variant="ghost" onClick={() => show(dispatch({ type: 'estimateRemoveLine', lineId: l.id }))}>Quitar</Button>}</td></tr>)}
             <tr><td colSpan={4}><strong>Total</strong></td><td className="tabular"><strong>{money(t.total)}</strong></td><td /></tr>
-            <tr><td colSpan={4}>Movimientos ficticios vinculados</td><td className="tabular">{money(t.paid)}</td><td /></tr>
-            {t.balance !== null && <tr><td colSpan={4}>Saldo</td><td className="tabular">{money(t.balance)}</td><td /></tr>}
           </tbody>
         </table>
       </div>

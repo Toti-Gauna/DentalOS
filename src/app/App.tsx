@@ -1,10 +1,11 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { fmtShort } from '../domain/time';
 import type { ViewRole } from '../domain';
 import { navigate, useRoute } from './router';
 import { store, useStore } from './store';
 import { resetUi, setRole, useUi } from './ui-state';
 import { Button, ConfirmDialog, Icon, LiveRegion, Notice } from '../ui/kit';
+import { LoadingState } from '../ui/components';
 import { Home, LocationPage, ServicePage } from '../pages/public/Home';
 import { Booking } from '../pages/public/Booking';
 import { MyAppointments } from '../pages/public/MyAppointments';
@@ -107,7 +108,7 @@ function RoleSwitch() {
   const ui = useUi();
   return (
     <div className="role-switch">
-      <label htmlFor="role">Vista de muestra <span className="muted">(no es inicio de sesión)</span></label>
+      <label htmlFor="role">Vista de muestra · no es inicio de sesión</label>
       <select id="role" value={ui.role} onChange={(e) => { const r = ROLES.find((x) => x.id === e.target.value)!; setRole(r.id); navigate(r.home); }}>
         {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
       </select>
@@ -160,13 +161,17 @@ export function App() {
   const { segments, path } = useRoute();
   const admin = segments[0] === 'admin';
   const [menuOpen, setMenuOpen] = useState(false);
+  const prevTitle = useRef<HTMLElement | null>(null);
+  const prevText = useRef<string | null>(null);
 
   const ui = useUi();
   useEffect(() => {
-    // La vista de muestra acompaña al área elegida (no es seguridad).
+    // La vista de muestra acompaña al área elegida (no es seguridad). Solo reacciona al cambio de área,
+    // así elegir una vista no se pisa antes de que cambie la ruta.
     if (admin && (ui.role === 'visitante' || ui.role === 'paciente')) setRole('recepcion');
     if (!admin && ui.role !== 'visitante' && ui.role !== 'paciente') setRole('paciente');
-  }, [admin, ui.role]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [admin]);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -175,8 +180,12 @@ export function App() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const focusTitle = () => {
       const h = document.querySelector<HTMLElement>('[data-page-title]');
-      if (h) { if (document.activeElement?.tagName !== 'INPUT') h.focus({ preventScroll: false }); }
-      else if (tries++ < 20) timer = setTimeout(focusTitle, 50);
+      // Mientras el panel diferido carga, puede seguir montado el título anterior: esperar al nuevo.
+      if (h && (h !== prevTitle.current || h.textContent !== prevText.current)) {
+        prevTitle.current = h;
+        prevText.current = h.textContent;
+        if (document.activeElement?.tagName !== 'INPUT') h.focus({ preventScroll: false });
+      } else if (tries++ < 40) timer = setTimeout(focusTitle, 50);
     };
     focusTitle();
     window.scrollTo?.(0, 0);
@@ -196,9 +205,12 @@ export function App() {
       <header className="topbar">
         <div className="topbar-inner">
           <Logo />
-          <button className="menu-toggle btn btn-ghost" aria-expanded={menuOpen} aria-controls="main-nav" onClick={() => setMenuOpen((v) => !v)}><Icon name="list" /> <span>Menú</span></button>
+          <nav className="area-switch" aria-label="Área de la demo">
+            <a href="#/" aria-current={!admin ? 'true' : undefined} aria-label="Portal de pacientes"><Icon name="user" size={16} /> <span className="lbl-long">Portal de pacientes</span><span className="lbl-short">Pacientes</span></a>
+            <a href="#/admin" aria-current={admin ? 'true' : undefined} aria-label="Panel de la clínica"><Icon name="calendar" size={16} /> <span className="lbl-long">Panel de la clínica</span><span className="lbl-short">Clínica</span></a>
+          </nav>
           <RoleSwitch />
-          <a className="switch-area" href={admin ? '#/' : '#/admin'}>{admin ? 'Ver portal de pacientes' : 'Ver panel de la clínica'} <Icon name="arrow" size={14} /></a>
+          {admin && <button className="menu-toggle btn btn-ghost" aria-expanded={menuOpen} aria-controls="main-nav" onClick={() => setMenuOpen((v) => !v)}><Icon name="list" /> <span>Menú</span></button>}
         </div>
       </header>
       <div className="layout">
@@ -211,7 +223,7 @@ export function App() {
         </nav>
         <main id="main" tabIndex={-1}>
           <SystemNotices />
-          <Suspense fallback={<p className="muted" role="status">Cargando panel…</p>}>{route(segments)}</Suspense>
+          <Suspense fallback={<LoadingState label="Cargando panel de la clínica…" />}>{route(segments)}</Suspense>
         </main>
       </div>
       <footer className="footer">
