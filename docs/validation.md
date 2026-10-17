@@ -312,3 +312,43 @@ Rama `feat/fase3-rediseno`, que sale de `feat/fase2c-premium` (PR #5). Mismo ent
 - El odontograma en móvil se desplaza en horizontal dentro de su tarjeta (mínimo 560 px) para que cada pieza siga siendo fácil de tocar; la página no tiene scroll horizontal (verificado en 320 y 390 px).
 - Sin lector de pantalla real ni audio audible en el contenedor.
 
+# Mejora L1–L10 · lote 1 (diagnóstico, especificación y estabilidad)
+
+Rama `feat/dentalos-l1-diagnostico` desde `main` @ `73c5e75`. Sin cambios de producto.
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` · `npm run typecheck` · `npm run build` | 0 | sin errores |
+| `npm run test -- --run` | 0 | 154/154 |
+| e2e, subconjunto del juego y reloj de cepillado × 20 repeticiones, 4 workers | 0 | **60/60** |
+| e2e, suite completa × 5 seguidas | 0 | 5 × 63 pasadas + 1 omitida |
+
+Falla intermitente: ver `docs/spec/estabilidad.md` (causa, corrección y límites). Los requisitos nuevos están **especificados, no construidos** (`docs/spec/requisitos.md`).
+
+# Mejora L1–L10 · lote 2 (investigación y tres propuestas visuales)
+
+Rama `feat/dentalos-l2-propuestas`. Ruta nueva y aislada `#/propuestas`; el resto del producto no cambia (solo se agregó la ruta en `App.tsx`).
+
+| Comando | Exit | Evidencia |
+| --- | --- | --- |
+| `npm run lint` · `npm run typecheck` · `npm run build` | 0 | sin errores; entrada 544,52 kB (igual); `Proposals` 45 kB en chunk aparte |
+| `npx vitest run` | 0 | 245/245 (154 previas + 91 de `src/pages/proposals/contrast.test.ts`) |
+| `npx playwright test` | 0 | 66 pasadas + 1 omitida (63 previas + 3 de `tests/e2e/proposals.spec.ts`) |
+
+Qué prueban las nuevas:
+
+- Las tres propuestas renderizan las 4 pantallas y las 4 muestras con el mismo contenido del seed (A-0012, agenda del 19/10, 45 min, versión 2).
+- Cada pantalla tiene su indicador de demo.
+- Ningún par de contraste queda bajo el mínimo y no hay pedidos fuera de `127.0.0.1`.
+- Claro/oscuro y comparar quedan en la URL y sobreviven a recargar.
+- A 390 px no hay scroll horizontal y con movimiento reducido no corre ninguna animación.
+
+Láminas de las tres propuestas en claro y oscuro: `docs/evidence/l2/{a,b,c}-{claro,oscuro}.jpg`.
+
+**Límites:**
+
+- Solo Chromium.
+- `backdrop-filter` (B) sin medir en equipos modestos.
+- Los prototipos no son interactivos: los botones no ejecutan acciones, y así lo dice la página.
+- Las referencias son resúmenes del buscador, no páginas vistas.
+

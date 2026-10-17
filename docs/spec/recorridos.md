@@ -1,0 +1,71 @@
+# Recorridos (sobre rutas y comandos reales)
+
+Cada paso nombra la ruta (`#/…`) y el comando del store (`commands.ts`) que ya existen, o marca **[nuevo]** lo que falta. Un paso existente se conserva; los nuevos se cubren en `requisitos.md`.
+
+## 1 · Primera consulta
+Descubre la clínica → consulta simulada → disponibilidad → turno → recepción.
+
+| # | Paso | Ruta / comando | Estado hoy |
+| --- | --- | --- | --- |
+| 1 | Conoce la clínica y los motivos | `#/`, `#/sedes/:id`, `#/servicios/ST-PRIMERA` | existe (M01) |
+| 2 | Consulta por chat o llamada simulada | `#/whatsapp` (`chatSend`, `chatChoose`), `#/llamada` (`callSave`) | existe (M06, M07) |
+| 3 | Ve disponibilidad | `#/reservar` (`findSlots`) | existe (M02) |
+| 4 | Solicita el turno (queda solicitado, no confirmado) | `book` | existe (S02, S06, S07) |
+| 5 | Recepción lo ve y lo confirma | `#/admin`, `#/admin/bandeja` · `confirmAppointment` | existe (S17) |
+| 6 | Código legible y QR del turno | **[nuevo]** R-QR-01 | falta |
+| 7 | Animación de “solicitud recibida” | **[nuevo]** R-MOT-02 | falta |
+
+Variantes: profesional ocupado (S08), sillón ocupado (S09), duración insuficiente (S10), fuera de jornada (S11), agenda llena con espera (S12).
+
+## 2 · Paciente existente
+Próximo turno → confirma o reprograma → conserva ID y versiona → recordatorio anterior anulado.
+
+| # | Paso | Ruta / comando | Estado hoy |
+| --- | --- | --- | --- |
+| 1 | Ve su próximo turno con cuenta regresiva | `#/mis-turnos` | existe |
+| 2 | Confirma | `patientConfirm` | existe (A07) |
+| 3 | Reprograma por WhatsApp o llamada | `reschedule` | existe (S13, S29, S33, A03, A04) |
+| 4 | Mismo ID, versión nueva, recordatorio v1 anulado | store | existe (S13, S22) |
+| 5 | Ventana < 12 h → deriva a recepción | `requestHumanChange` | existe (S15) |
+| 6 | Cancelación: libera el cupo, anula recordatorios, **cierra** las tareas del turno y, si era un control de ortodoncia, lo deja de nuevo “indicado” | `cancel` | existe (S16) |
+| 6b | Tarea administrativa de seguimiento **después** de cancelar | **[nuevo]** hoy `cancel` no crea tareas; se define en R-SCN-02 (caso 4) | falta |
+| 7 | Llegada registrada por QR | **[nuevo]** R-QR-02, R-QR-04 | falta |
+| 8 | Animación de reprogramación | **[nuevo]** R-MOT-02 | falta |
+
+## 3 · Ortodoncia
+Control indicado por el profesional → seguimiento administrativo → reserva.
+
+| # | Paso | Ruta / comando | Estado hoy |
+| --- | --- | --- | --- |
+| 1 | El profesional indica el control **manualmente** | `#/admin/ortodoncia` · `episodeIndicateControl` | existe (S42) |
+| 2 | Queda una tarea `control_indicado` (la crea el propio comando, deduplicada) | `episodeIndicateControl` → `upsertTask` | existe |
+| 3 | Se reserva el turno del control | `book` con `ST-ORTO-CTRL` | existe |
+| 4 | Aparatología registrada | `episodeSetAppliance` | existe |
+| 5 | Segmento “controles ya indicados pendientes” y campaña | **[nuevo]** R-GRW-01, R-GRW-02 | falta |
+
+El software no decide cuándo corresponde un control ni lo recomienda por rentabilidad.
+
+## 4 · Familia / odontopediatría
+El adulto responsable gestiona → espacio infantil opcional → turno.
+
+| # | Paso | Ruta / comando | Estado hoy |
+| --- | --- | --- | --- |
+| 1 | Responsable ve los turnos de dependientes (Carla P-003 → Tomás P-004, Lola P-005) | `#/mis-turnos`, `#/admin/personas/P-003` | existe (S40) |
+| 2 | Pide turno para el dependiente | `book` con `personId` | existe |
+| 3 | Espacio infantil opcional | `#/chicos` (escena, juego, reloj, cuento, álbum) | existe |
+| 4 | Segunda actividad infantil distinta | **[nuevo]** R-KID-02 | falta |
+| 5 | Presupuesto: lo acepta el responsable, nunca el menor | `estimateTransition` | existe; regla explícita **[nuevo]** R-FLW-02 |
+
+## 5 · Dirección
+Capacidad/seguimiento → campaña administrativa → economía → aprobación.
+
+| # | Paso | Ruta / comando | Estado hoy |
+| --- | --- | --- | --- |
+| 1 | Informes con denominador y n=0 | `#/admin/informes` | existe |
+| 2 | Capacidad y ocupación | informes, `Configuración` | existe |
+| 3 | Segmento y campaña (borrador → vista previa → aprobación → activación simulada) | **[nuevo]** R-GRW-01, R-GRW-02 | falta |
+| 4 | Economía antes de activar (contribución, equilibrio, ND) | **[nuevo]** R-GRW-03 | falta |
+| 5 | Asistente determinista | **[nuevo]** R-GRW-05 | falta |
+| 6 | Resultado simulado → reserva | **[nuevo]** R-SCN-02 (caso 8) | falta |
+
+Todo con datos ficticios; ninguna comunicación, cobro ni medición real.

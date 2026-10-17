@@ -1,5 +1,42 @@
 # Checkpoint · DentalOS demo
 
+## Mejora L1–L10 — lote 2 (investigación y tres propuestas visuales) · detenido esperando la elección de Ignacio
+
+- **Rama:** `feat/dentalos-l2-propuestas` desde `feat/dentalos-l1-diagnostico` (el PR #7 del lote 1 sigue abierto; este PR lo incluye).
+- **Hecho:**
+  - `docs/spec/referencias.md`: 13 familias de componentes. 11 se buscaron, pero solo se leyeron resúmenes del buscador, porque `WebFetch` no resuelve dominios; ninguna página se abrió. Las otras 2 se resolvieron por criterio propio y así se declara.
+  - Ruta aislada `#/propuestas` (chunk diferido, sin el marco de la app, entrada principal sin cambios: 544,52 kB). Tiene tres propuestas sobre el mismo contenido del seed:
+    - pantallas: Inicio del paciente, Hoy/agenda, Reserva (390 px) y WhatsApp simulado;
+    - muestras de carga, de movimiento “turno confirmado” y de la familia de la marca;
+    - paleta con contraste medido, tipografía, grilla, densidad, superficies y movimiento;
+    - claro y oscuro, y vista de comparación de la misma pantalla.
+  - `docs/spec/direccion.md`: resumen comparativo, familia de la marca (general, ortodoncia y Brisa Chicos; el brief no tiene otros negocios) y registro de la elección, vacío.
+- **Dependencias:** cuatro fuentes OFL locales (`@fontsource/newsreader`, `plus-jakarta-sans`, `ibm-plex-sans` e `ibm-plex-mono`). Solo las descarga `#/propuestas`; las de las propuestas descartadas se quitan en L3.
+- **Resultados:**
+  - lint 0, typecheck 0, build 0;
+  - unit 245/245 (91 nuevas de contraste de las propuestas, peor caso sobre todos los fondos);
+  - e2e 66 pasadas + 1 omitida (3 nuevas: contenido igual en las tres, sin pedidos externos, claro/oscuro y comparar en la URL, 390 px sin desborde, sin animaciones con movimiento reducido).
+- **Revisión visual:**
+  - capturas de las 3 propuestas × 4 pantallas × 2 modos, más las muestras y 390 px;
+  - corregido: altura de la agenda, turnos cortos que cortaban texto o dependían solo del color, tarjeta de B que partía la etiqueta, diente de C que parecía una cara, y disco de B demasiado claro en oscuro.
+- **Bloqueo:** R-VIS-03. No se avanza a L3 en lo visual sin la elección explícita (letra, combinación o correcciones).
+- **Próxima acción exacta:** registrar la elección en `docs/spec/direccion.md` y pasar a L3 con el OK de Ignacio. Modelo recomendado para L3: Opus 5.5 High.
+
+## Mejora L1–L10 — lote 1 (diagnóstico, especificación y estabilidad) · cerrado
+
+- **Rama:** `feat/dentalos-l1-diagnostico` desde `main` @ `73c5e75`. Autorización de Ignacio: un PR por lote, seguimiento hasta verde, y esperar su OK antes del lote siguiente.
+- **Hecho:**
+  - `docs/spec/` con requisitos con ID (52, con fuente, roles, escenarios, componente, aceptación y estado), inventario medido, cinco recorridos y la correspondencia con los D-IDs de la auditoría.
+  - Falla e2e intermitente **identificada y corregida**: carrera por reloj en vivo en el test del juego de Brisa Chicos (`page.clock.install` no detiene el tiempo) y, al verificar, un test demasiado costoso bajo carga. Detalle en `docs/spec/estabilidad.md`.
+- **Código del producto:** sin cambios. Solo `tests/e2e/premium.spec.ts` y documentación.
+- **Resultados:**
+  - lint 0, typecheck 0, 154 unit, build 0.
+  - Subconjunto afectado × 20 repeticiones con 4 workers: 60/60.
+  - Suite completa × 5 seguidas: 63 pasadas + 1 omitida en cada una.
+- **Hallazgo de la especificación:** la cancelación **no crea** tareas (solo cierra las del turno); el caso “cancelación → tarea” es trabajo nuevo del lote 9.
+- **Decisiones que siguen pendientes de Ignacio:** elección visual (lote 2), confirmación del indicador “Demo” compacto con botonera (lote 3), precio/anticipo/plazo del cierre Eclipse (lote 9).
+- **Próxima acción exacta:** lote 2 — investigación por familia de componentes y tres propuestas visuales en una ruta aislada, y **detenerse** hasta la elección de Ignacio. Modelo recomendado: Opus 5.5 en el nivel más alto disponible (“Extra”).
+
 ## Rediseño por fases (0–6) — modo oscuro, shell, páginas, arte dental v4 y Brisa Chicos v2 · cerrada
 
 - **Rama:** `feat/fase3-rediseno` desde `feat/fase2c-premium` @ `8ca5904` (PR #5, todavía abierto).
